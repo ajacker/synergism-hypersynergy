@@ -74,6 +74,7 @@ export interface Runes {
     infiniteAscent: number;
     antiquities: number;
     horseShoe: number;
+    topHat: number;
     finiteDescent: number;
 }
 
@@ -687,6 +688,7 @@ export interface SingularityChallenges {
     noSingularityUpgrades: SingularityChallengeStatus;
     oneChallengeCap: SingularityChallengeStatus;
     limitedAscensions: SingularityChallengeStatus;
+    noQuarkUpgrades: SingularityChallengeStatus;
     noOcteracts: SingularityChallengeStatus;
     noAmbrosiaUpgrades: SingularityChallengeStatus;
     limitedTime: SingularityChallengeStatus;

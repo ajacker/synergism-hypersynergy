@@ -456,19 +456,6 @@ export const SINGULARITY_CHALLENGE_DATA: Record<
       }
     }
   },
-  noOcteracts: {
-    achievementPointValue: (n: number) => {
-      return 10 * n + 5 * Math.max(0, n - 7)
-    },
-    effect: (n: number) => {
-      return {
-        octeractPow: (n <= 10) ? 0.02 * n : 0.2 + (n - 10) / 100,
-        offeringBonus: n > 0,
-        obtainiumBonus: n >= 10,
-        shopUpgrade: n >= 10
-      }
-    }
-  },
   limitedAscensions: {
     achievementPointValue: (n: number) => {
       return 5 * n + 5 * Math.max(0, n - 10)
@@ -479,6 +466,36 @@ export const SINGULARITY_CHALLENGE_DATA: Record<
         hepteractCap: n > 0,
         shopUpgrade0: n >= 20,
         shopUpgrade: n >= 25
+      }
+    }
+  },
+  noQuarkUpgrades: {
+    achievementPointValue: (n: number) => {
+      return 20 * n
+    },
+    effect: (n: number) => {
+      return {
+        freeObtainiumLevels: n,
+        freeOfferingLevels: n,
+        freeSpeedLevels: n,
+        freeCubeLevels: n,
+        freeQuarkLevel: n >= 5 ? 1 : 0,
+        freeInfinityLevels: n,
+        shopUpgrade: n >= 1,
+        topHatUnlock: n >= 10
+      }
+    }
+  },
+  noOcteracts: {
+    achievementPointValue: (n: number) => {
+      return 10 * n + 5 * Math.max(0, n - 7)
+    },
+    effect: (n: number) => {
+      return {
+        octeractPow: (n <= 10) ? 0.02 * n : 0.2 + (n - 10) / 100,
+        offeringBonus: n > 0,
+        obtainiumBonus: n >= 10,
+        shopUpgrade: n >= 10
       }
     }
   },
@@ -618,17 +635,17 @@ export const TALISMAN_RARITY_VALUES: Record<number, number> = {
 }
 
 export const TALISMAN_BASE_COEFFICIENTS: Record<TalismanKeys, Record<RuneKeys, number>> = {
-  exemption: { speed: 0, duplication: 1.5, prism: 0.75, thrift: 0.75, superiorIntellect: 0, infiniteAscent: 0, antiquities: 0, horseShoe: 0, finiteDescent: 0 },
-  chronos: { speed: 1.5, duplication: 0, prism: 0, thrift: 0.75, superiorIntellect: 0.75, infiniteAscent: 0, antiquities: 0, horseShoe: 0, finiteDescent: 0 },
-  midas: { speed: 0, duplication: 0.75, prism: 0.75, thrift: 1.5, superiorIntellect: 0, infiniteAscent: 0, antiquities: 0, horseShoe: 0, finiteDescent: 0 },
-  metaphysics: { speed: 0.6, duplication: 0.6, prism: 0.6, thrift: 0.6, superiorIntellect: 0.6, infiniteAscent: 0, antiquities: 0, horseShoe: 0, finiteDescent: 0 },
-  polymath: { speed: 0.75, duplication: 0.75, prism: 0, thrift: 0, superiorIntellect: 1.5, infiniteAscent: 0, antiquities: 0, horseShoe: 0, finiteDescent: 0 },
-  mortuus: { speed: 0.6, duplication: 0.6, prism: 0.6, thrift: 0.6, superiorIntellect: 0.6, infiniteAscent: 0, antiquities: 0, horseShoe: 0, finiteDescent: 0 },
-  plastic: { speed: 0.75, duplication: 0, prism: 1.5, thrift: 0, superiorIntellect: 0.75, infiniteAscent: 0.005, antiquities: 0, horseShoe: 0, finiteDescent: 0 },
-  wowSquare: { speed: 0, duplication: 1, prism: 1, thrift: 0, superiorIntellect: 1, infiniteAscent: 0, antiquities: 0, horseShoe: 0, finiteDescent: 0 },
-  achievement: { speed: 1.4, duplication: 1.4, prism: 1.4, thrift: 1.4, superiorIntellect: 1.4, infiniteAscent: 0.01, antiquities: 0, horseShoe: 0, finiteDescent: 0 },
-  cookieGrandma: { speed: 1, duplication: 1, prism: 1, thrift: 1, superiorIntellect: 1, infiniteAscent: 0.01, antiquities: 0, horseShoe: 0, finiteDescent: 0 },
-  horseShoe: { speed: 1.2, duplication: 1.2, prism: 1.2, thrift: 1.2, superiorIntellect: 1.2, infiniteAscent: 0, antiquities: 0, horseShoe: 0.01, finiteDescent: 0 }
+  exemption: { speed: 0, duplication: 1.5, prism: 0.75, thrift: 0.75, superiorIntellect: 0, infiniteAscent: 0, antiquities: 0, horseShoe: 0, topHat: 0, finiteDescent: 0 },
+  chronos: { speed: 1.5, duplication: 0, prism: 0, thrift: 0.75, superiorIntellect: 0.75, infiniteAscent: 0, antiquities: 0, horseShoe: 0, topHat: 0, finiteDescent: 0 },
+  midas: { speed: 0, duplication: 0.75, prism: 0.75, thrift: 1.5, superiorIntellect: 0, infiniteAscent: 0, antiquities: 0, horseShoe: 0, topHat: 0, finiteDescent: 0 },
+  metaphysics: { speed: 0.6, duplication: 0.6, prism: 0.6, thrift: 0.6, superiorIntellect: 0.6, infiniteAscent: 0, antiquities: 0, horseShoe: 0, topHat: 0, finiteDescent: 0 },
+  polymath: { speed: 0.75, duplication: 0.75, prism: 0, thrift: 0, superiorIntellect: 1.5, infiniteAscent: 0, antiquities: 0, horseShoe: 0, topHat: 0, finiteDescent: 0 },
+  mortuus: { speed: 0.6, duplication: 0.6, prism: 0.6, thrift: 0.6, superiorIntellect: 0.6, infiniteAscent: 0, antiquities: 0, horseShoe: 0, topHat: 0, finiteDescent: 0 },
+  plastic: { speed: 0.75, duplication: 0, prism: 1.5, thrift: 0, superiorIntellect: 0.75, infiniteAscent: 0.005, antiquities: 0, horseShoe: 0, topHat: 0, finiteDescent: 0 },
+  wowSquare: { speed: 0, duplication: 1, prism: 1, thrift: 0, superiorIntellect: 1, infiniteAscent: 0, antiquities: 0, horseShoe: 0, topHat: 0, finiteDescent: 0 },
+  achievement: { speed: 1.4, duplication: 1.4, prism: 1.4, thrift: 1.4, superiorIntellect: 1.4, infiniteAscent: 0.01, antiquities: 0, horseShoe: 0, topHat: 0, finiteDescent: 0 },
+  cookieGrandma: { speed: 1, duplication: 1, prism: 1, thrift: 1, superiorIntellect: 1, infiniteAscent: 0.01, antiquities: 0, horseShoe: 0, topHat: 0, finiteDescent: 0 },
+  horseShoe: { speed: 1.2, duplication: 1.2, prism: 1.2, thrift: 1.2, superiorIntellect: 1.2, infiniteAscent: 0, antiquities: 0, horseShoe: 0.01, topHat: 0, finiteDescent: 0 }
 }
 
 export const regularCostProgressionString = (baseMult: string, level: number): Record<string, string> => {

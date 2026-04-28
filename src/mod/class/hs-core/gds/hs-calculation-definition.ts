@@ -113,6 +113,71 @@ export const HSCalculationDefinitions: HSCalculationDefinition[] = [
         toolingSupport: true
     },
     {
+        calculationName: "Cube To Quark Shop Upgrade",
+        fnName: "R_calculateCubeToQuarkShopUpgrade",
+        fnParams: [
+            {
+                paramName: "reduce_vals",
+                paramType: "boolean",
+                defaultValue: true
+            }
+        ],
+        supportsReduce: true,
+        toolingSupport: true
+    },
+    {
+        calculationName: "Tesseract To Quark Shop Upgrade",
+        fnName: "R_calculateTesseractToQuarkShopUpgrade",
+        fnParams: [
+            {
+                paramName: "reduce_vals",
+                paramType: "boolean",
+                defaultValue: true
+            }
+        ],
+        supportsReduce: true,
+        toolingSupport: true
+    },
+    {
+        calculationName: "Hypercube To Quark Shop Upgrade",
+        fnName: "R_calculateHypercubeToQuarkShopUpgrade",
+        fnParams: [
+            {
+                paramName: "reduce_vals",
+                paramType: "boolean",
+                defaultValue: true
+            }
+        ],
+        supportsReduce: true,
+        toolingSupport: true
+    },
+    {
+        calculationName: "Cube To Quark All Shop Upgrade",
+        fnName: "R_calculateCubeToQuarkAllShopUpgrade",
+        fnParams: [
+            {
+                paramName: "reduce_vals",
+                paramType: "boolean",
+                defaultValue: true
+            }
+        ],
+        supportsReduce: true,
+        toolingSupport: true
+    },
+    {
+        calculationName: "Cash Grab 2 Shop Upgrade",
+        fnName: "R_calculateCashGrab2ShopUpgrade",
+        fnParams: [
+            {
+                paramName: "reduce_vals",
+                paramType: "boolean",
+                defaultValue: true
+            }
+        ],
+        supportsReduce: true,
+        toolingSupport: true
+    },
+    {
         calculationName: "Total Cubes",
         fnName: "R_calculateTotalCubes",
         fnParams: [],
