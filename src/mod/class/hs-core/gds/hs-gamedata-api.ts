@@ -1763,6 +1763,9 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow2').freeLevels,
+            prerequisites: {
+                ambrosiaTutorial: 10
+            }
         },
 
         ambrosiaCubes1: {
@@ -1777,6 +1780,9 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow2').freeLevels,
+            prerequisites: {
+                ambrosiaTutorial: 10
+            }
 
         },
 
@@ -1792,6 +1798,9 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow2').freeLevels,
+            prerequisites: {
+                ambrosiaTutorial: 10
+            }
 
         },
 
@@ -1810,6 +1819,10 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow3').freeLevels,
+            prerequisites: {
+                ambrosiaCubes1: 30,
+                ambrosiaQuarks1: 20
+            }
 
         },
 
@@ -1827,6 +1840,10 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow3').freeLevels,
+            prerequisites: {
+                ambrosiaCubes1: 30,
+                ambrosiaLuck1: 20
+            }
 
         },
 
@@ -1851,6 +1868,10 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow3').freeLevels,
+            prerequisites: {
+                ambrosiaQuarks1: 30,
+                ambrosiaCubes1: 20
+            }
 
         },
 
@@ -1872,6 +1893,10 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow3').freeLevels,
+            prerequisites: {
+                ambrosiaQuarks1: 30,
+                ambrosiaLuck1: 20
+            }
 
         },
 
@@ -1895,6 +1920,10 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow3').freeLevels,
+            prerequisites: {
+                ambrosiaLuck1: 30,
+                ambrosiaCubes1: 20
+            }
 
         },
 
@@ -1911,6 +1940,10 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow3').freeLevels,
+            prerequisites: {
+                ambrosiaLuck1: 30,
+                ambrosiaQuarks1: 20
+            }
 
         },
 
@@ -1930,6 +1963,9 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow4').freeLevels,
+            prerequisites: {
+                ambrosiaQuarks1: 40
+            }
 
         },
 
@@ -1951,6 +1987,9 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow4').freeLevels,
+            prerequisites: {
+                ambrosiaCubes1: 40
+            }
 
         },
 
@@ -1969,6 +2008,9 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow4').freeLevels,
+            prerequisites: {
+                ambrosiaLuck1: 40
+            }
 
         },
 
@@ -1986,6 +2028,10 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow5').freeLevels,
+            prerequisites: {
+                ambrosiaQuarks1: 100,
+                ambrosiaQuarks2: 50
+            }
 
         },
 
@@ -2004,6 +2050,10 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow5').freeLevels,
+            prerequisites: {
+                ambrosiaCubes1: 100,
+                ambrosiaCubes2: 50
+            }
 
         },
 
@@ -2019,6 +2069,10 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow5').freeLevels,
+            prerequisites: {
+                ambrosiaLuck1: 90,
+                ambrosiaLuck2: 50
+            }
 
         },
 
@@ -2144,6 +2198,10 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow4').freeLevels,
+            prerequisites: {
+                ambrosiaBaseOffering1: 30,
+                ambrosiaBaseObtainium1: 10
+            }
 
         },
 
@@ -2159,6 +2217,10 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow4').freeLevels,
+            prerequisites: {
+                ambrosiaBaseObtainium1: 15,
+                ambrosiaBaseOffering1: 20
+            }
 
         },
 
@@ -2174,6 +2236,9 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => 0,
+            prerequisites: {
+                ambrosiaHyperflux: 4
+            }
 
         },
 
@@ -2189,6 +2254,11 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow4').freeLevels,
+            prerequisites: {
+                ambrosiaCubes1: 70,
+                ambrosiaBaseOffering1: 20,
+                ambrosiaBaseObtainium1: 10
+            }
 
         },
 
@@ -2204,6 +2274,12 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow5').freeLevels,
+            prerequisites: {
+                ambrosiaInfiniteShopUpgrades1: 20,
+                ambrosiaCubes2: 50,
+                ambrosiaBaseOffering2: 20,
+                ambrosiaBaseObtainium2: 10
+            }
 
         },
 
@@ -2305,6 +2381,9 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 }
             },
             extraLevelCalc: () => this.R_getRedAmbrosiaUpgradeEffects('freeLevelsRow4').freeLevels,
+            prerequisites: {
+                ambrosiaFreeLuckUpgrades: 10
+            }
 
         },
         ambrosiaFreeQuarkUpgrades: {

@@ -272,6 +272,7 @@ export interface AmbrosiaUpgradeCalculationConfig<
     costFunction: (n: number, cpl: number) => number
     effects: (n: number) => AmbrosiaUpgradeRewards[K]
     extraLevelCalc: () => number
+    prerequisites?: Partial<Record<AmbrosiaUpgradeNames, number>>
 }
 
 
