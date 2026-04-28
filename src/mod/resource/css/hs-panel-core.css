@@ -405,6 +405,10 @@
     text-align: center;
 }
 
+.hs-panel-btn.hs-panel-large-btn {
+    width: 220px;
+}
+
 .hs-panel-btn:hover {
     background-color: #005;
 }

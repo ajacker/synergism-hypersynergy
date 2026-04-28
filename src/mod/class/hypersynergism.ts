@@ -3,6 +3,7 @@ import { HSLogger } from "./hs-core/hs-logger";
 import { HSModuleManager } from "./hs-core/module/hs-module-manager";
 import { HSUI } from "./hs-core/hs-ui";
 import { HSUIC } from "./hs-core/hs-ui-components";
+import { HSHeaterUI } from "./hs-modules/hs-heater/hs-heater-ui";
 import corruption_ref_b64 from "inline:../resource/txt/corruption_ref.txt";
 import corruption_ref_b64_2 from "inline:../resource/txt/corruption_ref_onemind.txt";
 import { HSSettings } from "./hs-core/settings/hs-settings";
@@ -160,9 +161,12 @@ export class Hypersynergism {
         hsui.replaceTabContents(2,
             HSUIC.Grid({
                 html: [
-                    this.#buildGridSectionHeader('Export tools'),
-                    this.#buildGridFullSpanDiv('hs-panel-amb-heater-p', `Export an extended save file string for the <a href="${HSGlobal.General.heaterUrl}" class="hs-link" target="_blank">Ambrosia Heater.</a>`),
-                    HSUIC.Button({ id: 'hs-panel-amb-heater-btn', text: 'Export Heater' }),
+                    this.#buildGridSectionHeader('Heater tools'),
+                    this.#buildGridFullSpanDiv('hs-panel-amb-heater-p', `Prepare the True Ambrosia Heater sheet input values from current game state.`),
+                    HSUIC.Button({ id: 'hs-panel-amb-heater-btn', text: 'Heater Data' }),
+                    HSUIC.Button({ id: 'hs-panel-amb-heater-sheet-btn', text: 'Heater SheetVals' }),
+                    HSUIC.Button({ id: 'hs-panel-amb-heater-preview-btn', text: 'Heater Preview' }),
+                    HSUIC.Button({ id: 'hs-panel-amb-heater-optimizer-btn', text: 'Heater Optimizer' }),
                     this.#buildGridSectionHeader('References'),
                     HSUIC.Button({ id: 'hs-panel-cor-ref-btn', text: 'Corruption Ref.' }),
                     HSUIC.Button({ id: 'hs-panel-cor-ref-btn-2', text: 'Crpt. Onemind' }),
@@ -221,15 +225,67 @@ export class Hypersynergism {
             const heaterData = await dataModule.dumpDataForHeater();
             if (!heaterData) return;
 
-            const json = JSON.stringify(heaterData);
-            const base64 = btoa(json);
-            const tsv = HSUtils.base64WithCRLF(base64);
-            await navigator.clipboard.writeText(tsv);
+            const escapeHtml = (value: string): string =>
+                value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-            HSUI.Notify('Ambrosia heater data copied to clipboard', {
-                position: 'top',
-                notificationType: 'success'
-            });
+            const json = escapeHtml(JSON.stringify(heaterData, null, 2));
+            const html = `<pre style="white-space: pre-wrap; word-break: break-word;">${json}</pre>`;
+
+            hsui.Modal({ title: 'Current Heater Data', htmlContent: html, needsToLoad: true });
+        });
+
+        this.#bindToolsButton('#hs-panel-amb-heater-sheet-btn', async () => {
+            const dataModule = HSModuleManager.getModule<HSGameDataAPI>('HSGameDataAPI');
+            if (!dataModule) return;
+
+            const sheetData = await dataModule.dumpHeaterSheetData();
+            if (!sheetData) return;
+
+            const escapeHtml = (value: string): string =>
+                value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            const json = escapeHtml(JSON.stringify(sheetData, null, 2));
+            const html = `<pre style="white-space: pre-wrap; word-break: break-word;">${json}</pre>`;
+
+            hsui.Modal({ title: 'True Heater Sheet Values', htmlContent: html, needsToLoad: true });
+        });
+
+        this.#bindToolsButton('#hs-panel-amb-heater-preview-btn', async () => {
+            const dataModule = HSModuleManager.getModule<HSGameDataAPI>('HSGameDataAPI');
+            if (!dataModule) return;
+
+            const previewResult = await dataModule.dumpHeaterPreview();
+            if (!previewResult) return;
+
+            const escapeHtml = (value: string): string =>
+                value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            const json = escapeHtml(JSON.stringify(previewResult, null, 2));
+            const html = `<pre style="white-space: pre-wrap; word-break: break-word;">${json}</pre>`;
+
+            hsui.Modal({ title: 'True Heater Preview', htmlContent: html, needsToLoad: true });
+        });
+
+        this.#bindToolsButton('#hs-panel-amb-heater-optimizer-btn', async () => {
+            const dataModule = HSModuleManager.getModule<HSGameDataAPI>('HSGameDataAPI');
+            if (!dataModule) {
+                HSUI.Notify('Heater optimizer module is unavailable.', {
+                    position: 'top',
+                    notificationType: 'error'
+                });
+                return;
+            }
+
+            const optimizerResult = await dataModule.dumpHeaterOptimizer();
+            if (!optimizerResult) {
+                HSUI.Notify('Heater optimizer returned no result.', {
+                    position: 'top',
+                    notificationType: 'warning'
+                });
+                return;
+            }
+
+            await HSHeaterUI.openOptimizerResultModal(optimizerResult, hsui);
         });
 
         this.#bindToolsButton('#hs-panel-cor-ref-btn', () => {
@@ -275,8 +331,22 @@ export class Hypersynergism {
     }
 
     #bindToolsButton(selector: string, callback: () => void | Promise<void>) {
-        document.querySelector(selector)?.addEventListener('click', async () => {
-            await callback();
+        const el = document.querySelector(selector);
+        if (!el) {
+            HSLogger.warn(`Failed to bind tools button: ${selector}`, this.#context);
+            return;
+        }
+        el.addEventListener('click', async () => {
+            try {
+                await callback();
+            } catch (err) {
+                const errorMsg = err instanceof Error ? `${err.message}\n${err.stack}` : String(err);
+                HSLogger.error(`Tools button callback failed for ${selector}: ${errorMsg}`, this.#context);
+                HSUI.Notify('An error occurred while running the tool. See console for details.', {
+                    position: 'top',
+                    notificationType: 'error'
+                });
+            }
         });
     }
 

@@ -1,0 +1,18 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Extract Heater HS Data Keys",
+			"type": "shell",
+			"command": "node .tmp_extract_hs_data_keys.js",
+			"isBackground": false
+		},
+		{
+			"label": "Extract Heater V Values",
+			"type": "shell",
+			"command": "node .tmp_extract_v_values.js",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

@@ -57,6 +57,10 @@ export interface CalculationCache {
     AMB_ambrosiaRuneOOMBonus: CachedValue;
 
     AMB_ambrosiaBrickOfLead: CachedValue;
+    AMB_ambrosiaFreeGenerationUpgrades: CachedValue;
+    AMB_ambrosiaFreeLuckUpgrades: CachedValue;
+    AMB_ambrosiaFreeQuarkUpgrades: CachedValue;
+    AMB_ambrosiaFreeRedLuckUpgrades: CachedValue;
 
     REDAMB_blueberryGenerationSpeed: CachedValue;
     REDAMB_blueberryGenerationSpeed2: CachedValue;
@@ -162,6 +166,13 @@ export type RuneTypeMap = {
         ambrosiaLuck: number
         redLuck: number
         redLuckConversion: number
+    }
+    topHat: {
+        freeOfferingLevels: number
+        freeObtainiumLevels: number
+        freeCubeLevels: number
+        freeSpeedLevels: number
+        freeInfinityLevels: number
     }
     finiteDescent: {
         ascensionScore: number
@@ -553,8 +564,9 @@ export const LAST_ANT_PRODUCER = AntProducers.HolySpirit
 export type SingularityChallengeDataKeys =
     | 'noSingularityUpgrades'
     | 'oneChallengeCap'
-    | 'noOcteracts'
     | 'limitedAscensions'
+    | 'noQuarkUpgrades'
+    | 'noOcteracts'
     | 'noAmbrosiaUpgrades'
     | 'limitedTime'
     | 'sadisticPrequel'
