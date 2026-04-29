@@ -17,6 +17,76 @@ const FAVORITE_UPGRADE_GQ_DEPENDENCIES = ['goldenQuarks1', 'platonicDelta', 'one
 const FAVORITE_UPGRADE_OCTERACT_DEPENDENCIES = ['octeractImprovedFree', 'octeractCorruption', 'octeractBlueberries'] as const;
 const FAVORITE_UPGRADE_RED_AMBROSIA_DEPENDENCIES = ['tutorial', 'infiniteShopUpgrades', 'blueberryGenerationSpeed2'] as const;
 
+const ACHIEVEMENT_REWARD_TYPES: AchievementRewards[] = [
+    'acceleratorPower',
+    'accelerators',
+    'multipliers',
+    'accelBoosts',
+    'crystalMultiplier',
+    'taxReduction',
+    'particleGain',
+    'conversionExponent',
+    'chronosTalisman',
+    'midasTalisman',
+    'metaphysicsTalisman',
+    'polymathTalisman',
+    'talismanPower',
+    'sacrificeMult',
+    'antSpeed',
+    'antSacrificeUnlock',
+    'preserveAnthillCount',
+    'preserveAnthillCountSingularity',
+    'antAutobuyers',
+    'inceptusAutobuy',
+    'fortunaeAutobuy',
+    'tributumAutobuy',
+    'celeritasAutobuy',
+    'exploratoremAutobuy',
+    'sacrificiumAutobuy',
+    'experientiaAutobuy',
+    'hicAutobuy',
+    'scientiaAutobuy',
+    'praemoenioAutobuy',
+    'phylacteriumAutobuy',
+    'antELOAdditive',
+    'antELOAdditiveMultiplier',
+    'wowSquareTalisman',
+    'ascensionCountMultiplier',
+    'ascensionCountAdditive',
+    'wowCubeGain',
+    'wowTesseractGain',
+    'wowHypercubeGain',
+    'wowPlatonicGain',
+    'quarkGain',
+    'wowHepteractGain',
+    'ascensionScore',
+    'constUpgrade1Buff',
+    'constUpgrade2Buff',
+    'platonicToHypercubes',
+    'statTracker',
+    'ascensionRewardScaling',
+    'overfluxConversionRate',
+    'diamondUpgrade18',
+    'diamondUpgrade19',
+    'diamondUpgrade20',
+    'prestigeCountMultiplier',
+    'transcensionCountMultiplier',
+    'reincarnationCountMultiplier',
+    'duplicationRuneUnlock',
+    'prismRuneUnlock',
+    'thriftRuneUnlock',
+    'salvage',
+    'offeringBonus',
+    'obtainiumBonus',
+    'transcendToPrestige',
+    'reincarnationToTranscend',
+    'antSacrificeCountMultiplier',
+    'freeAntUpgrades',
+    'autoAntSacrifice',
+    'antSpeed2UpgradeImprover',
+    'antSacrificeToReincarnation'
+] as const;
+
 /**
  * Class: HSGameDataAPI
  * IsExplicitHSModule: Yes
@@ -1046,9 +1116,11 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         },
         {
             i18n: 'ConstantUpgrade9',
-            stat: () =>
-                1 + 0.01 * Decimal.log((this.gameData?.talismanShards ?? new Decimal(0)).add(1), 4)
-                * Math.min(1, (this.gameData?.constantUpgrades[9] ?? 0)),
+            stat: () => {
+                const talismanShards = new Decimal(this.gameData?.talismanShards ?? 0)
+                return 1 + 0.01 * Decimal.log(talismanShards.add(1), 4)
+                    * Math.min(1, (this.gameData?.constantUpgrades[9] ?? 0))
+            },
         },
         {
             i18n: 'Challenge15',
@@ -2732,7 +2804,8 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         },
         {
             pointValue: 20,
-            group: 'transcendPointGain'
+            group: 'transcendPointGain',
+            reward: { taxReduction: () => 0.95 }
         },
         {
             pointValue: 25,
@@ -3014,7 +3087,15 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
             pointValue: 30,
             group: 'challenge6',
             reward: {
-                quarkGain: () => 1 + (this.gameData?.challengecompletions[6] ?? 0) / 100
+                taxReduction: () =>
+                    Math.pow(
+                        0.9925,
+                        (this.gameData?.challengecompletions[6] ?? 0) +
+                        (this.gameData?.challengecompletions[7] ?? 0) +
+                        (this.gameData?.challengecompletions[8] ?? 0) +
+                        (this.gameData?.challengecompletions[9] ?? 0) +
+                        (this.gameData?.challengecompletions[10] ?? 0)
+                    )
             }
         },
         {
@@ -3023,7 +3104,8 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         },
         {
             pointValue: 5,
-            group: 'challenge7'
+            group: 'challenge7',
+            reward: { diamondUpgrade18: () => 0 }
         },
         {
             pointValue: 10,
@@ -3053,7 +3135,8 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         },
         {
             pointValue: 5,
-            group: 'challenge8'
+            group: 'challenge8',
+            reward: { diamondUpgrade19: () => 1 }
         },
         {
             pointValue: 10,
@@ -3083,7 +3166,8 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         },
         {
             pointValue: 5,
-            group: 'challenge9'
+            group: 'challenge9',
+            reward: { diamondUpgrade20: () => 1 }
         },
         {
             pointValue: 10,
@@ -3098,7 +3182,7 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         {
             pointValue: 20,
             group: 'challenge9',
-            reward: { sacrificeMult: () => 1.25 }
+            reward: { sacrificeMult: () => 1.25, experientiaAutobuy: () => 1 }
         },
         {
             pointValue: 25,
@@ -3132,17 +3216,17 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         },
         {
             pointValue: 25,
-            group: 'challenge10'
+            group: 'challenge10',
+            reward: { talismanPower: () => 0.025 }
         },
         {
             pointValue: 30,
-            group: 'challenge10',
-            reward: { talismanPower: () => 0.025 }
+            group: 'challenge10'
         },
         {
             pointValue: 35,
             group: 'challenge10',
-            reward: { talismanPower: () => 0.025 }
+            reward: { polymathTalisman: () => 1 }
         },
         {
             pointValue: 5,
@@ -3183,7 +3267,8 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         },
         {
             pointValue: 10,
-            group: 'multipliers'
+            group: 'multipliers',
+            reward: { multipliers: () => 1 }
         },
         {
             pointValue: 15,
@@ -3326,15 +3411,25 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         },
         {
             pointValue: 25,
-            group: 'ascensionCount'
+            group: 'ascensionCount',
+            reward: {
+                ascensionCountMultiplier: () => Math.log10(this.R_calculateAscensionScore().effectiveScore + 100) - 1
+            }
         },
         {
             pointValue: 30,
-            group: 'ascensionCount'
+            group: 'ascensionCount',
+            reward: {
+                ascensionCountAdditive: () => (this.gameData?.ascensionCounter ?? 0) > 10 ? 100 : 0
+            }
         },
         {
             pointValue: 35,
-            group: 'ascensionCount'
+            group: 'ascensionCount',
+            reward: {
+                ascensionCountAdditive: () => (this.gameData?.ascensionCounter ?? 0) > 10 ? (this.gameData?.ascensionCounterReal ?? 0) * 2 : 0,
+                wowCubeGain: () => 1 + 2 * Math.min(1, (this.gameData?.ascensionCount ?? 0) / 5e8)
+            }
         },
         {
             pointValue: 5,
@@ -3359,7 +3454,11 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         },
         {
             pointValue: 30,
-            group: 'constant'
+            group: 'constant',
+            reward: {
+                wowCubeGain: () => 1 + 249 * Math.min(1, Decimal.log(this.gameData?.ascendShards.plus(1) ?? 0, 10) / 100000),
+                wowTesseractGain: () => 1 + 249 * Math.min(1, Decimal.log(this.gameData?.ascendShards.plus(1) ?? 0, 10) / 100000)
+            }
         },
         {
             pointValue: 35,
@@ -3480,7 +3579,11 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         },
         {
             pointValue: 60,
-            group: 'challenge14'
+            group: 'challenge14',
+            reward: {
+                ascensionCountAdditive: () => (this.gameData?.ascensionCounter ?? 0) * 2,
+                wowPlatonicGain: () => 1 + 2 * Math.min(1, (this.gameData?.ascensionCount ?? 0) / 2.674e9)
+            }
         },
         {
             pointValue: 70,
@@ -3588,11 +3691,13 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         },
         {
             pointValue: 100,
-            group: 'ungrouped'
+            group: 'ungrouped',
+            reward: { quarkGain: () => 1.05 }
         },
         {
             pointValue: 150,
-            group: 'ungrouped'
+            group: 'ungrouped',
+            reward: { quarkGain: () => 1.05 }
         },
         {
             pointValue: 50,
@@ -3679,7 +3784,12 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         },
         {
             pointValue: 55,
-            group: 'constant'
+            group: 'constant',
+            reward: {
+                wowHepteractGain: () => 1 + Math.min(Decimal.log(this.gameData?.ascendShards.add(1) ?? 0, 10) / 1e6, 1),
+                constUpgrade1Buff: () => 0.01,
+                constUpgrade2Buff: () => 0.01
+            }
         },
         {
             pointValue: 60,
@@ -3997,6 +4107,7 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         {
             pointValue: 50,
             group: 'sacMult',
+            reward: { antAutobuyers: () => 1 }
         },
         {
             pointValue: 75,
@@ -4509,7 +4620,11 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         },
         {
             pointValue: 36,
-            group: 'reincarnationCount'
+            group: 'reincarnationCount',
+            reward: {
+                prestigeCountMultiplier: () => Math.min(4, 1.25 + 2.75 * ((this.gameData?.prestigecounter ?? 0) / 1e6)),
+                ascensionCountMultiplier: () => Math.min(1.25, 1 + 0.25 * ((this.gameData?.ascensionCounter ?? 0) / 1e6))
+            }
         },
         {
             pointValue: 40,
@@ -4585,6 +4700,90 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         {
             pointValue: 40,
             group: 'sacCount',
+        },
+        {
+            pointValue: 45,
+            group: 'sacCount',
+            reward: { antSacrificeToReincarnation: () => 1 }
+        },
+        {
+            pointValue: 55,
+            group: 'sacCount'
+        },
+        {
+            pointValue: 3,
+            unlockCondition: () => (this.gameData?.stats?.totalAddCodesUsed ?? 0) >= 10,
+            group: 'addCodesUsed'
+        },
+        {
+            pointValue: 6,
+            unlockCondition: () => (this.gameData?.stats?.totalAddCodesUsed ?? 0) >= 20,
+            group: 'addCodesUsed'
+        },
+        {
+            pointValue: 9,
+            unlockCondition: () => (this.gameData?.stats?.totalAddCodesUsed ?? 0) >= 50,
+            group: 'addCodesUsed'
+        },
+        {
+            pointValue: 12,
+            unlockCondition: () => (this.gameData?.stats?.totalAddCodesUsed ?? 0) >= 100,
+            group: 'addCodesUsed'
+        },
+        {
+            pointValue: 15,
+            unlockCondition: () => (this.gameData?.stats?.totalAddCodesUsed ?? 0) >= 200,
+            group: 'addCodesUsed'
+        },
+        {
+            pointValue: 18,
+            unlockCondition: () => (this.gameData?.stats?.totalAddCodesUsed ?? 0) >= 300,
+            group: 'addCodesUsed'
+        },
+        {
+            pointValue: 21,
+            unlockCondition: () => (this.gameData?.stats?.totalAddCodesUsed ?? 0) >= 500,
+            group: 'addCodesUsed'
+        },
+        {
+            pointValue: 24,
+            unlockCondition: () => (this.gameData?.stats?.totalAddCodesUsed ?? 0) >= 750,
+            group: 'addCodesUsed'
+        },
+        {
+            pointValue: 27,
+            unlockCondition: () => (this.gameData?.stats?.totalAddCodesUsed ?? 0) >= 1000,
+            group: 'addCodesUsed'
+        },
+        {
+            pointValue: 30,
+            unlockCondition: () => (this.gameData?.stats?.totalAddCodesUsed ?? 0) >= 2000,
+            group: 'addCodesUsed'
+        },
+        {
+            pointValue: 33,
+            unlockCondition: () => (this.gameData?.stats?.totalAddCodesUsed ?? 0) >= 3000,
+            group: 'addCodesUsed'
+        },
+        {
+            pointValue: 36,
+            unlockCondition: () => (this.gameData?.stats?.totalAddCodesUsed ?? 0) >= 5000,
+            group: 'addCodesUsed'
+        },
+        {
+            pointValue: 39,
+            unlockCondition: () => (this.gameData?.stats?.totalAddCodesUsed ?? 0) >= 6000,
+            group: 'addCodesUsed'
+        },
+        {
+            pointValue: 42,
+            unlockCondition: () => (this.gameData?.stats?.totalAddCodesUsed ?? 0) >= 7500,
+            group: 'addCodesUsed'
+        },
+        {
+            pointValue: 45,
+            unlockCondition: () => (this.gameData?.stats?.totalAddCodesUsed ?? 0) >= 10000,
+            group: 'addCodesUsed'
         }
     ]
 
@@ -6101,9 +6300,119 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                 ? data.highestChallenge15Exponent
                 : 0;
         if (exponent === 0) {
-            return 0;
+            return challenge15Rewards[rewardName].baseValue;
         }
         return c15Functions[rewardName](exponent);
+    }
+
+    R_calculateAscensionScorePlatonicBlessing(): number {
+        if (!this.gameData) return 1;
+
+        const globalSpeedBlessing = this.gameData.platonicBlessings.globalSpeed;
+        const DR1 = 1 / 4;
+        const DR2 = 1 / 8;
+        const limit1 = 1e4;
+        const limit2 = 1e20;
+        const effectPerBlessing = 1 / 1e4;
+
+        if (globalSpeedBlessing < limit1) {
+            return 1 + effectPerBlessing * globalSpeedBlessing;
+        }
+
+        if (globalSpeedBlessing < limit2) {
+            const limitMult = Math.pow(limit1, 1 - DR1);
+            return 1 + effectPerBlessing * limitMult * Math.pow(globalSpeedBlessing, DR1);
+        }
+
+        const limitMult1 = Math.pow(limit1, 1 - DR1);
+        const limitMult2 = Math.pow(limit2, DR1 - DR2);
+        return 1 + effectPerBlessing * limitMult1 * limitMult2 * Math.pow(globalSpeedBlessing, DR2);
+    }
+
+    R_calculateAscensionScore() {
+        if (!this.gameData) {
+            return { baseScore: 0, corruptionMultiplier: 0, bonusMultiplier: 0, effectiveScore: 0 };
+        }
+
+        const data = this.gameData;
+        const corruptionMultiplier = [
+            'viscosity',
+            'drought',
+            'deflation',
+            'extinction',
+            'illiteracy',
+            'recession',
+            'dilation',
+            'hyperchallenge'
+        ].reduce((product, corruption) => product * this.R_calculateCorruptionEffect(data.corruptions.used, corruption), 1);
+
+        const challengeScoreArrays1 = [0, 8, 10, 12, 15, 20, 60, 80, 120, 180, 300];
+        const challengeScoreArrays2 = [0, 10, 12, 15, 20, 30, 80, 120, 180, 300, 450];
+        const challengeScoreArrays3 = [0, 20, 30, 50, 100, 200, 250, 300, 400, 500, 750];
+        const challengeScoreArrays4 = [0, 10000, 10000, 10000, 10000, 10000, 2000, 3000, 4000, 5000, 7500];
+
+        challengeScoreArrays1[1] += data.cubeUpgrades[56] ?? 0;
+        challengeScoreArrays1[2] += data.cubeUpgrades[56] ?? 0;
+        challengeScoreArrays1[3] += data.cubeUpgrades[56] ?? 0;
+
+        let baseScore = 0;
+        for (let i = 1; i <= 10; i++) {
+            baseScore += challengeScoreArrays1[i] * data.highestchallengecompletions[i];
+
+            if (i <= 5 && data.highestchallengecompletions[i] >= 75) {
+                baseScore += challengeScoreArrays2[i] * (data.highestchallengecompletions[i] - 75);
+
+                if (data.highestchallengecompletions[i] >= 750) {
+                    baseScore += challengeScoreArrays3[i] * (data.highestchallengecompletions[i] - 750);
+                }
+
+                if (data.highestchallengecompletions[i] >= 9000) {
+                    baseScore += challengeScoreArrays4[i] * (data.highestchallengecompletions[i] - 9000);
+                }
+            }
+
+            if (i > 5 && data.highestchallengecompletions[i] >= 25) {
+                baseScore += challengeScoreArrays2[i] * (data.highestchallengecompletions[i] - 25);
+
+                if (data.highestchallengecompletions[i] >= 60) {
+                    baseScore += challengeScoreArrays3[i] * (data.highestchallengecompletions[i] - 60);
+                }
+            }
+        }
+
+        baseScore += this.R_getAntUpgradeEffect(AntUpgrades.AscensionScore).ascensionScoreBase;
+
+        baseScore *= Math.pow(
+            1.03
+                + 0.005 * (data.cubeUpgrades[39] ?? 0)
+                + 0.0025 * ((data.platonicUpgrades[5] ?? 0) + (data.platonicUpgrades[10] ?? 0)),
+            data.highestchallengecompletions[10]
+        );
+
+        const challenge15ScoreBonus = this.R_calculateChallenge15Reward('score') || 1;
+        const masterPackAscensionScoreMult = this.R_getGQUpgradeEffect('masterPack') || 1;
+        const expertPackAscensionScoreMult = this.R_getGQUpgradeEffect('expertPack') || 1;
+
+        const bonusMultiplier =
+            challenge15ScoreBonus *
+            this.R_calculateAscensionScorePlatonicBlessing() *
+            this.R_getRuneEffects('finiteDescent').ascensionScore *
+            (1 + 0.05 * (data.cubeUpgrades[21] ?? 0)) *
+            (1 + 0.05 * (data.cubeUpgrades[31] ?? 0)) *
+            (1 + 0.05 * (data.cubeUpgrades[41] ?? 0)) *
+            Number(this.R_getAchievementReward('ascensionScore')) *
+            masterPackAscensionScoreMult *
+            (this.isEvent ? 1 + this.R_calculateConsumableEventBuff(EventBuffType.AscensionScore) : 1);
+
+        let effectiveScore = baseScore * corruptionMultiplier * bonusMultiplier;
+
+        if (effectiveScore > 1e23) {
+            effectiveScore = Math.pow(effectiveScore, 0.5) * Math.pow(1e23, 0.5);
+        }
+
+        effectiveScore *= expertPackAscensionScoreMult;
+
+        return { baseScore, corruptionMultiplier, bonusMultiplier, effectiveScore };
     }
 
     R_calculateRawAscensionSpeedMult(reduce_vals = true) {
@@ -6942,18 +7251,30 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
             : 1;
     }
 
-    R_calculateAchievementsByReward: Record<AchievementRewards, number[]> = this.R_achievements
-        .reduce((rewards, achievement, index) => {
-            if (achievement.reward) {
-                for (const rewardType of Object.keys(achievement.reward) as AchievementRewards[]) {
-                    if (!rewards[rewardType]) {
-                        rewards[rewardType] = []
-                    }
-                    rewards[rewardType].push(Number(index))
+    R_calculateAchievementsByReward: Record<AchievementRewards, number[]> = (() => {
+        const rewards = ACHIEVEMENT_REWARD_TYPES.reduce(
+            (acc, rewardType) => {
+                acc[rewardType] = []
+                return acc
+            },
+            {} as Record<AchievementRewards, number[]>
+        )
+
+        return this.R_achievements.reduce((rewards, achievement, index) => {
+            if (!achievement.reward || typeof achievement.reward !== 'object') {
+                return rewards
+            }
+
+            for (const rewardType of Object.keys(achievement.reward)) {
+                if (!Object.prototype.hasOwnProperty.call(rewards, rewardType)) {
+                    console.warn(`HSGameDataAPI: skipping unknown achievement reward type '${rewardType}' on achievement index ${index}`)
+                    rewards[rewardType as AchievementRewards] = []
                 }
+                rewards[rewardType as AchievementRewards].push(Number(index))
             }
             return rewards
-        }, {} as Record<AchievementRewards, number[]>)
+        }, rewards)
+    })()
 
 
     R_AchRewards: Record<AchievementRewards, () => number | boolean> = {
@@ -7047,6 +7368,9 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         },
         antSacrificeUnlock: (): boolean => {
             return Boolean(this.gameData?.achievements[this.R_calculateAchievementsByReward.antSacrificeUnlock[0]])
+        },
+        antSacrificeToReincarnation: (): boolean => {
+            return Boolean(this.gameData?.achievements[this.R_calculateAchievementsByReward.antSacrificeToReincarnation[0]])
         },
         antAutobuyers: (): number => {
             return this.R_calculateAchievementsByReward.antAutobuyers.reduce(
@@ -7384,7 +7708,7 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                         salvageYinYang: this.R_calculateRedAmbrosiaUpgradeValue('salvageYinYang'),
                         blueberries: this.R_calculateRedAmbrosiaUpgradeValue('blueberries'),
                     },
-                    isInsideSingularityChallenge: data.insideSingularityChallenge,
+                    isInsideExalt: data.insideSingularityChallenge,
                 }
             }
 

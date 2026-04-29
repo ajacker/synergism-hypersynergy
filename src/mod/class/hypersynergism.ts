@@ -15,6 +15,7 @@ import strategyEditionCSS from "inline:../resource/css/hs-strategy-edition.css";
 import { HSInputType, HSNotifyPosition, HSNotifyType } from "../types/module-types/hs-ui-types";
 import { HSGameDataAPI } from "./hs-core/gds/hs-gamedata-api";
 import { HSAmbrosia } from "./hs-modules/hs-ambrosia";
+import { HSHeaterUI } from "./hs-modules/hs-heater/hs-heater-ui";
 import { HSUtils } from "./hs-utils/hs-utils";
 import { HSGithub } from "./hs-core/github/hs-github";
 
@@ -162,7 +163,8 @@ export class Hypersynergism {
                 html: [
                     this.#buildGridSectionHeader('Export tools'),
                     this.#buildGridFullSpanDiv('hs-panel-amb-heater-p', `Export an extended save file string for the <a href="${HSGlobal.General.heaterUrl}" class="hs-link" target="_blank">Ambrosia Heater.</a>`),
-                    HSUIC.Button({ id: 'hs-panel-amb-heater-btn', text: 'Export Heater' }),
+                    HSUIC.Button({ id: 'hs-panel-amb-heater-btn', text: 'Copy Heater Data' }),
+                    HSUIC.Button({ id: 'hs-panel-amb-heater-compute-btn', text: 'Ambrosia Heater' }),
                     this.#buildGridSectionHeader('References'),
                     HSUIC.Button({ id: 'hs-panel-cor-ref-btn', text: 'Corruption Ref.' }),
                     HSUIC.Button({ id: 'hs-panel-cor-ref-btn-2', text: 'Crpt. Onemind' }),
@@ -230,6 +232,10 @@ export class Hypersynergism {
                 position: 'top',
                 notificationType: 'success'
             });
+        });
+
+        this.#bindToolsButton('#hs-panel-amb-heater-compute-btn', async () => {
+            await HSHeaterUI.openHeaterComputationModal();
         });
 
         this.#bindToolsButton('#hs-panel-cor-ref-btn', () => {

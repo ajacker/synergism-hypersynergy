@@ -1091,6 +1091,9 @@ export interface PlayerData {
     // Automation & Toggles
     toggles: Toggles;
     unlocks: Unlocks;
+    stats?: {
+        totalAddCodesUsed: number;
+    };
     achievements: number[]; // Status per achievement (0 or 1)
     progressiveAchievements: progressiveAchievements;
     achievementPoints: number;

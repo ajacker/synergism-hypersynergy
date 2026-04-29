@@ -468,6 +468,7 @@ export type AchievementGroups =
     | 'transcensionCount'
     | 'reincarnationCount'
     | 'sacCount'
+    | 'addCodesUsed'
     | 'ungrouped'
 
 export type AchievementRewards =
@@ -516,6 +517,7 @@ export type AchievementRewards =
     | 'constUpgrade1Buff'
     | 'constUpgrade2Buff'
     | 'platonicToHypercubes'
+    | 'antSacrificeToReincarnation'
     | 'statTracker'
     | 'ascensionRewardScaling'
     | 'overfluxConversionRate'

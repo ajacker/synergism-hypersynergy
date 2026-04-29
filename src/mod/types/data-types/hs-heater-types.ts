@@ -87,7 +87,7 @@ export interface HeaterExportHsData {
     ambrosiaAcceleratorCount: number;
     pseudoCoinUpgrades: HeaterExportPseudoCoinUpgrades;
     redAmbrosiaUpgrades: HeaterExportRedAmbrosiaUpgrades;
-    isInsideSingularityChallenge: boolean;
+    isInsideExalt: boolean;
 }
 
 export interface HeaterSheetData {
@@ -118,7 +118,7 @@ export interface HeaterSheetData {
     isEvent: boolean | null;
     bellStacks: number | null;
     personalQuarkBonus: number | null;
-    isInsideSingularityChallenge: boolean;
+    isInsideExalt: boolean;
     blueAmbrosiaBarValue: number;
     redAmbrosiaBarValue: number;
     blueAmbrosiaBarMax: number;
@@ -181,8 +181,7 @@ export interface HeaterOptimizerInput {
     totalbonusia: number;
     talismanbonusia: number;
     btp: number;
-    noSingularityUpgradesCompletions: number;
-    noAmbrosiaUpgradesCompletions: number;
+    isInsideExalt: boolean;
     active: boolean[];
 }
 
@@ -205,7 +204,6 @@ export interface HeaterOptimizationResult {
     s1?: any[];
     s2?: any[];
     m0?: any[];
-    notes: string[];
 }
 
 export type HeaterExportData = PlayerData & {
