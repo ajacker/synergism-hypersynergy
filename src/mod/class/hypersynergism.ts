@@ -86,6 +86,21 @@ export class Hypersynergism {
         });
 
         HSGithub.startVersionPolling(HSGlobal.Release.checkIntervalMs);
+        this.#startVanillaGlobalEventPolling();
+    }
+
+    #startVanillaGlobalEventPolling() {
+        const dataModule = HSModuleManager.getModule<HSGameDataAPI>('HSGameDataAPI');
+        if (!dataModule) return;
+
+        const refresh = async () => {
+            try {
+                await dataModule.fetchVanillaGlobalEventData();
+            } catch (error) { HSLogger.warn(`Failed to refresh vanilla global event data: ${error}`, this.#context); }
+        };
+
+        void refresh();
+        window.setInterval(refresh, HSGlobal.HSGameData.globalEventRefreshInterval);
     }
 
     async #waitForGameReady(): Promise<boolean> {
@@ -351,11 +366,12 @@ export class Hypersynergism {
         }
 
         const selValue = sel.value.split('|');
-        const calcFnName = selValue[0] as keyof HSGameDataAPI;
+        const calcFnName = selValue[0] as string;
         const isComponentMode = mode === 'components';
         const supportsComponent = selValue.includes('c');
 
-        const calcFn = dataModule[calcFnName];
+        const calcFn = dataModule.getCalculationFunction(calcFnName);
+
         if (typeof calcFn !== 'function') {
             HSLogger.warn(`${calcFnName} is not a function`, this.#context);
             return;

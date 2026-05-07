@@ -2,7 +2,7 @@ import { HSAmbrosiaLoadoutIconMapping } from "./hs-ambrosia-types";
 import { HSWatcherOptions } from "./hs-elementhooker-types";
 import { HSViewProperties, MAIN_VIEW } from "./hs-gamestate-types";
 import { ELogLevel } from "./hs-logger-types";
-import { PlayerData } from "../data-types/hs-player-savedata";
+import { Player } from "../data-types/hs-player-savedata";
 
 interface IStoreable {
     storageKey: string;
@@ -127,6 +127,7 @@ export interface HSGlobalGameState {
 export interface HSGlobalGameData {
     fetchedDataRefreshInterval: number;
     campaignTokenRefreshInterval: number;
+    globalEventRefreshInterval: number;
     turboModeSpeedMs: number;
     turboCSSId: string;
 }
@@ -143,7 +144,7 @@ export interface HSGlobalHSUIC {
 }
 
 export interface IHSGlobal {
-    exposedPlayer: PlayerData | null;
+    exposedPlayer: Player | null;
     Debug: HSGlobalDebug;
     Release: HSGlobalRelease;
     General: HSGlobalGeneral;

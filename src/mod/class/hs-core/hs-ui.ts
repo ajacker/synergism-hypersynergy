@@ -807,6 +807,7 @@ export class HSUI extends HSModule {
             id: uuid,
             title: modalOptions.title || '',
             styles: {
+                ...(modalOptions.styles ?? {}),
                 opacity: 0
             }
         });

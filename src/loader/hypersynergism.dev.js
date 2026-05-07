@@ -268,18 +268,19 @@
         // ────── PLAYER PATCH ─ Detect the call `Object.defineProperties(window, { player: { value:<sym> }, ... })`
         // and expose the player object via an obfuscated, non-enumerable Symbol property on window (window.symp)
         try {
-            // Match the full Object.defineProperties(...) call
-            const re = /Object\.defineProperties\(window,\s*\{\s*player\s*:\s*\{\s*value\s*:\s*([a-zA-Z_$][\w$]*)\s*\}[^}]*\}[^)]*\)/;
+            // Match the full Object.defineProperties(...) call that publishes player and G.
+            const re = /Object\.defineProperties\(window,\s*\{\s*player\s*:\s*\{\s*value\s*:\s*([a-zA-Z_$][\w$]*)\s*\}\s*,\s*G\s*:\s*\{\s*value\s*:\s*([a-zA-Z_$][\w$]*)\s*\}[^}]*\}[^)]*\)/;
             const m = re.exec(code);
             if (m) {
                 const insertPos = m.index + m[0].length;
                 const playerVar = m[1];
-                if (playerVar) {
+                const gVar = m[2];
+                if (playerVar && gVar) {
                     // Expose player using a Symbol property, with Symbol stored globally (symp = symbol player)
                     const expose =
                         ',(' +
                             'window.symp=window.symp||Symbol(),' +
-                            'Object.defineProperty(' + 
+                            'Object.defineProperty(' +
                                 'window,window.symp,' +
                                 '{' +
                                     'enumerable:false,' +
@@ -287,7 +288,14 @@
                                     'writable:true,' +
                                     'value:' + playerVar +
                                 '}' +
-                            '),console.log("[HS-PATCH] \u2705 Symbol exposed")' + 
+                            '),' +
+                            // Expose HSInternal via a Proxy in order to be able to call every method... If we know the minified name... >< 
+                            '(window.HSInternal=window.HSInternal||new Proxy({' +
+                                'get:function(name){try{return eval(name)}catch(e){return undefined}},' +
+                                'has:function(name){try{return typeof eval(name)!=="undefined"}catch(e){return false}}' +
+                            '},{get(o,n){return n in o?o[n]:(function(){try{return eval(n)}catch(e){return undefined}})();}})),' +
+                            '(window.HSInternal.G=' + gVar + '),' +
+                            'console.log("[HS-PATCH] ✅ Symbol, HSInternal and HSInternal.G exposed")' +
                         ')';
                     code = code.slice(0, insertPos) + expose + code.slice(insertPos);
                 } else {
@@ -537,7 +545,8 @@
                         `exportData:          typeof window.__HS_exportData,` +
                         `getMaxChallenges:    typeof window.__HS_getMaxChallenges,` +
                         `applyCorruptions:    typeof window.__HS_applyCorruptions,` +
-                        `tackHooks:           Array.isArray(window.__HS_tackHooks) ? window.__HS_tackHooks.length : 'n/a'` +
+                        `tackHooks:           Array.isArray(window.__HS_tackHooks) ? window.__HS_tackHooks.length : 'n/a',` +
+                        `HSInternal:          typeof window.HSInternal` +
                     `};` +
                 `}` +
             `};`;

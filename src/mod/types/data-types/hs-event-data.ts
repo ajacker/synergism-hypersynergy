@@ -23,6 +23,28 @@ export interface GameEvent {
     endsAt: number;
 }
 
+export interface VanillaGlobalEvent {
+    name: string[];
+    url: string[];
+    start: number;
+    end: number;
+    quark: number;
+    goldenQuark: number;
+    cubes: number;
+    powderConversion: number;
+    ascensionSpeed: number;
+    globalSpeed: number;
+    ascensionScore: number;
+    antSacrifice: number;
+    offering: number;
+    obtainium: number;
+    octeract: number;
+    blueberryTime: number;
+    ambrosiaLuck: number;
+    oneMind: number;
+    color: string[];
+}
+
 /**
  * Internal identifiers for tracked game events.
  * Notes: The LOTUS_OF_REJUVENATION isn't technically part of the vanilla "event" system (it's not in info-all);

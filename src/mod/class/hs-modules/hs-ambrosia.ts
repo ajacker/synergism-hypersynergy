@@ -1,6 +1,6 @@
 import { HSGameDataSubscriber, HSModuleOptions, HSPersistable } from "../../types/hs-types";
 import { AmbrosiaUpgradeCalculationCollection, AmbrosiaUpgradeCalculationConfig } from "../../types/data-types/hs-gamedata-api-types";
-import { AmbrosiaUpgradeData, AmbrosiaUpgrades, PlayerData } from "../../types/data-types/hs-player-savedata";
+import { AmbrosiaUpgradeData, AmbrosiaUpgrades, Player } from "../../types/data-types/hs-player-savedata";
 import { AMBROSIA_ICON, AMBROSIA_LOADOUT_SLOT, HSAmbrosiaLoadoutState } from "../../types/module-types/hs-ambrosia-types";
 import { MAIN_VIEW, SINGULARITY_VIEW, VIEW_TYPE } from "../../types/module-types/hs-gamestate-types";
 import { HSElementHooker } from "../hs-core/hs-elementhooker";
@@ -555,24 +555,24 @@ export class HSAmbrosia extends HSModule
         }
     }
 
-    private calculateAmbUpgradeLevelFromSave(upgradeName: keyof AmbrosiaUpgrades, invested: number, saveData: PlayerData): number {
+    private calculateAmbUpgradeLevelFromSave(upgradeName: keyof AmbrosiaUpgrades, invested: number): number {
         const gameDataAPI = HSModuleManager.getModule<HSGameDataAPI>('HSGameDataAPI');
         if (!gameDataAPI) return 0;
 
-        const investmentParameters = ((gameDataAPI.R_ambrosiaUpgradeCalculationCollection as AmbrosiaUpgradeCalculationCollection)[upgradeName]) as AmbrosiaUpgradeCalculationConfig<any>;
+        const investmentParameters = ((gameDataAPI.ambrosia.R_ambrosiaUpgradeCalculationCollection as AmbrosiaUpgradeCalculationCollection)[upgradeName]) as AmbrosiaUpgradeCalculationConfig<any>;
         if (!investmentParameters) return 0;
 
-        return gameDataAPI.investToAmbrosiaUpgrade(
+        return gameDataAPI.ambrosia.investToAmbrosiaUpgrade(
             0,
             invested,
             investmentParameters.costPerLevel,
             investmentParameters.maxLevel,
-            investmentParameters.costFunction
+            investmentParameters.costFormula
         );
     }
 
-    private calculateBlueBarRequirementForLoadout(saveData: PlayerData, loadoutNumber: number): number | undefined {
-        const loadout = saveData.blueberryLoadouts?.[String(loadoutNumber)];
+    private calculateBlueBarRequirementForLoadout(saveData: Player, loadoutNumber: number): number | undefined {
+        const loadout = saveData.blueberryLoadouts?.[loadoutNumber];
         if (!loadout || Object.keys(loadout).length === 0) return;
 
         const brickLevel = (loadout as Record<string, number>).ambrosiaBrickOfLead ?? 0;
@@ -596,7 +596,7 @@ export class HSAmbrosia extends HSModule
         return val;
     }
 
-    public findBestMatchingAmbrosiaLoadout(saveData: PlayerData): { id: string | undefined; score: number } {
+    public findBestMatchingAmbrosiaLoadout(saveData: Player): { id: string | undefined; score: number } {
         const currentUpgrades = saveData.ambrosiaUpgrades;
         const savedLoadouts = saveData.blueberryLoadouts;
 
@@ -622,7 +622,7 @@ export class HSAmbrosia extends HSModule
                 totalUpgrades++;
 
                 const currentLevelData = currentUpgrades[upgradeKey as keyof AmbrosiaUpgrades] as AmbrosiaUpgradeData;
-                const totalLevel = currentLevelData ? this.calculateAmbUpgradeLevelFromSave(upgradeKey as keyof AmbrosiaUpgrades, currentLevelData.ambrosiaInvested, saveData) : 0;
+                const totalLevel = currentLevelData ? this.calculateAmbUpgradeLevelFromSave(upgradeKey as keyof AmbrosiaUpgrades, currentLevelData.ambrosiaInvested) : 0;
 
                 if (totalLevel === savedLevel) {
                     matches++;
@@ -644,7 +644,7 @@ export class HSAmbrosia extends HSModule
         return { id: bestMatchId, score: highestScore };
     }
 
-    public async performInitialActiveLoadoutMatch(saveData: PlayerData): Promise<void> {
+    public async performInitialActiveLoadoutMatch(saveData: Player): Promise<void> {
         if (!saveData) return;
 
         await this.resetActiveLoadout();
@@ -663,8 +663,6 @@ export class HSAmbrosia extends HSModule
             if (!slotEnum) { HSLogger.warn(`No slot enum found for slot ID: ${slotId}`, this.context); return; }
 
             await this.#updateActiveLoadout(slotEnum);
-            HSLogger.debug(() => `1345Updating active loadout to ${slotEnum}`, this.context);
-            HSLogger.debug(() => `Resolved active loadout slot: ${this.activeLoadout}`, this.context);
 
             HSLogger.debug(() => `Initial load - Ambrosia loadout best match: ${bestMatchId} is ${(highestScore * 100).toFixed(1)}% compliant. `, this.context);
         } else if (bestMatchId) {
@@ -672,7 +670,6 @@ export class HSAmbrosia extends HSModule
         } else {
             HSLogger.debug(() => `Initial load - No saved Ambrosia loadouts found to match.`, this.context);
         }
-        HSLogger.debug(() => `1Active loadout after initial match: ${this.activeLoadout}`, this.context);
     }
 
     public getAmbrosiaLoadoutsAmount(): number {
@@ -1277,7 +1274,7 @@ export class HSAmbrosia extends HSModule
         }
     }
 
-    async #performInitialActiveLoadoutMatchOnce(gameData: PlayerData): Promise<void> {
+    async #performInitialActiveLoadoutMatchOnce(gameData: Player): Promise<void> {
         if (this.#hasPerformedInitialLoadoutMatch) return;
 
         await this.performInitialActiveLoadoutMatch(gameData);
@@ -1298,19 +1295,19 @@ export class HSAmbrosia extends HSModule
 
             const blueAmbrosiaBarValue = gameData.blueberryTime;
             const redAmbrosiaBarValue = gameData.redAmbrosiaTime;
-            const blueAmbrosiaBarMax = gameDataAPI.R_calculateRequiredBlueberryTime();
-            const redAmbrosiaBarMax = gameDataAPI.R_calculateRequiredRedAmbrosiaTime();
+            const blueAmbrosiaBarMax = gameDataAPI.ambrosia.R_calculateRequiredBlueberryTime();
+            const redAmbrosiaBarMax = gameDataAPI.ambrosia.R_calculateRequiredRedAmbrosiaTime();
             const blueAmbrosiaPercent = ((blueAmbrosiaBarValue / blueAmbrosiaBarMax) * 100);
             const redAmbrosiaPercent = ((redAmbrosiaBarValue / redAmbrosiaBarMax) * 100);
 
-            const blueberrySpeedMults = (gameDataAPI.calculateAmbrosiaSpeed() as number);
-            const blueberries = (gameDataAPI.R_calculateBlueBerries() as number);
+            const blueberrySpeedMults = (gameDataAPI.calculateAmbrosiaSpeed_OLD() as number);
+            const blueberries = (gameDataAPI.ambrosia.R_calculateBlueberryInventory() as number);
             const ambrosiaSpeed = blueberrySpeedMults * blueberries;
             const ambrosiaAcceleratorCount = gameData.shopUpgrades.shopAmbrosiaAccelerator;
-            const ambrosiaLuck = gameDataAPI.calculateLuck() as { additive: number; raw: number; total: number; };
+            const ambrosiaLuck = gameDataAPI.calculateLuck() as { luckBase: number; luckMult: number; luckTotal: number; };
             const bonusAmbrosia = (gameData.singularityChallenges.noAmbrosiaUpgrades.completions > 0) ? 1 : 0
-            const ambrosiaGainPerGen = (ambrosiaLuck.total / 100) + bonusAmbrosia;
-            const ambrosiaGainChance = (ambrosiaLuck.total - 100 * Math.floor(ambrosiaLuck.total / 100)) / 100;
+            const ambrosiaGainPerGen = (ambrosiaLuck.luckTotal / 100) + bonusAmbrosia;
+            const ambrosiaGainChance = (ambrosiaLuck.luckTotal - 100 * Math.floor(ambrosiaLuck.luckTotal / 100)) / 100;
             let accelerationSeconds = 0;
             let accelerationAmount = 0;
             let accelerationPercent = 0;
@@ -1463,9 +1460,9 @@ export class HSAmbrosia extends HSModule
                         BERRY: ${blueberries} </br>
                         TOT BLU: ${(blueberrySpeedMults * blueberries).toFixed(2)} </br>
         ------------------------</br>
-                        ADD LUK: ${ambrosiaLuck.additive.toFixed(2)} </br>
-                        RAW LUK: ${ambrosiaLuck.raw.toFixed(2)} </br>
-                        TOT LUK: ${ambrosiaLuck.total.toFixed(2)} </br>
+                        BASE LUK: ${ambrosiaLuck.luckBase.toFixed(2)} </br>
+                        MULT LUK: ${ambrosiaLuck.luckMult.toFixed(2)} </br>
+                        TOT LUK: ${ambrosiaLuck.luckTotal.toFixed(2)} </br>
         ------------------------</br>
                         ACC CNT: ${ambrosiaAcceleratorCount} </br>
                         ACCEL AMOUNT: ${accelerationAmount.toFixed(2)} </br>

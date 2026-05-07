@@ -1,119 +1,150 @@
+import Decimal from "break_infinity.js";
 import { HSModuleManager } from "../../hs-core/module/hs-module-manager";
 import { HSGameDataAPI } from "../../hs-core/gds/hs-gamedata-api";
 import type { AmbrosiaUpgradeNames } from "../../../types/data-types/hs-gamedata-api-types";
 import type { HeaterOptimizerInput, HeaterOptimizationResult } from "../../../types/data-types/hs-heater-types";
 
-export interface HSHeaterFieldMapping {
-    exportPath: string;
-    sheetLabel: string;
-}
-
-// Maps HS heater export paths to the Google Sheet label names used by Pull_value_to_heater()
-export const HS_HEATER_EXPORT_TO_SHEET_MAPPINGS: HSHeaterFieldMapping[] = [
-    { exportPath: "hs_data.lifeTimeAmbrosia", sheetLabel: "Amb Total" },
-    { exportPath: "hs_data.quarks", sheetLabel: "Quark" },
-    { exportPath: "hs_data.platonic4x4", sheetLabel: "p4x4" },
-    { exportPath: "hs_data.trueBaseLuck", sheetLabel: "trueBaseLuck" },
-    { exportPath: "hs_data.luckMult", sheetLabel: "luckMult" },
-    { exportPath: "hs_data.totalCubes", sheetLabel: "totalCubes" },
-    { exportPath: "hs_data.effectiveSingularity", sheetLabel: "effectiveSingularity" },
-    { exportPath: "hs_data.postaoag", sheetLabel: "postaoag" },
-    { exportPath: "hs_data.transcription", sheetLabel: "Transcription" },
-    { exportPath: "hs_data.ascSpeed", sheetLabel: "ascSpeed" },
-    { exportPath: "hs_data.spread", sheetLabel: "spread" },
-    { exportPath: "hs_data.totalInfinityVouchers", sheetLabel: "totalInfinityVouchers" },
-    { exportPath: "hs_data.ambrosiaSpeed", sheetLabel: "ambrosiaSpeed" },
-    { exportPath: "hs_data.redAmbrosiaLuck", sheetLabel: "redAmbrosiaLuck" },
-    { exportPath: "hs_data.lifeTimeRedAmbrosia", sheetLabel: "Red Amb Total" },
-    { exportPath: "hs_data.pseudoCoinUpgrades.redAmbrosiaGenerationBuffLevel", sheetLabel: "redAmbrosiaGenerationBuffLevel" },
-    { exportPath: "hs_data.isInsideSingularityChallenge", sheetLabel: "insideSingularityChallenge" },
-    { exportPath: "hs_data.baseObt", sheetLabel: "baseobt" },
-    { exportPath: "hs_data.baseOff", sheetLabel: "baseoff" },
-    { exportPath: "hs_data.bb", sheetLabel: "bb" },
-    { exportPath: "hs_data.bonusRow2", sheetLabel: "bonusRow2" },
-    { exportPath: "hs_data.bonusRow3", sheetLabel: "bonusRow3" },
-    { exportPath: "hs_data.bonusRow4", sheetLabel: "bonusRow4" },
-    { exportPath: "hs_data.bonusRow5", sheetLabel: "bonusRow5" },
-    { exportPath: "highestSingularityCount", sheetLabel: "highestSingularityCount" },
-    { exportPath: "wowCubes", sheetLabel: "wowCubes" },
-    { exportPath: "maxRuneExp", sheetLabel: "maxRuneExp" },
-    { exportPath: "hs_data.runeexp", sheetLabel: "runeexp" },
-    { exportPath: "hs_data.sirc", sheetLabel: "sirc" },
-    { exportPath: "hs_data.bonussi", sheetLabel: "bonussi" },
-    { exportPath: "hs_data.totalbonusia", sheetLabel: "totalbonusia" },
-    { exportPath: "hs_data.talismanbonusia", sheetLabel: "talismanbonusia" },
-    { exportPath: "hs_data.baseTalismanPower", sheetLabel: "btp" },
-    { exportPath: "redAmbrosiaUpgrades", sheetLabel: "Red Ambs upgrade" },
-    { exportPath: "shopRedLuck1", sheetLabel: "shopRedLuck1" },
-    { exportPath: "shopRedLuck2", sheetLabel: "shopRedLuck2" },
-    { exportPath: "shopRedLuck3", sheetLabel: "shopRedLuck3" },
-];
-
-export const HS_HEATER_EXPORT_TO_SHEET_MAP: Record<string, string> = Object.fromEntries(
-    HS_HEATER_EXPORT_TO_SHEET_MAPPINGS.map((mapping) => [mapping.exportPath, mapping.sheetLabel])
-);
-
 export class HSHeaterAPI {
-    static readonly fieldMappings = HS_HEATER_EXPORT_TO_SHEET_MAPPINGS;
-    static readonly fieldMap = HS_HEATER_EXPORT_TO_SHEET_MAP;
 
     static createHeaterOptimizerResultFromInput(input: HeaterOptimizerInput): HeaterOptimizationResult {
         const {
             amb,
-            quark,
+            ramb,
+            ambSpeed,
+            luckBaseNonAmb,
+            luckMultNonAmb,
+            redLuckBase,
+            luckConversion,
+            quarksOwned,
+            qHept,
             plat4x4,
-            baseluck,
-            multluck,
-            cube,
-            singularity,
-            postaoag,
+            cubesExpTotal,
+            reducedSingularity,
+            isInsideExalt,
+            postAoag,
             transcription,
-            ascspeed1,
-            ascspeed2,
-            spread,
-            voucher,
-            baseobt,
-            baseoff,
-            bb,
+            ascSpeed,
+            ascSpeed2,
+            ascSpread,
+            baseObt,
+            baseOff,
+            blueberries,
             bonusRow2,
             bonusRow3,
             bonusRow4,
             bonusRow5,
-            ramb,
-            runeexp,
-            sirc,
-            bonussi,
-            totalbonusia,
-            talismanbonusia,
-            btp,
-            active,
-            isInsideExalt,
+            runeMaxExp,
+            runeSiRC,
+            runeSiBonusLevelsTotal,
+            runeIaBonusLevelsTotal,
+            runeIaBonusLevelsTalisman,
+            baseTalismanPower,
+            totalVouchers,
+            shopAmbrosiaLuck1,
+            shopAmbrosiaLuck2,
+            shopAmbrosiaLuck3,
+            shopAmbrosiaLuck4,
+            shopAmbrosiaGeneration1,
+            shopAmbrosiaGeneration2,
+            shopAmbrosiaGeneration3,
+            shopAmbrosiaGeneration4,
+            shopRedLuck1,
+            shopRedLuck2,
+            shopRedLuck3,
+            singQuarkHepteract1,
+            singQuarkHepteract2,
+            singQuarkHepteract3,
+            octeractImprovedQuarkHept,
+            shopImproveQuarkHept1,
+            shopImproveQuarkHept2,
+            shopImproveQuarkHept3,
+            shopImproveQuarkHept4,
+            shopImproveQuarkHept5,
+            jack,
+            active
         } = input;
 
+        const qHeptExp = singQuarkHepteract1 + singQuarkHepteract2 + singQuarkHepteract3 + octeractImprovedQuarkHept;
+        const shopQuark = shopImproveQuarkHept1 + shopImproveQuarkHept2 + shopImproveQuarkHept3 + shopImproveQuarkHept4 + shopImproveQuarkHept5;
         const exalt = Number(isInsideExalt);
+
+        const baseluck = luckBaseNonAmb;
+        const multluck = luckMultNonAmb;
+
+        const shopLuck =
+            (shopAmbrosiaLuck1 > 0 ? 2 : 0)
+            + (shopAmbrosiaLuck2 > 0 ? 2 : 0)
+            + (shopAmbrosiaLuck3 > 0 ? 2 : 0)
+            + (shopAmbrosiaLuck4 > 0 ? 0.6 : 0);
+
         const bonus = [
             [bonusRow2, 0],
             [bonusRow3, 0],
             [bonusRow4, 0],
             [bonusRow5, 0],
         ];
-        const true_base_tree = Array.from({ length: 31 }, (_, i) => Math.floor(Math.pow(10, 1 - i)));
+
+        const module_name = [
+            "ambrosiaTutorial",
+            "ambrosiaPatreon",
+            "ambrosiaObtainium1",
+            "ambrosiaOffering1",
+            "ambrosiaHyperflux",
+            "ambrosiaQuarks1",
+            "ambrosiaCubes1",
+            "ambrosiaLuck1",
+            "ambrosiaCubeQuark1",
+            "ambrosiaLuckQuark1",
+            "ambrosiaLuckCube1",
+            "ambrosiaQuarkCube1",
+            "ambrosiaCubeLuck1",
+            "ambrosiaQuarkLuck1",
+            "ambrosiaQuarks2",
+            "ambrosiaCubes2",
+            "ambrosiaLuck2",
+            "ambrosiaQuarks3",
+            "ambrosiaCubes3",
+            "ambrosiaLuck3",
+            "ambrosiaBaseObtainium1",
+            "ambrosiaBaseOffering1",
+            "ambrosiaBaseObtainium2",
+            "ambrosiaBaseOffering2",
+            "ambrosiaSingReduction1",
+            "ambrosiaSingReduction2",
+            "ambrosiaInfiniteShopUpgrades1",
+            "ambrosiaInfiniteShopUpgrades2",
+            "ambrosiaLuck4",
+            "ambrosiaTalismanBonusRuneLevel",
+            "ambrosiaRuneOOMBonus",
+            "ambrosiaBrickOfLead",
+            "ambrosiaFreeLuckUpgrades",
+            "ambrosiaFreeGenerationUpgrades",
+            "ambrosiaFreeRedLuckUpgrades",
+            "ambrosiaFreeQuarkUpgrades",
+        ];
+        
+        const true_base_tree = Array.from({ length: module_name.length }, (_, i) => Math.floor(Math.pow(10, 1 - i)));
         const max_level = [
             10, 1, 2, 2, 7, 100, 100, 100, 25, 25, 25, 25, 25, 25, 100, 100, 100, 10, 100, 100, 20, 40, 30, 60, 2, 2, 20, 20, 50, 100, 100,
+            25, 25, 3, 40, 10,
         ];
         const alt_level_list = [
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 6, 7, 14, 15, 16, 0, 0, 0, 0, 0, 0, 0, 26, 0, 0, 0,
+            0, 0, 0, 0, 0,
         ];
         const bonus_level = [
             -1, -1, -1, -1, -1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, -1, -1, -1, -1, -1, -1, -1, -1, 3, -1, 2,
+            -1, -1, -1, -1, -1,
         ];
         const obtofoff = [
             0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 2, 3, 3, 3, 3, 0, 3, 3,
+            0, 0, 0, 0, 0,
         ];
         const multiluck = [
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+            0, 0, 0, 0, 0,
         ];
-        const force_tree = new Array(31).fill(0);
+        const force_tree = new Array(module_name.length).fill(0);
 
         let matrix_L_I: Array<[number[], number, number]> = [];
         let matrix_Q_I: Array<[number[], number, number]> = [];
@@ -123,11 +154,13 @@ export class HSHeaterAPI {
             input,
         };
 
-        const greater_than_1 = 1 - 2 * Number(ascspeed1 < 1);
-        const reduced_asc = Math.pow(Math.pow(ascspeed1, 1 / (1 + spread * greater_than_1)), greater_than_1);
+        const greater_than_1 = 1 - 2 * Number(ascSpeed < 1);
+        const reduced_asc = Math.pow(Math.pow(ascSpeed, 1 / (1 + ascSpread * greater_than_1)), greater_than_1);
+        const transcriptionEffect = 0.55 + transcription / 150;
         const l4_digits = 2 + Math.floor(Math.log10(Math.max(1, amb))) + Math.floor(Math.log10(Math.max(1, ramb)));
-        const originalIAtotal = Math.floor((runeexp - 75) * (0.5 + 0.001 * bonus[2][0])) + totalbonusia;
-        const originalSItotal = Math.floor((runeexp - 12) * sirc) + bonussi;
+        const originalIAtotal = new Decimal(Math.floor((runeMaxExp - 75) * (0.5 + 0.001 * bonus[2][0]))).plus(runeIaBonusLevelsTotal);
+        const originalIAtotalNumber = originalIAtotal.toNumber();
+        const originalSItotal = new Decimal(Math.floor((runeMaxExp - 12) * runeSiRC)).plus(runeSiBonusLevelsTotal);
 
         function singDebuff(singnum: number): [number, number] {
             function effectiveSing(sing: number): number {
@@ -197,76 +230,97 @@ export class HSHeaterAPI {
             return [cubeA / cubeB, obtA / obtB];
         }
 
-        function deltaIA(ctype: number, delta: number): number {
-            let newIAtotal = -1;
+        function deltaIA(ctype: number, delta: Decimal): Decimal {
+            let newIAtotal = new Decimal(-1);
             if (ctype === 1) {
-                newIAtotal = originalIAtotal + (talismanbonusia * delta) / btp;
+                newIAtotal = originalIAtotal.plus(runeIaBonusLevelsTalisman.times(delta).dividedBy(baseTalismanPower));
             } else if (ctype === 2) {
-                newIAtotal = Math.floor((runeexp - 75) * (0.5 + delta)) + totalbonusia;
+                newIAtotal = new Decimal(runeMaxExp - 75).times(new Decimal(0.5).plus(delta)).floor().plus(runeIaBonusLevelsTotal);
             }
-            return newIAtotal - originalIAtotal;
+            return newIAtotal.minus(originalIAtotal);
         }
 
-        function changeinIA(ctype: number, delta: number): [number, number] {
-            let newIAtotal = -1;
+        function changeinIA(ctype: number, delta: Decimal): [Decimal, Decimal] {
+            let newIAtotal = new Decimal(-1);
             if (ctype === 1) {
-                newIAtotal = originalIAtotal + (talismanbonusia * delta) / btp;
+                newIAtotal = originalIAtotal.plus(runeIaBonusLevelsTalisman.times(delta).dividedBy(baseTalismanPower));
             } else if (ctype === 2) {
-                newIAtotal = Math.floor((runeexp - 75) * (0.5 + delta)) + totalbonusia;
+                newIAtotal = new Decimal(runeMaxExp - 75).times(new Decimal(0.5).plus(delta)).floor().plus(runeIaBonusLevelsTotal);
             }
-            const qchange = (500 + newIAtotal) / (500 + originalIAtotal);
-            const cchange = (100 + newIAtotal) / (100 + originalIAtotal);
+            const qchange = newIAtotal.plus(500).div(originalIAtotal.plus(500));
+            const cchange = newIAtotal.plus(100).div(originalIAtotal.plus(100));
             return [qchange, cchange];
         }
 
-        function talismanO(delta: number): number {
-            const newbonusSI = (bonussi * delta) / btp;
-            return 1 + newbonusSI / originalSItotal;
+        function rSpeed(speed: number): number {
+            return Math.min(speed, Math.sqrt(1000 * speed));
         }
 
-        function rcmO(level: number): number {
-            const newSI = Math.floor((runeexp - 12) * (sirc + level - bonus[2][0])) + bonussi;
-            return newSI / originalSItotal;
+        function ambGeneration(level = 0): number {
+            let speed = 1;
+            speed *= 1 + 0.01 * level / (1 + 0.01 * shopAmbrosiaGeneration1);
+            speed *= 1 + 0.01 * level / (1 + 0.01 * shopAmbrosiaGeneration2);
+            speed *= 1 + 0.01 * level / (1 + 0.01 * shopAmbrosiaGeneration3);
+            speed *= 1 + 0.001 * level / (1 + 0.001 * shopAmbrosiaGeneration4);
+            if (jack)
+                speed *= 1 + 0.001 * (1 + 0.01 * totalVouchers) * level;
+            return speed;
+        }
+
+        function shopQuarkEffect(level = 0): number {
+            const base = 1 + 0.2 * Math.log2(1 + qHept / 500);
+            let result = Math.pow(base, qHeptExp * 0.001 * level);
+            const jackBonus = 0.001 * (1 + 0.01 * totalVouchers);
+            result *= 1 + jackBonus * 0.1 * level / (1 + jackBonus * shopQuark);
+            return result;
+        }
+
+        function rLuckValue(level = 0, luck = 0): number {
+            let conversion = luckConversion;
+            conversion += Math.floor(shopRedLuck1 / 20) * 0.01;
+            conversion += Math.floor(shopRedLuck2 / 20) * 0.01;
+            conversion += Math.floor(shopRedLuck3 / 20) * 0.01;
+
+            const levels = [
+                shopRedLuck1 > 0 ? shopRedLuck1 + level : 0,
+                shopRedLuck2 > 0 ? shopRedLuck2 + level : 0,
+                shopRedLuck3 > 0 ? shopRedLuck3 + level : 0,
+            ];
+            levels[2] += shopRedLuck3 > 0 ? level : 0;
+
+            conversion = levels.reduce((result, value) => result - Math.floor(value / 20) * 0.01, conversion);
+            conversion = Math.max(conversion, 1e-6);
+
+            let result = redLuckBase + Math.floor(luck / conversion);
+            if (shopRedLuck1 > 0)
+                result += level * 0.05;
+            if (shopRedLuck2 > 0)
+                result += level * 0.075;
+            if (shopRedLuck3 > 0)
+                result += level * 0.2;
+            if (jack)
+                result += 0.05 * (1 + 0.01 * totalVouchers);
+            return result;
+        }
+
+        function rLuckDelta(level = 0, luck = 0): number {
+            return rLuckValue(level, luck) - rLuckValue(0, luck);
+        }
+
+        function talismanO(delta: Decimal): Decimal {
+            const newbonusSI = runeSiBonusLevelsTotal.times(delta).dividedBy(baseTalismanPower);
+            return new Decimal(1).plus(newbonusSI.div(originalSItotal));
+        }
+
+        function rcmO(level: number): Decimal {
+            const newSI = new Decimal(Math.floor((runeMaxExp - 12) * (runeSiRC + level - bonus[2][0]))).plus(runeSiBonusLevelsTotal);
+            return newSI.div(originalSItotal);
         }
 
         function arrayToText(loadout: number[]): string {
             const txts = loadout.map((value, index) => `"${module_name[index]}":${value.toString()}`);
             return `{${txts.join(",")}}`;
         }
-
-        const module_name = [
-            "ambrosiaTutorial",
-            "ambrosiaPatreon",
-            "ambrosiaObtainium1",
-            "ambrosiaOffering1",
-            "ambrosiaHyperflux",
-            "ambrosiaQuarks1",
-            "ambrosiaCubes1",
-            "ambrosiaLuck1",
-            "ambrosiaCubeQuark1",
-            "ambrosiaLuckQuark1",
-            "ambrosiaLuckCube1",
-            "ambrosiaQuarkCube1",
-            "ambrosiaCubeLuck1",
-            "ambrosiaQuarkLuck1",
-            "ambrosiaQuarks2",
-            "ambrosiaCubes2",
-            "ambrosiaLuck2",
-            "ambrosiaQuarks3",
-            "ambrosiaCubes3",
-            "ambrosiaLuck3",
-            "ambrosiaBaseObtainium1",
-            "ambrosiaBaseOffering1",
-            "ambrosiaBaseObtainium2",
-            "ambrosiaBaseOffering2",
-            "ambrosiaSingReduction1",
-            "ambrosiaSingReduction2",
-            "ambrosiaInfiniteShopUpgrades1",
-            "ambrosiaInfiniteShopUpgrades2",
-            "ambrosiaLuck4",
-            "ambrosiaTalismanBonusRuneLevel",
-            "ambrosiaRuneOOMBonus",
-        ];
 
         type HeaterPrerequisiteMap = Partial<Record<AmbrosiaUpgradeNames, Partial<Record<AmbrosiaUpgradeNames, number>>>>;
         const ambrosiaPrerequisiteCache: HeaterPrerequisiteMap = {};
@@ -281,7 +335,7 @@ export class HSHeaterAPI {
                 return ambrosiaPrerequisiteCache;
             }
 
-            const collection = gameDataAPI.R_ambrosiaUpgradeCalculationCollection;
+            const collection = gameDataAPI.ambrosia.R_ambrosiaUpgradeCalculationCollection;
             for (const upgradeKey of Object.keys(collection) as AmbrosiaUpgradeNames[]) {
                 const prerequisites = collection[upgradeKey].prerequisites;
                 if (prerequisites && Object.keys(prerequisites).length > 0) {
@@ -434,6 +488,16 @@ export class HSHeaterAPI {
                     return 100 * level * level;
                 case 30:
                     return rcmcost[level];
+                case 31:
+                    return 10 * Math.pow(level, 3);
+                case 32:
+                    return 5000 * Math.pow(level, 2);
+                case 33:
+                    return 45000 * (Math.pow(10, level) - 1) / 9;
+                case 34:
+                    return 20000 * Math.pow(level, 2);
+                case 35:
+                    return 25000 * Math.pow(level, 3);
                 default:
                     return NaN;
             }
@@ -468,17 +532,17 @@ export class HSHeaterAPI {
                 case 7:
                     return [2 * level + 12 * Math.floor(level / 10), 1, 1, 1, 0, 1];
                 case 8:
-                    return [0, 1 + 0.0001 * level * cube, 1, 1, 0, 1];
+                    return [0, 1 + 0.0001 * level * cubesExpTotal, 1, 1, 0, 1];
                 case 9:
                     return [0, 1 + 0.0001 * level * Math.min(luck, Math.pow(1000 * luck, 0.5)), 1, 1, 0, 1];
                 case 10:
                     return [0, 1, 1 + 0.0005 * level * luck, 1 + 0.0005 * level * luck, 0, 1];
                 case 11:
-                    return [0, 1, 1 + 0.001 * level * quark, 1 + 0.001 * level * quark, 0, 1];
+                    return [0, 1, 1 + 0.001 * level * quarksOwned, 1 + 0.001 * level * quarksOwned, 0, 1];
                 case 12:
-                    return [0.02 * level * cube, 1, 1, 1, 0, 1];
+                    return [0.02 * level * cubesExpTotal, 1, 1, 1, 0, 1];
                 case 13:
-                    return [0.02 * level * quark, 1, 1, 1, 0, 1];
+                    return [0.02 * level * quarksOwned, 1, 1, 1, 0, 1];
                 case 14:
                     return [0, 1 + level * (0.01 + Math.floor(altlevel / 10) / 1000), 1, 1, 0, 1];
                 case 15:
@@ -490,7 +554,7 @@ export class HSHeaterAPI {
                 case 18:
                     return [0, 1, (1 + 0.2 * level * (1 + 0.03 * altlevel)) * Math.pow(1.2, Math.floor(level / 5)), (1 + 0.2 * level * (1 + 0.03 * altlevel)) * Math.pow(1.2, Math.floor(level / 5)), 0, 1];
                 case 19:
-                    return [level * bb, 1, 1, 1, 0, 1];
+                    return [level * blueberries, 1, 1, 1, 0, 1];
                 case 20:
                     return [0, 1, 1, 1, level, 1];
                 case 21:
@@ -500,43 +564,64 @@ export class HSHeaterAPI {
                 case 23:
                     return [0, 1, 1, 1, level, 1];
                 case 24:
-                    return [0, 1, singReductionEffect(singularity, level)[0], singReductionEffect(singularity, level)[0], 0, singReductionEffect(singularity, level)[1]];
+                    return [0, 1, singReductionEffect(reducedSingularity, level)[0], singReductionEffect(reducedSingularity, level)[0], 0, singReductionEffect(reducedSingularity, level)[1]];
                 case 25:
-                    return [0, 1, singReductionEffect(singularity, level)[0], singReductionEffect(singularity, level)[0], 0, singReductionEffect(singularity, level)[1]];
+                    return [0, 1, singReductionEffect(reducedSingularity, level)[0], singReductionEffect(reducedSingularity, level)[0], 0, singReductionEffect(reducedSingularity, level)[1]];
                 case 26:
                     return [
                         0,
                         1,
-                        Math.pow(1.012 * Math.pow(1.006, 1 + spread * greater_than_1), level) *
-                            Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((voucher + level) / 40) - Math.floor(voucher / 40))),
+                        Math.pow(1.012 * Math.pow(1.006, 1 + ascSpread * greater_than_1), level) *
+                            Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((totalVouchers + level) / 40) - Math.floor(totalVouchers / 40))),
                         Math.pow(1.012, level * 1.25) *
                             Math.pow(
-                                Math.pow(1.006, level * (1 + spread * greater_than_1)) * Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((voucher + level) / 40) - Math.floor(voucher / 40))),
-                                transcription
+                                Math.pow(1.006, level * (1 + ascSpread * greater_than_1)) * Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((totalVouchers + level) / 40) - Math.floor(totalVouchers / 40))),
+                                transcriptionEffect
                             ),
                         0,
-                        Math.pow(1.012, level) * Math.pow(1.06, Math.floor((voucher + level) / 25) - Math.floor(voucher / 25)),
+                        Math.pow(1.012, level) * Math.pow(1.06, Math.floor((totalVouchers + level) / 25) - Math.floor(totalVouchers / 25)),
                     ];
                 case 27:
                     return [
                         0,
                         1,
-                        Math.pow(1.012 * Math.pow(1.006, 1 + spread * greater_than_1), level) *
-                            Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((voucher + level + altlevel) / 40) - Math.floor((voucher + altlevel) / 40))),
+                        Math.pow(1.012 * Math.pow(1.006, 1 + ascSpread * greater_than_1), level) *
+                            Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((totalVouchers + level + altlevel) / 40) - Math.floor((totalVouchers + altlevel) / 40))),
                         Math.pow(1.012, level * 1.25) *
                             Math.pow(
-                                Math.pow(1.006, level * (1 + spread * greater_than_1)) * Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((voucher + level + altlevel) / 40) - Math.floor((voucher + altlevel) / 40))),
-                                transcription
+                                Math.pow(1.006, level * (1 + ascSpread * greater_than_1)) * Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((totalVouchers + level + altlevel) / 40) - Math.floor((totalVouchers + altlevel) / 40))),
+                                transcriptionEffect
                             ),
                         0,
-                        Math.pow(1.012, level) * Math.pow(1.06, Math.floor((voucher + level + altlevel) / 25) - Math.floor((voucher + altlevel) / 25)),
+                        Math.pow(1.012, level) * Math.pow(1.06, Math.floor((totalVouchers + level + altlevel) / 25) - Math.floor((totalVouchers + altlevel) / 25)),
                     ];
                 case 28:
                     return [0.0001 * l4_digits * level, 1, 1, 1, 0, 1];
-                case 29:
-                    return [0, changeinIA(1, 0.005 * level)[0], changeinIA(1, 0.005 * level)[1], 1, 0, talismanO(0.005 * level)];
-                case 30:
-                    return [0, changeinIA(2, 0.001 * level)[0], changeinIA(2, 0.001 * level)[1], 1, 0, rcmO(level)];
+                case 29: {
+                    const [qchange, cchange] = changeinIA(1, new Decimal(0.005).times(level));
+                    const qchangeNumber = qchange.toNumber();
+                    const cchangeNumber = cchange.toNumber();
+                    return [0, qchangeNumber, cchangeNumber, 1, 0, talismanO(new Decimal(0.005).times(level)).toNumber()];
+                }
+                case 30: {
+                    const [qchange, cchange] = changeinIA(2, new Decimal(0.001).times(level));
+                    const qchangeNumber = qchange.toNumber();
+                    const cchangeNumber = cchange.toNumber();
+                    return [0, qchangeNumber, cchangeNumber, 1, 0, rcmO(level).toNumber()];
+                }
+                case 31:
+                    return [level / 50, 1, 1 - 0.02 * level, 1 - 0.02 * level, 0, 1];
+                case 32:
+                    return [shopLuck * level, 1, 1, 1, 0, 1];
+                case 33:
+                    return [0, 1, 1, ambGeneration(level), 0, 1];
+                case 34:
+                    return [rLuckDelta(level, luck), 1, 1, 1, 0, 1];
+                case 35: {
+                    const quarkMult = shopQuarkEffect(level);
+                    const cubeMult = quarkMult * (1.5 + 0.5 * (1 - Math.pow(0.9, shopQuark + 0.1 * level - 1)));
+                    return [0, quarkMult, cubeMult, cubeMult, 0, 1];
+                }
                 default:
                     return [0, 1, 1, 1, 0, 1];
             }
@@ -745,7 +830,7 @@ export class HSHeaterAPI {
             for (let i = 0; i <= 100; i++) {
                 for (let j = 0; j <= 100; j++) {
                     const cost = calculateCost(29, i) + calculateCost(30, j);
-                    const effect = deltaIA(1, 0.005 * i) + deltaIA(2, 0.001 * (j + bonus[2][0]));
+                    const effect = deltaIA(1, new Decimal(0.005).times(i)).plus(deltaIA(2, new Decimal(0.001).times(j + bonus[2][0]))).toNumber();
                     full_matrix.push([[i, j], cost, effect]);
                 }
             }
@@ -757,7 +842,7 @@ export class HSHeaterAPI {
             for (let i = 0; i < matrix_Q_P.length; i++) {
                 for (let j = 0; j < matrix_RuneIA.length; j++) {
                     const cost = matrix_Q_P[i][1] + matrix_RuneIA[j][1];
-                    const effect = matrix_Q_P[i][2] * (1 + matrix_RuneIA[j][2] / (500 + originalIAtotal));
+                    const effect = matrix_Q_P[i][2] * (1 + matrix_RuneIA[j][2] / (500 + originalIAtotalNumber));
                     full_matrix.push([matrix_Q_P[i][0].concat(matrix_RuneIA[j][0]), cost, effect]);
                 }
             }
@@ -937,7 +1022,7 @@ export class HSHeaterAPI {
             for (let i = 0; i < matrix_C_I_1.length; i++) {
                 for (let c = 0; c <= 25 * Number(matrix_C_I_1[i][0][0] >= 30); c++) {
                     const cost = matrix_C_I_1[i][1] + 250 * c ** 3 + 8000 * Number(c > 0) * prereq - 8000 * Number(prereq === 0);
-                    const effect = matrix_C_I_1[i][2] * (1 + 0.001 * (c + bonus[2][0]) * quark);
+                    const effect = matrix_C_I_1[i][2] * (1 + 0.001 * (c + bonus[2][0]) * quarksOwned);
                     const copy = [...matrix_C_I_1[i][0]];
                     copy.push(c);
                     full_matrix.push([copy, cost, effect]);
@@ -959,7 +1044,7 @@ export class HSHeaterAPI {
             for (let i = 0; i < matrix_C_P.length; i++) {
                 for (let j = 0; j < matrix_C_R.length; j++) {
                     const cost = matrix_C_P[i][1] + matrix_C_R[j][1];
-                    const effect = matrix_C_P[i][2] * (1 + matrix_C_R[j][2] / (100 + originalIAtotal));
+                    const effect = matrix_C_P[i][2] * (1 + matrix_C_R[j][2] / (100 + originalIAtotalNumber));
                     full_matrix.push([matrix_C_P[i][0].concat(matrix_C_R[j][0]), cost, effect]);
                 }
             }
@@ -980,7 +1065,7 @@ export class HSHeaterAPI {
                     const maxS = (((exalt === 0 ? Number(hs[h] >= 4) : 0) + (exalt === 1 ? 1 : 0)) * 2) * Number(type === 0);
                     for (let s = (0 + force_tree[24] * Number(!exalt) + force_tree[25] * Number(exalt)); s <= maxS; s++) {
                         const cost = matrix_C_P[i][1] + calculateCost(4, hs[h]) + calculateCost(24 + (exalt === 1 ? 1 : 0), s);
-                        const effect = matrix_C_P[i][2] * Math.pow(1 + hs[h] * 0.01, plat4x4) * singReductionEffect(singularity, s)[0];
+                        const effect = matrix_C_P[i][2] * Math.pow(1 + hs[h] * 0.01, plat4x4) * singReductionEffect(reducedSingularity, s)[0];
                         full_matrix.push([matrix_C_P[i][0].concat([hs[h], s * Number(exalt === 0), s * Number(exalt === 1)]), cost, effect]);
                     }
                 }
@@ -1122,7 +1207,7 @@ export class HSHeaterAPI {
                         const cube_cost = calculateCost(6, 70 * Number(t1 > 0)) + calculateCost(15, 50 * Number(t2 > 0));
                         const cost = base_module_cost + basic_alt_cost + cube_cost;
                         const base_increase = a + b;
-                        const base_effect = 1 + base_increase / baseobt;
+                        const base_effect = 1 + base_increase / baseObt;
                         const mult_effect = calculateEffect(26, c, 0, 0)[5];
                         const effect = base_effect * mult_effect;
                         full_matrix.push([[a, b, t1, t2], cost, effect, base_increase]);
@@ -1144,7 +1229,7 @@ export class HSHeaterAPI {
                         const cube_cost = calculateCost(6, 70 * Number(t1 > 0)) + calculateCost(15, 50 * Number(t2 > 0));
                         const cost = base_module_cost + basic_alt_cost + cube_cost;
                         const base_increase = a + b;
-                        const base_effect = 1 + base_increase / baseoff;
+                        const base_effect = 1 + base_increase / baseOff;
                         const mult_effect = calculateEffect(26, c, 0, 0)[5];
                         const effect = base_effect * mult_effect;
                         full_matrix.push([[a, b, t1, t2], cost, effect, base_increase]);
@@ -1186,7 +1271,7 @@ export class HSHeaterAPI {
             for (let i = 0; i < matrix_Obt.length; i++) {
                 for (let s = 0; s <= 2 * Number(type === 0); s++) {
                     const cost = matrix_Obt[i][1] + calculateCost(4, 4 * Number(exalt === 0) * Number(s > 0)) + calculateCost(24 + (exalt === 1 ? 1 : 0), s);
-                    const effect = matrix_Obt[i][2] * singReductionEffect(singularity, s)[1];
+                    const effect = matrix_Obt[i][2] * singReductionEffect(reducedSingularity, s)[1];
                     full_matrix.push([matrix_Obt[i][0].concat([s * Number(exalt === 0), s * Number(exalt === 1)]), cost, effect, matrix_Obt[i][3]]);
                 }
             }
@@ -1284,12 +1369,12 @@ export class HSHeaterAPI {
             tree[29] = vector[4];
             tree[30] = vector[5];
             enforceAmbrosiaPrerequisites(tree);
-            const max = ((tree[2] === 2) || (tree[3] === 2)) && tree[7] === 100 && tree[12] === 25 && tree[13] === 25 && tree[16] === 100 && tree[19] === 100 && ((tree[20] === 20) || (tree[21] === 40)) && ((tree[22] === 30) || (tree[23] === 60)) && tree[27] === 20 && tree[28] === 50 && tree[29] === 100 && tree[30] === 100 && (postaoag === 1 || tree[24] === 2 || tree[25] === 2);
+            const max = ((tree[2] === 2) || (tree[3] === 2)) && tree[7] === 100 && tree[12] === 25 && tree[13] === 25 && tree[16] === 100 && tree[19] === 100 && ((tree[20] === 20) || (tree[21] === 40)) && ((tree[22] === 30) || (tree[23] === 60)) && tree[27] === 20 && tree[28] === 50 && tree[29] === 100 && tree[30] === 100 && (postAoag === 1 || tree[24] === 2 || tree[25] === 2);
             const effect = calculateLoadoutEffect(tree);
             if (type === 0) {
-                return [arrayToText(tree), 0, calculateLoadoutCost(tree), 0, effect[4], effect[6], max];
+                return [arrayToText(tree), calculateLoadoutCost(tree), 0, 0, effect[4], effect[6], max];
             }
-            return [arrayToText(tree), 0, calculateLoadoutCost(tree), 0, effect[5], effect[7], max];
+            return [arrayToText(tree), calculateLoadoutCost(tree), 0, 0, effect[5], effect[7], max];
         }
 
         matrix_L_I = L_I_matrix_generator();
@@ -1313,12 +1398,12 @@ export class HSHeaterAPI {
         let matrix_Obt_SR: Array<[number[], number, number, number]> = [];
         let matrix_Off_SR: Array<[number[], number, number, number]> = [];
 
-        if (active[3] || active[4] || active[7] || true) {
-            const matrix_L_D_0 = L_D_matrix_generator(cube, quark, 0);
+        if (active[3] || active[4] || active[7]) {
+            const matrix_L_D_0 = L_D_matrix_generator(cubesExpTotal, quarksOwned, 0);
             matrix_L_0 = L_matrix_generator(matrix_L_I, matrix_L_D_0);
         }
         if (active[0] || active[1] || active[2] || active[5] || active[6]) {
-            const matrix_L_D_3 = L_D_matrix_generator(cube, quark, 3);
+            const matrix_L_D_3 = L_D_matrix_generator(cubesExpTotal, quarksOwned, 3);
             matrix_L_3 = L_matrix_generator(matrix_L_I, matrix_L_D_3);
             matrix_L_3 = [matrix_L_3[0], ...matrix_L_3.slice(20)];
         }
@@ -1338,7 +1423,7 @@ export class HSHeaterAPI {
         if (active[4]) {
             matrix_Obt_I = Obt_I_generator(0);
             matrix_Off_I = Obt_I_generator(1);
-            if (postaoag === 0) {
+            if (postAoag === 0) {
                 matrix_Obt_SR = Obt_SR_matrix_generator(matrix_Obt_I, 0);
                 matrix_Off_SR = Obt_SR_matrix_generator(matrix_Off_I, 0);
             } else {

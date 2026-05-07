@@ -179,11 +179,16 @@ export const HSCalculationDefinitions: HSCalculationDefinition[] = [
     },
     {
         calculationName: "Total Cubes",
-        fnName: "R_calculateTotalCubes",
+        fnName: "R_calculateTotalCubesExp",
         fnParams: [],
         supportsReduce: false,
         toolingSupport: true
     },
+    /*
+
+                            SHOULD WE ADD ANYTHING ELSE ????
+
+    */
     {
         calculationName: "Red Ambrosia Upgrade Value",
         fnName: "R_calculateRedAmbrosiaUpgradeValue",
@@ -394,7 +399,7 @@ export const HSCalculationDefinitions: HSCalculationDefinition[] = [
     },
     {
         calculationName: "Ambrosia Speed",
-        fnName: "calculateAmbrosiaSpeed",
+        fnName: "calculateAmbrosiaSpeed_OLD",
         fnParams: [
             {
                 paramName: "reduce_vals",
@@ -406,8 +411,8 @@ export const HSCalculationDefinitions: HSCalculationDefinition[] = [
         toolingSupport: true
     },
     {
-        calculationName: "Blueberries",
-        fnName: "R_calculateBlueBerries",
+        calculationName: "Blueberry Inventory",
+        fnName: "R_calculateBlueberryInventory",
         fnParams: [
             {
                 paramName: "reduce_vals",

@@ -650,6 +650,7 @@ export const HSGlobal: IHSGlobal = class {
     static HSGameData = {
         fetchedDataRefreshInterval: 60000,
         campaignTokenRefreshInterval: 60000,
+        globalEventRefreshInterval: 1000 * 60 * 5, // 5 minutes
         turboModeSpeedMs: 66,
         turboCSSId: 'hs-game-data-turbo-css'
     }

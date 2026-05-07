@@ -1,3 +1,4 @@
+import Decimal from "break_infinity.js";
 import { HSModuleManager } from "../../hs-core/module/hs-module-manager";
 import { HSUI } from "../../hs-core/hs-ui";
 import { HSUIC } from "../../hs-core/hs-ui-components";
@@ -9,34 +10,59 @@ import { HSUtils } from "../../hs-utils/hs-utils";
 
 export class HSHeaterUI {
     private static readonly inputDefinitions = [
-        { key: "amb",           label: "Lifetime Ambrosia",     type: "number" },
-        { key: "quark",         label: "Quarks",                type: "number" },
-        { key: "plat4x4",       label: "Platonic 4x4",          type: "number" },
-        { key: "baseluck",      label: "Base Luck",             type: "number" },
-        { key: "multluck",      label: "Base Luck Mult",        type: "number" },
-        { key: "cube",          label: "Total Cubes Exp.",      type: "number" },
-        { key: "singularity",   label: "Effective Singularity", type: "number" },
-        { key: "isInsideExalt", label: "Exalt",                 type: "boolean" },
-        { key: "postaoag",      label: "Post-AoAG (Obt/Off)",   type: "boolean" },
-        { key: "transcription", label: "Transcription",         type: "number" },
-        { key: "ascspeed1",     label: "Asc. Speed (C)",        type: "number" },
-        { key: "ascspeed2",     label: "Asc. Speed (H)",        type: "number" },
-        { key: "spread",        label: "Spread",                type: "number" },
-        { key: "voucher",       label: "Total Vouchers",        type: "number" },
-        { key: "baseobt",       label: "Base Obtainium",        type: "number" },
-        { key: "baseoff",       label: "Base Offering",         type: "number" },
-        { key: "bb",            label: "Blueberries",           type: "number" },
-        { key: "bonusRow2",     label: "Bonus Row 2",           type: "number" },
-        { key: "bonusRow3",     label: "Bonus Row 3",           type: "number" },
-        { key: "bonusRow4",     label: "Bonus Row 4",           type: "number" },
-        { key: "bonusRow5",     label: "Bonus Row 5",           type: "number" },
-        { key: "ramb",          label: "Lifetime Red Amb",      type: "number" },
-        { key: "runeexp",       label: "Rune Exp. (log) (>50)", type: "number" },
-        { key: "sirc",          label: "SI Non-Amb Rune Coeff", type: "number" },
-        { key: "bonussi",       label: "Bonus SI",              type: "number" },
-        { key: "totalbonusia",    label: "Bonus IA (total)",    type: "number" },
-        { key: "talismanbonusia", label: "Bonus IA (talisman)", type: "number" },
-        { key: "btp",             label: "Base Talisman Power", type: "number" },
+        { key: "amb",                       label: "Lifetime Ambrosia",     type: "number",  url: "Pictures/Achievements/Progressive/AmbrosiaCount.png" },
+        { key: "ramb",                      label: "Lifetime Red Ambrosia", type: "number",  url: "Pictures/Achievements/Progressive/RedAmbrosiaCount.png" },
+        { key: "ambSpeed",                  label: "Ambrosia Bar Speed/s",  type: "number",  url: "Pictures/PseudoShop/AMBROSIATimeSkip.png" },
+        { key: "luckBaseNonAmb",            label: "Base Luck",             type: "number",  url: "Pictures/Achievements/Rewards/AmbrosiaLuck.png" },
+        { key: "luckMultNonAmb",            label: "Base Luck Mult",        type: "number",  url: "Pictures/PseudoShop/AMBROSIA_LUCK_BUFF.png" },
+        { key: "redLuckBase",               label: "Base Red Luck",         type: "number",  url: "Pictures/Achievements/Rewards/RedAmbrosiaLuck.png" },
+        { key: "luckConversion",            label: "Luck Conversion",       type: "number",  url: "Pictures/RedAmbrosia/RedAmbrosiaConversionImprovement1.png" },
+        { key: "quarksOwned",               label: "Quarks Owned",          type: "number",  url: "Pictures/Default/Quark.png" },
+        { key: "qHept",                     label: "Quark Hepteract",       type: "number",  url: "Pictures/Default/HepteractQuark.png" },
+        { key: "plat4x4",                   label: "Plat 4x4",              type: "number",  url: "Pictures/Default/PlatonicUpgrade19.png" },
+        { key: "cubesExpTotal",             label: "Total Cubes Exp.",      type: "number",  url: "Pictures/Default/WowCube.png" },
+        { key: "reducedSingularity",        label: "Reduced Singularity",   type: "number",  url: "Pictures/Default/Singularity.png" },
+        { key: "isInsideExalt",             label: "Inside Exalt",          type: "boolean", url: "Pictures/Default/TinySChalTime.png" },
+        { key: "postAoag",                  label: "Post-AoAG (Obt/Off)",   type: "boolean", url: "Pictures/Runes/Antiquities.png" },
+        { key: "transcription",             label: "Transcription",         type: "number",  url: "Pictures/Default/OcteractOneMindImprover.png" },
+        { key: "ascSpeed",                  label: "Asc. Speed (C)",        type: "number",  url: "Pictures/Default/TinySpeedAscension.png" },
+        { key: "ascSpeed2",                 label: "Asc. Speed (H)",        type: "number",  url: "Pictures/Default/TinySpeedAscension.png" },
+        { key: "ascSpread",                 label: "Asc. Spread",           type: "number",  url: "Pictures/Default/SingularityAscensionSpeed.png" },
+        { key: "baseObt",                   label: "Base Obtainium",        type: "number",  url: "Pictures/Default/Obtainium.png" },
+        { key: "baseOff",                   label: "Base Offering",         type: "number",  url: "Pictures/Default/Offering.png" },
+        { key: "blueberries",               label: "Blueberries Owned",     type: "number",  url: "Pictures/Default/Blueberries.png" },
+        { key: "bonusRow2",                 label: "Bonus Row 2",           type: "number",  url: "Pictures/RedAmbrosia/RedAmbrosiaFreeLevelsRow2.png" },
+        { key: "bonusRow3",                 label: "Bonus Row 3",           type: "number",  url: "Pictures/RedAmbrosia/RedAmbrosiaFreeLevelsRow3.png" },
+        { key: "bonusRow4",                 label: "Bonus Row 4",           type: "number",  url: "Pictures/RedAmbrosia/RedAmbrosiaFreeLevelsRow4.png" },
+        { key: "bonusRow5",                 label: "Bonus Row 5",           type: "number",  url: "Pictures/RedAmbrosia/RedAmbrosiaFreeLevelsRow5.png" },
+        { key: "runeMaxExp",                label: "Max Rune Exp.",         type: "number",  url: "Pictures/Runes/Speed.png" },
+        { key: "runeSiRC",                  label: "SI Rune Coeff",         type: "number",  url: "Pictures/Runes/SuperiorIntellect.png" },
+        { key: "runeSiBonusLevelsTotal",    label: "SI Bonus Levels (total)",      type: "number",  url: "Pictures/Runes/SuperiorIntellect.png" },
+        { key: "runeIaBonusLevelsTotal",    label: "IA Bonus Levels (total)",      type: "number",  url: "Pictures/Runes/InfiniteAscent.png" },
+        { key: "runeIaBonusLevelsTalisman", label: "IA Bonus Levels (talisman)",   type: "number",  url: "Pictures/Runes/InfiniteAscent.png" },
+        { key: "baseTalismanPower",         label: "Talisman Power Mult.",  type: "number",  url: "Pictures/Default/BlueberryTalismanBonusRuneLevel.png" },
+        { key: "jack",                      label: "Jack of All Trades",    type: "boolean", url: "Pictures/Default/ShopPanthema.png" },
+        { key: "totalVouchers",             label: "Total Vouchers",        type: "number",  url: "Pictures/Default/ShopInfiniteShopUpgrades.png" },
+        { key: "shopAmbrosiaGeneration1",   label: "Shop Ambrosia Gen 1",   type: "number",  url: "Pictures/Default/ShopAmbrosiaGeneration1.png" },
+        { key: "shopAmbrosiaGeneration2",   label: "Shop Ambrosia Gen 2",   type: "number",  url: "Pictures/Default/ShopAmbrosiaGeneration2.png" },
+        { key: "shopAmbrosiaGeneration3",   label: "Shop Ambrosia Gen 3",   type: "number",  url: "Pictures/Default/ShopAmbrosiaGeneration3.png" },
+        { key: "shopAmbrosiaGeneration4",   label: "Shop Ambrosia Gen 4",   type: "number",  url: "Pictures/Default/ShopAmbrosiaGeneration4.png" },
+        { key: "shopAmbrosiaLuck1",         label: "Shop Ambrosia Luck 1",  type: "number",  url: "Pictures/Default/ShopAmbrosiaLuck1.png" },
+        { key: "shopAmbrosiaLuck2",         label: "Shop Ambrosia Luck 2",  type: "number",  url: "Pictures/Default/ShopAmbrosiaLuck2.png" },
+        { key: "shopAmbrosiaLuck3",         label: "Shop Ambrosia Luck 3",  type: "number",  url: "Pictures/Default/ShopAmbrosiaLuck3.png" },
+        { key: "shopAmbrosiaLuck4",         label: "Shop Ambrosia Luck 4",  type: "number",  url: "Pictures/Default/ShopAmbrosiaLuck4.png" },
+        { key: "shopRedLuck1",              label: "Shop Red Luck 1",       type: "number",  url: "Pictures/Default/ShopRedLuck1.png" },
+        { key: "shopRedLuck2",              label: "Shop Red Luck 2",       type: "number",  url: "Pictures/Default/ShopRedLuck2.png" },
+        { key: "shopRedLuck3",              label: "Shop Red Luck 3",       type: "number",  url: "Pictures/Default/ShopRedLuck3.png" },
+        { key: "shopImproveQuarkHept1",     label: "Shop QHept 1",          type: "number",  url: "Pictures/Default/ShopImprovedQuarkHepteract0.png" },
+        { key: "shopImproveQuarkHept2",     label: "Shop QHept 2",          type: "number",  url: "Pictures/Default/ShopImprovedQuarkHepteract.png" },
+        { key: "shopImproveQuarkHept3",     label: "Shop QHept 3",          type: "number",  url: "Pictures/Default/ShopImprovedQuarkHepteract2.png" },
+        { key: "shopImproveQuarkHept4",     label: "Shop QHept 4",          type: "number",  url: "Pictures/Default/ShopImprovedQuarkHepteract3.png" },
+        { key: "shopImproveQuarkHept5",     label: "Shop QHept 5",          type: "number",  url: "Pictures/Default/ShopImprovedQuarkHepteractInfinity.png" },
+        { key: "singQuarkHepteract1",       label: "GQ QHept 1",            type: "number",  url: "Pictures/Default/SingularityQuarkHepteract.png" },
+        { key: "singQuarkHepteract2",       label: "GQ QHept 2",            type: "number",  url: "Pictures/Default/SingularityQuarkHepteract2.png" },
+        { key: "singQuarkHepteract3",       label: "GQ QHept 3",            type: "number",  url: "Pictures/Default/SingularityQuarkHepteract3.png" },
+        { key: "octeractImprovedQuarkHept", label: "Oct QHept",             type: "number",  url: "Pictures/Default/OcteractImprovedQuarkHepteract.png" },
     ] as const;
 
     private static readonly activeLabels = ["C1: Quarks", "C2: 3-7D Cubes", "C3: Octeracts", "C4: Luck", "A: Obt/Off", "H: p4x4 (pre-AOAG)", "S: Max SR", "M: Amb + Oct"];
@@ -78,21 +104,27 @@ export class HSHeaterUI {
         const initialInput = this.buildOptimizerInput(heaterData);
 
         HSUI.injectStyle(`
-            .hs-heater-modal-block { display: flex; gap: 14px; max-width: 860px; }
+            .hs-heater-modal-block { display: inline-flex; gap: 14px; max-width: 860px; width: max-content; }
             .hs-heater-results-modal-block { display: block; max-width: none; width: auto; }
-            .hs-heater-modal-left { flex: 1 1 auto; min-width: 0; }
+            .hs-heater-scrollable { max-height: calc(100vh - 150px); overflow-y: auto; }
+            .hs-heater-modal-left { flex: 0 1 auto; width: auto; min-width: 100px; }
             .hs-heater-modal-right { flex: 0 0 auto; display: flex; flex-direction: column; gap: 12px; width: auto; }
             .hs-heater-input-table, .hs-heater-results-table, .hs-heater-subtable { border-collapse: collapse; }
             .hs-heater-input-table { width: auto; table-layout: fixed; }
             .hs-heater-results-table, .hs-heater-subtable { width: auto; table-layout: auto; }
             .hs-heater-input-table td, .hs-heater-input-table th,
             .hs-heater-results-table td, .hs-heater-results-table th,
-            .hs-heater-subtable td, .hs-heater-subtable th { padding: 0px 8px; border: 1px solid rgba(255,255,255,0.08); }
+            .hs-heater-subtable td, .hs-heater-subtable th { padding: 0px 2px; border: 1px solid rgba(255,255,255,0.08); }
+            .hs-heater-input-table td, .hs-heater-input-table th { height: 20px; line-height: 20px; min-height: 20px; }
             .hs-heater-input-table td:first-child, .hs-heater-input-table th:first-child { width: auto; white-space: nowrap; }
-            .hs-heater-input-table td:last-child, .hs-heater-input-table th:last-child { width: 200px; }
+            .hs-heater-input-table td:nth-child(2), .hs-heater-input-table th:nth-child(2) { width: 200px; }
+            .hs-heater-input-table td:nth-child(3), .hs-heater-input-table th:nth-child(3) { width: auto; text-align: center; }
             .hs-heater-results-table th:first-child, .hs-heater-results-table td:first-child { width: auto; white-space: nowrap; }
             .hs-heater-results-table th:last-child, .hs-heater-results-table td:last-child { width: auto; }
-            .hs-heater-input-table input { width: 100%; min-width: 155px; box-sizing: border-box; }
+            .hs-heater-input-table input { width: 100%; min-width: 155px; box-sizing: border-box; height: 18px; }
+            .hs-heater-lock-button { border: none; background: transparent; cursor: pointer; padding: 0; }
+            .hs-heater-lock-button:hover { transform: scale(1.05); }
+            .hs-heater-lock-cell-locked { background: rgba(179, 25, 25, 0.58); }
             .hs-heater-results-table th, .hs-heater-subtable th { text-align: left; }
             .hs-heater-active-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
             .hs-heater-active-label { display: flex; align-items: center; gap: 6px; }
@@ -107,11 +139,11 @@ export class HSHeaterUI {
 
         const content = `
             <div class="hs-heater-modal-block">
-                <div class="hs-heater-modal-left">
+                <div class="hs-heater-modal-left hs-heater-scrollable">
                     ${this.buildInputTable(initialInput)}
                 </div>
-                <div class="hs-heater-modal-right">
-                    <div>${HSUIC.Button({ id: 'hs-heater-update-inputs-btn', text: 'Update Inputs' })}</div>
+                <div class="hs-heater-modal-right hs-heater-scrollable">
+                    <div>${HSUIC.Button({ id: 'hs-heater-update-inputs-btn', text: 'Update 🔓 Inputs' })}</div>
                     <div>${this.buildActiveToggleGrid(initialInput.active)}</div>
                     <div>${HSUIC.Button({ id: 'hs-heater-recalculate-btn', text: '(Re)Compute' })}</div>
                 </div>
@@ -121,11 +153,12 @@ export class HSHeaterUI {
         const modalId = await hsui.Modal({
             title: 'Ambrosia Heater Inputs',
             htmlContent: content,
+            // TODO: redo this below...
             styles: {
-                width: '860px',
-                minHeight: '520px',
-                maxHeight: 'calc(100vh - 80px)',
-                overflow: 'auto'
+                maxWidth: '860px',
+                height: 'auto',
+                minHeight: '200px',
+                maxHeight: 'calc(100vh - 80px)'
             }
         });
 
@@ -186,36 +219,61 @@ export class HSHeaterUI {
         return true;
     }
 
-    private static buildOptimizerInput(heaterData: HeaterExportData): HeaterOptimizerInput {
+    private static buildOptimizerInput(exportData: any): HeaterOptimizerInput {
         return {
-            amb: heaterData.hs_data.lifeTimeAmbrosia,
-            quark: heaterData.hs_data.quarks,
-            plat4x4: heaterData.hs_data.platonic4x4,
-            baseluck: heaterData.hs_data.trueBaseLuck,
-            multluck: heaterData.hs_data.luckMult,
-            cube: heaterData.hs_data.totalCubes,
-            singularity: heaterData.hs_data.effectiveSingularity,
-            postaoag: heaterData.hs_data.postaoag ? 1 : 0,
-            transcription: heaterData.hs_data.transcription,
-            ascspeed1: heaterData.hs_data.ascSpeed,
-            ascspeed2: heaterData.hs_data.ascSpeed2,
-            spread: heaterData.hs_data.spread,
-            voucher: heaterData.hs_data.totalInfinityVouchers,
-            baseobt: heaterData.hs_data.baseObt,
-            baseoff: heaterData.hs_data.baseOff,
-            bb: heaterData.hs_data.bb,
-            bonusRow2: heaterData.hs_data.bonusRow2,
-            bonusRow3: heaterData.hs_data.bonusRow3,
-            bonusRow4: heaterData.hs_data.bonusRow4,
-            bonusRow5: heaterData.hs_data.bonusRow5,
-            ramb: heaterData.hs_data.lifeTimeRedAmbrosia,
-            runeexp: heaterData.hs_data.runeexp,
-            sirc: heaterData.hs_data.sirc,
-            bonussi: heaterData.hs_data.bonussi,
-            totalbonusia: heaterData.hs_data.totalbonusia,
-            talismanbonusia: heaterData.hs_data.talismanbonusia,
-            btp: heaterData.hs_data.baseTalismanPower,
-            isInsideExalt: heaterData.hs_data.isInsideExalt,
+            amb:                exportData.hs_data.lifetimeAmbrosia,
+            ramb:               exportData.hs_data.lifetimeRedAmbrosia,
+            ambSpeed:           exportData.hs_data.ambSpeed,
+            luckBaseNonAmb:     exportData.hs_data.luckBaseNonAmb,
+            luckMultNonAmb:     exportData.hs_data.luckMultNonAmb,
+            redLuckBase:        exportData.hs_data.redLuckBase,
+            luckConversion:     exportData.hs_data.luckConversion,
+            quarksOwned:        exportData.hs_data.quarksOwned,
+            qHept:              exportData.hs_data.qHept,
+            plat4x4:            exportData.hs_data.plat4x4,
+            cubesExpTotal:      exportData.hs_data.cubesExpTotal,
+            reducedSingularity: exportData.hs_data.reducedSingularity,
+            isInsideExalt:      exportData.hs_data.isInsideExalt,
+            postAoag:           exportData.hs_data.postAoag,
+            transcription:      exportData.hs_data.transcription,
+            ascSpeed:           exportData.hs_data.ascSpeed,
+            ascSpeed2:          exportData.hs_data.ascSpeed2,
+            ascSpread:          exportData.hs_data.ascSpread,
+            baseObt:            exportData.hs_data.baseObt,
+            baseOff:            exportData.hs_data.baseOff,
+            blueberries:        exportData.hs_data.blueberries,
+            bonusRow2:          exportData.hs_data.bonusRow2,
+            bonusRow3:          exportData.hs_data.bonusRow3,
+            bonusRow4:          exportData.hs_data.bonusRow4,
+            bonusRow5:          exportData.hs_data.bonusRow5,
+            runeMaxExp:                 exportData.hs_data.runeMaxExp,
+            runeSiRC:                   exportData.hs_data.runeSiRC,
+            runeSiBonusLevelsTotal:     exportData.hs_data.runeSiBonusLevelsTotal,
+            runeIaBonusLevelsTotal:     exportData.hs_data.runeIaBonusLevelsTotal,
+            runeIaBonusLevelsTalisman:  exportData.hs_data.runeIaBonusLevelsTalisman,
+            baseTalismanPower:          exportData.hs_data.baseTalismanPower,
+            jack:                       exportData.hs_data.jack,
+            totalVouchers:              exportData.hs_data.totalVouchers,
+            shopAmbrosiaLuck1:          exportData.hs_data.shopAmbrosiaLuck1,
+            shopAmbrosiaLuck2:          exportData.hs_data.shopAmbrosiaLuck2,
+            shopAmbrosiaLuck3:          exportData.hs_data.shopAmbrosiaLuck3,
+            shopAmbrosiaLuck4:          exportData.hs_data.shopAmbrosiaLuck4,
+            shopAmbrosiaGeneration1:    exportData.hs_data.shopAmbrosiaGeneration1,
+            shopAmbrosiaGeneration2:    exportData.hs_data.shopAmbrosiaGeneration2,
+            shopAmbrosiaGeneration3:    exportData.hs_data.shopAmbrosiaGeneration3,
+            shopAmbrosiaGeneration4:    exportData.hs_data.shopAmbrosiaGeneration4,
+            shopRedLuck1:               exportData.hs_data.shopRedLuck1,
+            shopRedLuck2:               exportData.hs_data.shopRedLuck2,
+            shopRedLuck3:               exportData.hs_data.shopRedLuck3,
+            shopImproveQuarkHept1:      exportData.hs_data.shopImproveQuarkHept1,
+            shopImproveQuarkHept2:      exportData.hs_data.shopImproveQuarkHept2,
+            shopImproveQuarkHept3:      exportData.hs_data.shopImproveQuarkHept3,
+            shopImproveQuarkHept4:      exportData.hs_data.shopImproveQuarkHept4,
+            shopImproveQuarkHept5:      exportData.hs_data.shopImproveQuarkHept5,
+            singQuarkHepteract1:        exportData.hs_data.singQuarkHepteract1,
+            singQuarkHepteract2:        exportData.hs_data.singQuarkHepteract2,
+            singQuarkHepteract3:        exportData.hs_data.singQuarkHepteract3,
+            octeractImprovedQuarkHept:  exportData.hs_data.octeractImprovedQuarkHept,
             active: Array(this.activeLabels.length).fill(true),
         };
     }
@@ -223,15 +281,27 @@ export class HSHeaterUI {
     private static buildInputTable(input: HeaterOptimizerInput): string {
         const rows = this.inputDefinitions.map((field) => {
             const fieldId = `hs-heater-input-${field.key}`;
-            const value = input[field.key] as number | boolean;
+            const lockId = `hs-heater-lock-${field.key}`;
+            const value = input[field.key] as number | Decimal | boolean;
+            let displayedValue = '';
+            if (typeof value === 'number' && Number.isFinite(value)) {
+                displayedValue = String(value);
+            } else if (value instanceof Decimal) {
+                displayedValue = value.toString();
+            }
+            const iconHtml = field.url
+                ? `<img src="${field.url}" alt="${this.escapeHtml(field.label)}" width="20" height="20" style="display:block; margin:auto;" />`
+                : '';
             const inputHtml = field.type === "boolean"
                 ? HSUIC.Input({ id: fieldId, type: HSInputType.CHECK, props: value ? { checked: 'true' } : undefined })
-                : HSUIC.Input({ id: fieldId, type: HSInputType.NUMBER, props: { value: String(value as number), step: 'any', min: '0' }, styles: { width: '100%' } });
+                : HSUIC.Input({ id: fieldId, type: HSInputType.NUMBER, props: { value: displayedValue, step: 'any', min: '0' }, styles: { width: '100%' } });
 
             return `
                 <tr>
+                    <td>${iconHtml}</td>
                     <td>${field.label}</td>
                     <td>${inputHtml}</td>
+                    <td><button type="button" id="${lockId}" class="hs-heater-lock-button disable-hover-color" data-field-key="${field.key}" data-locked="false" aria-label="Toggle lock">🔓</button></td>
                 </tr>
             `;
         });
@@ -243,15 +313,53 @@ export class HSHeaterUI {
         `;
     }
 
-    private static applyOptimizerInputToFields(modal: HTMLElement, input: HeaterOptimizerInput): void {
+    private static setFieldLockState(modal: HTMLElement, fieldKey: string, locked: boolean): void {
+        const lockButton = modal.querySelector<HTMLButtonElement>(`#hs-heater-lock-${fieldKey}`);
+        if (!lockButton) return;
+
+        lockButton.dataset.locked = String(locked);
+        lockButton.textContent = locked ? '🔒' : '🔓';
+
+        const lockCell = lockButton.parentElement;
+        if (lockCell) {
+            lockCell.classList.toggle('hs-heater-lock-cell-locked', locked);
+        }
+    }
+
+    private static isFieldLocked(modal: HTMLElement, fieldKey: string): boolean {
+        const lockButton = modal.querySelector<HTMLButtonElement>(`#hs-heater-lock-${fieldKey}`);
+        if (!lockButton) return false;
+        return lockButton.dataset.locked === 'true';
+    }
+
+    private static toggleFieldLock(modal: HTMLElement, fieldKey: string): void {
+        const currentlyLocked = this.isFieldLocked(modal, fieldKey);
+        this.setFieldLockState(modal, fieldKey, !currentlyLocked);
+    }
+
+    private static attachInputLockHandlers(modal: HTMLElement): void {
         this.inputDefinitions.forEach((field) => {
             const element = modal.querySelector<HTMLInputElement>(`#hs-heater-input-${field.key}`);
             if (!element) return;
 
-            if (field.type === "boolean")
+            element.addEventListener('change', () => {
+                this.setFieldLockState(modal, field.key, true);
+            });
+        });
+    }
+
+    private static applyOptimizerInputToFields(modal: HTMLElement, input: HeaterOptimizerInput, applyLocked = true): void {
+        this.inputDefinitions.forEach((field) => {
+            if (!applyLocked && this.isFieldLocked(modal, field.key)) return;
+
+            const element = modal.querySelector<HTMLInputElement>(`#hs-heater-input-${field.key}`);
+            if (!element) return;
+
+            if (field.type === "boolean") {
                 element.checked = Boolean(input[field.key]);
-            else
+            } else if (field.type === 'number') {
                 element.value = String(input[field.key] ?? 0);
+            }
         });
     }
 
@@ -431,7 +539,7 @@ export class HSHeaterUI {
                 if (!heaterData) { HSUI.Notify('Failed to update inputs because heater data could not be loaded.', { position: 'top', notificationType: 'error' }); return; }
 
                 const updatedInput = this.buildOptimizerInput(heaterData);
-                this.applyOptimizerInputToFields(modal, updatedInput);
+                this.applyOptimizerInputToFields(modal, updatedInput, false);
                 HSUI.Notify('Inputs updated from current heater data.', { position: 'top', notificationType: 'success' });
             } finally {
                 updateInputsButton.style.pointerEvents = '';
@@ -460,9 +568,20 @@ export class HSHeaterUI {
             }
         });
 
+        this.attachInputLockHandlers(modal);
+
         modal.addEventListener('click', (event) => {
             const target = event.target as HTMLElement | null;
             if (!target) return;
+
+            if (target.classList.contains('hs-heater-lock-button')) {
+                const fieldKey = target.dataset.fieldKey;
+                if (fieldKey) {
+                    this.toggleFieldLock(modal, fieldKey);
+                }
+                return;
+            }
+
             const loadout = target.getAttribute('data-loadout');
             if (!loadout) return;
             if (target.classList.contains('hs-heater-copy-loadout-btn')) {
@@ -483,6 +602,10 @@ export class HSHeaterUI {
             return Number.isFinite(value) ? value : fallback;
         };
 
+        const readDecimal = (id: string, fallback = 0): Decimal => {
+            return new Decimal(readNumber(id, fallback));
+        };
+
         const readBoolean = (id: string): boolean => {
             const element = modal.querySelector<HTMLInputElement>(`#${id}`);
             return element?.checked ?? false;
@@ -492,35 +615,65 @@ export class HSHeaterUI {
             return readBoolean(`hs-heater-input-active-${index}`);
         });
 
+        const shopAmbrosiaLuck1 = readNumber('hs-heater-input-shopAmbrosiaLuck1');
+        const shopAmbrosiaLuck2 = readNumber('hs-heater-input-shopAmbrosiaLuck2');
+        const shopAmbrosiaLuck3 = readNumber('hs-heater-input-shopAmbrosiaLuck3');
+        const shopAmbrosiaLuck4 = readNumber('hs-heater-input-shopAmbrosiaLuck4');
+
         return {
-            amb: readNumber('hs-heater-input-amb'),
-            quark: readNumber('hs-heater-input-quark'),
-            plat4x4: readNumber('hs-heater-input-plat4x4'),
-            baseluck: readNumber('hs-heater-input-baseluck'),
-            multluck: readNumber('hs-heater-input-multluck'),
-            cube: readNumber('hs-heater-input-cube'),
-            singularity: readNumber('hs-heater-input-singularity'),
-            postaoag: readBoolean('hs-heater-input-postaoag') ? 1 : 0,
-            transcription: readNumber('hs-heater-input-transcription'),
-            ascspeed1: readNumber('hs-heater-input-ascspeed1'),
-            ascspeed2: readNumber('hs-heater-input-ascspeed2'),
-            spread: readNumber('hs-heater-input-spread'),
-            voucher: readNumber('hs-heater-input-voucher'),
-            baseobt: readNumber('hs-heater-input-baseobt'),
-            baseoff: readNumber('hs-heater-input-baseoff'),
-            bb: readNumber('hs-heater-input-bb'),
-            bonusRow2: readNumber('hs-heater-input-bonusRow2'),
-            bonusRow3: readNumber('hs-heater-input-bonusRow3'),
-            bonusRow4: readNumber('hs-heater-input-bonusRow4'),
-            bonusRow5: readNumber('hs-heater-input-bonusRow5'),
-            ramb: readNumber('hs-heater-input-ramb'),
-            runeexp: readNumber('hs-heater-input-runeexp'),
-            sirc: readNumber('hs-heater-input-sirc'),
-            bonussi: readNumber('hs-heater-input-bonussi'),
-            totalbonusia: readNumber('hs-heater-input-totalbonusia'),
-            talismanbonusia: readNumber('hs-heater-input-talismanbonusia'),
-            btp: readNumber('hs-heater-input-btp'),
-            isInsideExalt: readBoolean('hs-heater-input-isInsideExalt'),
+            amb:                readNumber('hs-heater-input-amb'),
+            ramb:               readNumber('hs-heater-input-ramb'),
+            ambSpeed:           readNumber('hs-heater-input-ambSpeed'),
+            luckBaseNonAmb:     readNumber('hs-heater-input-luckBaseNonAmb'),
+            luckMultNonAmb:     readNumber('hs-heater-input-luckMultNonAmb'),
+            redLuckBase:        readNumber('hs-heater-input-redLuckBase'),
+            luckConversion:     readNumber('hs-heater-input-luckConversion'),
+            quarksOwned:        readNumber('hs-heater-input-quarksOwned'),
+            qHept:              readNumber('hs-heater-input-qHept'),
+            plat4x4:            readNumber('hs-heater-input-plat4x4'),
+            cubesExpTotal:      readNumber('hs-heater-input-cubesExpTotal'),
+            reducedSingularity: readNumber('hs-heater-input-reducedSingularity'),
+            isInsideExalt:      readBoolean('hs-heater-input-isInsideExalt'),
+            postAoag:           readBoolean('hs-heater-input-postaoag') ? 1 : 0,
+            transcription:      readNumber('hs-heater-input-transcription'),
+            ascSpeed:           readNumber('hs-heater-input-ascSpeed'),
+            ascSpeed2:          readNumber('hs-heater-input-ascSpeed2'),
+            ascSpread:          readNumber('hs-heater-input-ascSpread'),
+            baseObt:            readNumber('hs-heater-input-baseObt'),
+            baseOff:            readNumber('hs-heater-input-baseOff'),
+            blueberries:        readNumber('hs-heater-input-blueberries'),
+            bonusRow2:          readNumber('hs-heater-input-bonusRow2'),
+            bonusRow3:          readNumber('hs-heater-input-bonusRow3'),
+            bonusRow4:          readNumber('hs-heater-input-bonusRow4'),
+            bonusRow5:          readNumber('hs-heater-input-bonusRow5'),
+            runeMaxExp:         readNumber('hs-heater-input-runeMaxExp'),
+            runeSiRC:     readNumber('hs-heater-input-runeSiRC'),
+            runeSiBonusLevelsTotal:     readDecimal('hs-heater-input-runeSiBonusLevelsTotal'),
+            runeIaBonusLevelsTotal:     readDecimal('hs-heater-input-runeIaBonusLevelsTotal'),
+            runeIaBonusLevelsTalisman:  readDecimal('hs-heater-input-runeIaBonusLevelsTalisman'),
+            baseTalismanPower:          readDecimal('hs-heater-input-baseTalismanPower'),
+            totalVouchers:              readNumber('hs-heater-input-totalVouchers'),
+            shopAmbrosiaLuck1:  shopAmbrosiaLuck1,
+            shopAmbrosiaLuck2:  shopAmbrosiaLuck2,
+            shopAmbrosiaLuck3:  shopAmbrosiaLuck3,
+            shopAmbrosiaLuck4:  shopAmbrosiaLuck4,
+            shopAmbrosiaGeneration1: readNumber('hs-heater-input-shopAmbrosiaGeneration1'),
+            shopAmbrosiaGeneration2: readNumber('hs-heater-input-shopAmbrosiaGeneration2'),
+            shopAmbrosiaGeneration3: readNumber('hs-heater-input-shopAmbrosiaGeneration3'),
+            shopAmbrosiaGeneration4: readNumber('hs-heater-input-shopAmbrosiaGeneration4'),
+            shopRedLuck1:       readNumber('hs-heater-input-shopRedLuck1'),
+            shopRedLuck2:       readNumber('hs-heater-input-shopRedLuck2'),
+            shopRedLuck3:       readNumber('hs-heater-input-shopRedLuck3'),
+            shopImproveQuarkHept1:      readNumber('hs-heater-input-shopImproveQuarkHept1'),
+            shopImproveQuarkHept2:      readNumber('hs-heater-input-shopImproveQuarkHept2'),
+            shopImproveQuarkHept3:      readNumber('hs-heater-input-shopImproveQuarkHept3'),
+            shopImproveQuarkHept4:      readNumber('hs-heater-input-shopImproveQuarkHept4'),
+            shopImproveQuarkHept5:      readNumber('hs-heater-input-shopImproveQuarkHept5'),
+            singQuarkHepteract1:        readNumber('hs-heater-input-singQuarkHepteract1'),
+            singQuarkHepteract2:        readNumber('hs-heater-input-singQuarkHepteract2'),
+            singQuarkHepteract3:        readNumber('hs-heater-input-singQuarkHepteract3'),
+            octeractImprovedQuarkHept:  readNumber('hs-heater-input-octeractImprovedQuarkHept'),
+            jack:               readBoolean('hs-heater-input-jack'),
             active,
         };
     }

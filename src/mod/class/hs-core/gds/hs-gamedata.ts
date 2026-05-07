@@ -1,8 +1,9 @@
 import { MeData } from "../../../types/data-types/hs-me-data";
-import { AmbrosiaUpgradeData, AmbrosiaUpgrades, PlayerData } from "../../../types/data-types/hs-player-savedata";
+import { AmbrosiaUpgradeData, AmbrosiaUpgrades, CorruptionLevels, CorruptionLoadout, Player, PlayerData, QuarkHandler, Runes } from "../../../types/data-types/hs-player-savedata";
 import { PseudoGameData } from "../../../types/data-types/hs-pseudo-data";
 import { HSUtils } from "../../hs-utils/hs-utils";
 import { HSElementHooker } from "../hs-elementhooker";
+import Decimal from "break_infinity.js";
 import { HSGameDataAPI } from "./hs-gamedata-api";
 import { HSGlobal } from "../hs-global";
 import { HSLogger } from "../hs-logger";
@@ -17,7 +18,7 @@ import { CampaignData } from "../../../types/data-types/hs-campaign-data";
 import { GameEventResponse, GameEventResponseType, ConsumableGameEvents, GameEventID } from "../../../types/data-types/hs-event-data";
 import { HSWebSocket } from "../hs-websocket";
 import { HSModuleOptions } from "../../../types/hs-types";
-import { AmbrosiaUpgradeCalculationCollection, AmbrosiaUpgradeCalculationConfig } from "../../../types/data-types/hs-gamedata-api-types";
+import { AmbrosiaUpgradeCalculationCollection, AmbrosiaUpgradeCalculationConfig, RuneKeys, RUNE_KEYS } from "../../../types/data-types/hs-gamedata-api-types";
 
 /**
  * Class: HSGameData
@@ -31,7 +32,7 @@ export class HSGameData extends HSModule {
     // --- Save Data & State ---
     #saveDataLocalStorageKey = 'Synergysave2';
     #saveDataCheckInterval?: number;
-    #saveData?: PlayerData;
+    #saveData?: Player;
     #lastB64Save?: string;
     #wasUsingGDS = false;
 
@@ -70,7 +71,7 @@ export class HSGameData extends HSModule {
     #loadFromFileEventHandler?: (e: MouseEvent) => Promise<void>;
 
     // --- Data APIs & Subscribers ---
-    #gameDataSubscribers: Map<string, (data: PlayerData) => void> = new Map();
+    #gameDataSubscribers: Map<string, (data: Player) => void> = new Map();
     #gameDataAPI?: HSGameDataAPI;
 
     // --- Player/Me/Campaign Data ---
@@ -92,13 +93,211 @@ export class HSGameData extends HSModule {
     // --- Miscellaneous ---
     #saveTriggerEvent: Event;
     #lastForceFetch = 0;
-    #ForceFetchCooldown = 5000;
+    #ForceFetchCooldown = 1000;
 
     constructor(moduleOptions: HSModuleOptions) {
         super(moduleOptions);
         this.#campaignTokenElement = document.querySelector('#campaignTokenCount') as HTMLHeadingElement;
 
         this.#saveTriggerEvent = new Event('click');
+    }
+
+    private normalizeRuneDecimal(value: unknown): Decimal {
+        if (value instanceof Decimal) return value;
+        if (value === undefined || value === null) return new Decimal(0);
+
+        if (typeof value === 'number')
+            return Number.isFinite(value) ? new Decimal(value) : new Decimal(0);
+        const rawString = typeof value === 'string'
+            ? value.trim()
+            : typeof value === 'object' && value !== null && typeof (value as { toString?: unknown }).toString === 'function'
+                ? (value as { toString: () => string }).toString().trim()
+                : '';
+        if (!rawString) return new Decimal(0);
+        try { return new Decimal(rawString); }
+        catch { return new Decimal(0); }
+    }
+
+    private normalizePlayerDataDate(value: unknown): Date | null {
+        if (value instanceof Date) return value;
+        if (typeof value !== 'string' || !value) return null;
+        const date = new Date(value);
+        return Number.isFinite(date.getTime()) ? date : null;
+    }
+
+    private normalizePlayerDataMap(value: unknown): Map<number, boolean> {
+        if (value instanceof Map) return value;
+        if (!Array.isArray(value)) return new Map<number, boolean>();
+        return new Map<number, boolean>(
+            value
+                .filter((entry): entry is [number, boolean] =>
+                    Array.isArray(entry)
+                    && entry.length === 2
+                    && typeof entry[0] === 'number'
+                    && typeof entry[1] === 'boolean'
+                )
+        );
+    }
+
+    private normalizePlayerDataQuark(value: unknown): QuarkHandler {
+        if (value && typeof (value as QuarkHandler).valueOf === 'function') {
+            return value as QuarkHandler;
+        }
+
+        const numeric = typeof value === 'number'
+            ? value
+            : typeof value === 'string' && value.trim() !== ''
+                ? Number(value)
+                : NaN;
+
+        return {
+            valueOf: () => Number.isFinite(numeric) ? numeric : 0
+        };
+    }
+
+    private normalizePlayerDataCorruption(value: unknown): CorruptionLoadout {
+        if (value instanceof CorruptionLoadout) return value;
+        if (typeof value !== 'object' || value === null) return new CorruptionLoadout();
+
+        const rawObject = value as Record<string, unknown>;
+        const loadout = new CorruptionLoadout();
+
+        if (typeof rawObject.totalScoreMult === 'number') {
+            loadout.totalScoreMult = rawObject.totalScoreMult;
+        }
+
+        if (Array.isArray(rawObject.corruptionScoreMults)) {
+            loadout.corruptionScoreMults = rawObject.corruptionScoreMults.map((entry) => typeof entry === 'number' ? entry : 1);
+        }
+
+        const levelsSource =
+            typeof rawObject.levels === 'object' && rawObject.levels !== null
+                ? rawObject.levels as Record<string, unknown>
+                : rawObject;
+
+        for (const key of Object.keys(loadout.levels) as Array<keyof CorruptionLevels>) {
+            const rawLevel = levelsSource[key];
+            loadout.levels[key] = typeof rawLevel === 'number' ? rawLevel : 0;
+        }
+
+        return loadout;
+    }
+
+    private isCorruptionLoadoutLike(value: Record<string, unknown>): boolean {
+        if (typeof value.levels === 'object' && value.levels !== null) {
+            return true;
+        }
+
+        const corruptionKeys: Array<keyof CorruptionLevels> = [
+            'viscosity',
+            'drought',
+            'deflation',
+            'extinction',
+            'illiteracy',
+            'recession',
+            'dilation',
+            'hyperchallenge'
+        ];
+
+        return corruptionKeys.every((key) => typeof value[key] === 'number');
+    }
+
+    private convertPlayerDataToPlayer(raw: PlayerData): Player {
+        this.normalizePlayerDataRunes(raw);
+
+        const normalizeValue = (key: string, value: unknown): unknown => {
+            if (value === undefined || value === null) return value;
+
+            if (Array.isArray(value)) {
+                if (key === 'codes') {
+                    return this.normalizePlayerDataMap(value);
+                }
+                return value.map((item) => normalizeValue(key, item));
+            }
+
+            if (typeof value === 'object') {
+                if (value instanceof Decimal) return value;
+                if (value instanceof Date) return value;
+
+                const objectValue = value as Record<string, unknown>;
+                if (this.isCorruptionLoadoutLike(objectValue)) {
+                    return this.normalizePlayerDataCorruption(objectValue);
+                }
+
+                const normalizedObject: Record<string, unknown> = {};
+                for (const [childKey, childValue] of Object.entries(objectValue)) {
+                    normalizedObject[childKey] = normalizeValue(childKey, childValue);
+                }
+                return normalizedObject;
+            }
+
+            if (typeof value === 'string') {
+                switch (key) {
+                    case 'firstPlayed':
+                    case 'version':
+                    case 'theme':
+                    case 'notation':
+                    case 'saveString':
+                    case 'exporttest':
+                    case 'type':
+                        return value;
+                    case 'dayCheck':
+                        return this.normalizePlayerDataDate(value);
+                    case 'worlds':
+                        return this.normalizePlayerDataQuark(value);
+                }
+
+                const trimmed = value.trim();
+                if (trimmed === '') return value;
+                if (/^-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(trimmed)) {
+                    return new Decimal(trimmed);
+                }
+                return value;
+            }
+
+            if (typeof value === 'number') {
+                if (key === 'worlds') {
+                    return this.normalizePlayerDataQuark(value);
+                }
+                return value;
+            }
+
+            return value;
+        };
+
+        return normalizeValue('', raw) as Player;
+    }
+
+    private normalizePlayerDataRunes(data: unknown): void {
+        if (typeof data !== 'object' || data === null) return;
+
+        const dataObj = data as { runeexp?: unknown; runes?: unknown; [key: string]: unknown };
+        const runeKeys = RUNE_KEYS;
+
+        const normalizedRuneExp = Array.isArray(dataObj.runeexp)
+            ? (dataObj.runeexp as unknown[]).map((value: unknown) => this.normalizeRuneDecimal(value))
+            : Array.from({ length: runeKeys.length }, () => new Decimal(0));
+
+        dataObj.runeexp = normalizedRuneExp.slice(0, runeKeys.length).concat(
+            Array.from({ length: Math.max(0, runeKeys.length - normalizedRuneExp.length) }, () => new Decimal(0))
+        );
+
+        if (!dataObj.runes || typeof dataObj.runes !== 'object') {
+            dataObj.runes = {} as Runes;
+        }
+
+        const runes = dataObj.runes as Record<string, unknown>;
+
+        runeKeys.forEach((key, index) => {
+            const rawValue = runes[key];
+            const isValueMissing = rawValue === undefined || rawValue === null;
+            if (isValueMissing) {
+                HSLogger.warn(`Missing rune value for ${key} in save data...`, this.context);
+                runes[key] = normalizedRuneExp[index];
+            } else {
+                runes[key] = this.normalizeRuneDecimal(rawValue);
+            }
+        });
     }
 
     /**
@@ -196,7 +395,8 @@ export class HSGameData extends HSModule {
 
         if (this.#mitm_gamedata) {
             try {
-                this.#saveData = JSON.parse(this.#mitm_gamedata) as PlayerData;
+                const rawSaveData = JSON.parse(this.#mitm_gamedata) as PlayerData;
+                this.#saveData = this.convertPlayerDataToPlayer(rawSaveData);
             } catch (err) {
                 HSLogger.error(`Failed to parse save data during forceRefreshGameData: ${err}`, this.context);
             }
@@ -473,7 +673,8 @@ export class HSGameData extends HSModule {
             this.#lastB64Save = saveDataB64;
 
             try {
-                this.#saveData = JSON.parse(atob(saveDataB64)) as PlayerData;
+                const rawSaveData = JSON.parse(atob(saveDataB64)) as PlayerData;
+                this.#saveData = this.convertPlayerDataToPlayer(rawSaveData);
                 this.#saveDataUpdated();
             } catch (error) {
                 HSLogger.debug(() => `<red>Error processing save data:</red> ${error}`, this.context);
@@ -494,7 +695,8 @@ export class HSGameData extends HSModule {
 
         if (this.#mitm_gamedata) {
             try {
-                this.#saveData = JSON.parse(this.#mitm_gamedata) as PlayerData;
+                const rawSaveData = JSON.parse(this.#mitm_gamedata) as PlayerData;
+                this.#saveData = this.convertPlayerDataToPlayer(rawSaveData);
                 this.#saveDataUpdated();
             } catch (error) {
                 HSLogger.debug(() => `<red>Error processing save data:</red> ${error}`, this.context);
@@ -717,11 +919,11 @@ export class HSGameData extends HSModule {
 
         // Overwrite btoa
         window.btoa = function (s) {
-            // Small check so we hopefully mitm just when we have the save
+            // Capture raw save JSON before the game encodes it to base64.
+            // This is the save payload as the game produces it.
             if (s && s.length > 0 && s[0] === '{') {
                 self.#mitm_gamedata = s;
-            } // Snatch the save json before it is encoded
-
+            }
             // Call the original btoa so everything still works normally
             return _btoa(s);
         }
@@ -787,8 +989,9 @@ export class HSGameData extends HSModule {
                     if (self.#mitm_atob_data) {
                         try {
                             const saveData = JSON.parse(self.#mitm_atob_data) as PlayerData;
+                            const playerSaveData = self.convertPlayerDataToPlayer(saveData);
                             if (ambrosiaModule) {
-                                await ambrosiaModule.performInitialActiveLoadoutMatch(saveData);
+                                await ambrosiaModule.performInitialActiveLoadoutMatch(playerSaveData);
                             }
                         } catch (e) {
                             HSLogger.warn(`Failed to analyze save data for loadout restoration: ${e}`, self.context);
@@ -978,7 +1181,7 @@ export class HSGameData extends HSModule {
      * @param callback Function to call when game data changes.
      * @returns Subscription ID string or undefined.
      */
-    subscribeGameDataChange(callback: (data: PlayerData) => void): string | undefined {
+    subscribeGameDataChange(callback: (data: Player) => void): string | undefined {
         const id = HSUtils.uuidv4();
         this.#gameDataSubscribers.set(id, callback);
         return id;
@@ -995,32 +1198,5 @@ export class HSGameData extends HSModule {
         } else {
             HSLogger.warn(`Could not unsubscribe from game data change. ID ${id} not found`, this.context);
         }
-    }
-
-
-    // --- Ambrosia Loadouts Logic ---
-
-    /**
-     * Calculates the effective level of an Ambrosia upgrade based on invested amount and save data.
-     * @param upgradeName Name of the Ambrosia upgrade.
-     * @param invested Amount invested in the upgrade.
-     * @param saveData Player save data.
-     * @returns Calculated upgrade level as a number.
-     */
-    #calculateAmbUpgradeLevelFromSave(upgradeName: keyof AmbrosiaUpgrades, invested: number, saveData: PlayerData): number {
-        if (!this.#gameDataAPI) return 0;
-
-        const investmentParameters = ((this.#gameDataAPI.R_ambrosiaUpgradeCalculationCollection as AmbrosiaUpgradeCalculationCollection)[upgradeName]) as AmbrosiaUpgradeCalculationConfig<any>;
-        if (!investmentParameters) return 0;
-
-        // Calculate purchased levels only; free levels are handled separately.
-        const level = this.#gameDataAPI.investToAmbrosiaUpgrade(
-            0,
-            invested,
-            investmentParameters.costPerLevel,
-            investmentParameters.maxLevel,
-            investmentParameters.costFunction
-        );
-        return level;
     }
 }

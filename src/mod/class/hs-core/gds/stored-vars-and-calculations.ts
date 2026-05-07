@@ -1,5 +1,5 @@
-import { AchievementRewards, HepteractEffectiveValues, RedAmbrosiaUpgradeCalculationCollection, AmbrosiaUpgradeCalculationCollection, AntUpgrades, SingularityChallengeDataKeys, ISingularityChallengeData, GoldenQuarkUpgradeKey, OcteractUpgradeKey, TalismanKeys, RuneKeys } from "../../../types/data-types/hs-gamedata-api-types"
-import { PlayerData } from "../../../types/data-types/hs-player-savedata";
+import { AchievementRewards, HepteractEffectiveValues, RedAmbrosiaUpgradeCalculationCollection, AmbrosiaUpgradeCalculationCollection, AntUpgrades, SingularityChallengeDataKeys, ISingularityChallengeData, GoldenQuarkUpgradeKey, OcteractUpgradeKey, TalismanKeys, RuneKeys, SynergismLevelMilestones, SynergismLevelMilestoneDefinition, ShopUpgradeGroups } from "../../../types/data-types/hs-gamedata-api-types"
+import type { Player, SingularityChallengeRewards } from "../../../types/data-types/hs-player-savedata"
 
 export const CASH_GRAB_ULTRA_QUARK = 0.08;
 export const CASH_GRAB_ULTRA_CUBE = 1.2;
@@ -8,6 +8,131 @@ export const CASH_GRAB_ULTRA_BLUEBERRY = 0.15;
 export const EX_ULTRA_OFFERING = 0.125;
 export const EX_ULTRA_OBTAINIUM = 0.125;
 export const EX_ULTRA_CUBES = 0.125;
+
+export const SHOP_UPGRADE_TYPE_KEYS: Record<ShopUpgradeGroups, string[]> = {
+  [ShopUpgradeGroups.Offering]: [
+    'offeringEX',
+    'offeringEX2',
+    'offeringEX3',
+    'offeringAuto',
+    'cashGrab',
+    'cashGrab2'
+  ],
+  [ShopUpgradeGroups.Obtainium]: [
+    'obtainiumEX',
+    'obtainiumEX2',
+    'obtainiumEX3',
+    'obtainiumAuto',
+    'cashGrab',
+    'cashGrab2'
+  ],
+  [ShopUpgradeGroups.Cubes]: [
+    'seasonPass',
+    'seasonPass2',
+    'seasonPass3',
+    'seasonPassY',
+    'seasonPassZ',
+    'seasonPassLost',
+    'seasonPassInfinity',
+    'cubeToQuark',
+    'tesseractToQuark',
+    'hypercubeToQuark',
+    'cubeToQuarkAll'
+  ],
+  [ShopUpgradeGroups.Speed]: [
+    'chronometer',
+    'chronometer2',
+    'chronometer3',
+    'chronometerZ',
+    'shopChronometerS'
+  ],
+  [ShopUpgradeGroups.Quark]: [
+    'cubeToQuark',
+    'tesseractToQuark',
+    'hypercubeToQuark',
+    'cubeToQuarkAll',
+    'improveQuarkHept',
+    'improveQuarkHept2',
+    'improveQuarkHept3',
+    'improveQuarkHept4',
+    'improveQuarkHept5',
+    'shopImprovedDaily',
+    'shopImprovedDaily2',
+    'shopImprovedDaily3',
+    'shopImprovedDaily4',
+    'seasonPass',
+    'seasonPass2',
+    'seasonPass3',
+    'seasonPassY',
+    'seasonPassZ',
+    'seasonPassLost',
+    'seasonPassInfinity',
+    'shopPanthema'
+  ],
+  [ShopUpgradeGroups.AmbrosiaLuck]: [
+    'shopAmbrosiaLuck1',
+    'shopAmbrosiaLuck2',
+    'shopAmbrosiaLuck3',
+    'shopAmbrosiaLuck4'
+  ],
+  [ShopUpgradeGroups.RedAmbrosiaLuck]: [
+    'shopRedLuck1',
+    'shopRedLuck2',
+    'shopRedLuck3'
+  ],
+  [ShopUpgradeGroups.AmbrosiaGeneration]: [
+    'shopAmbrosiaGeneration1',
+    'shopAmbrosiaGeneration2',
+    'shopAmbrosiaGeneration3',
+    'shopAmbrosiaGeneration4',
+    'shopAmbrosiaAccelerator'
+  ],
+  [ShopUpgradeGroups.InfinityUpgrades]: [
+    'shopInfiniteShopUpgrades',
+    'offeringEX3',
+    'obtainiumEX3',
+    'improveQuarkHept5',
+    'chronometerInfinity',
+    'seasonPassInfinity'
+  ],
+  [ShopUpgradeGroups.Utility]: [
+    'shopTalisman',
+    'infiniteAscent',
+    'shopSadisticRune',
+    'calculator',
+    'calculator2',
+    'calculator3',
+    'calculator4',
+    'calculator5',
+    'calculator6',
+    'calculator7',
+    'autoWarp',
+    'extraWarp',
+    'constantEX',
+    'powderEX',
+    'powderAuto',
+    'shopCashGrabUltra',
+    'shopEXUltra',
+    'shopSingularitySpeedup',
+    'shopSingularityPotency',
+    'shopPanthema',
+    'shopImprovedDaily',
+    'shopImprovedDaily2',
+    'shopImprovedDaily3',
+    'shopImprovedDaily4'
+  ]
+}
+
+export const SHOP_UPGRADE_GROUPS_BY_KEY: Record<string, ShopUpgradeGroups[]> = Object.entries(SHOP_UPGRADE_TYPE_KEYS).reduce(
+  (acc, [group, keys]) => {
+    const groupKey = Number(group) as ShopUpgradeGroups
+    for (const key of keys) {
+      acc[key] = [...(acc[key] ?? []), groupKey]
+    }
+    return acc
+  },
+  {} as Record<string, ShopUpgradeGroups[]>
+)
 
 export const hepteractEffectiveValues: HepteractEffectiveValues = {
   chronos: {
@@ -120,6 +245,11 @@ export const challenge15Rewards = {
     baseValue: 1,
     requirement: 500000
   },
+  achievementUnlock: {
+    value: 0,
+    baseValue: 0,
+    requirement: 666666
+  },
   cube3: {
     value: 1,
     baseValue: 1,
@@ -214,13 +344,14 @@ export const challenge15Rewards = {
     value: 0,
     baseValue: 0,
     requirement: 3.33e16,
-    HTMLColor: 'purple'
+    HTMLColor: 'pink'
   },
   freeOrbs: {
     value: 0,
     baseValue: 0,
     requirement: 2e17,
-    HTMLColor: 'pink'
+    HTMLColor: 'pink',
+    doNotUsePercentage: true
   },
   ascensionSpeed: {
     value: 1,
@@ -229,6 +360,531 @@ export const challenge15Rewards = {
     HTMLColor: 'orange'
   }
 };
+
+export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculationCollection = {
+  blueberryGenerationSpeed: {
+    costPerLevel: 1,
+    maxLevel: 100,
+    costFunction: (n: number, cpl: number) => cpl * (n + 1),
+    effects: (n: number) => {
+      const val = 1 + n / 500
+      return {
+        blueberryGenerationSpeed: val
+      }
+    }
+  },
+
+  blueberryGenerationSpeed2: {
+    costPerLevel: 8000,
+    maxLevel: 250,
+    costFunction: (n: number, cpl: number) => cpl + 0 * n,
+    effects: (n: number) => {
+      const val = 1 + n / 1000
+      return {
+        blueberryGenerationSpeed: val
+      }
+    }
+  },
+
+  freeLevelsRow2: {
+    costPerLevel: 10,
+    maxLevel: 5,
+    costFunction: (n: number, cpl: number) => cpl * Math.pow(2, n),
+    effects: (n: number) => {
+      return {
+        freeLevels: n
+      }
+    }
+  },
+
+  freeLevelsRow3: {
+    costPerLevel: 250,
+    maxLevel: 5,
+    costFunction: (n: number, cpl: number) => cpl * Math.pow(2, n),
+    effects: (n: number) => {
+      return {
+        freeLevels: n
+      }
+    }
+  },
+
+  freeLevelsRow4: {
+    costPerLevel: 5000,
+    maxLevel: 5,
+    costFunction: (n: number, cpl: number) => cpl * Math.pow(2, n),
+    effects: (n: number) => {
+      return {
+        freeLevels: n
+      }
+    }
+  },
+
+  freeLevelsRow5: {
+    costPerLevel: 50000,
+    maxLevel: 5,
+    costFunction: (n: number, cpl: number) => cpl * Math.pow(2, n),
+    effects: (n: number) => {
+      return {
+        freeLevels: n
+      }
+    }
+  },
+
+  regularLuck: {
+    costPerLevel: 1,
+    maxLevel: 100,
+    costFunction: (n: number, cpl: number) => cpl * (n + 1),
+    effects: (n: number) => {
+      return {
+        ambrosiaLuck: 2 * n
+      }
+    }
+  },
+
+  regularLuck2: {
+    costPerLevel: 8000,
+    maxLevel: 250,
+    costFunction: (n: number, cpl: number) => cpl + 0 * n,
+    effects: (n: number) => {
+      return {
+        ambrosiaLuck: 2 * n
+      }
+    }
+  },
+
+  viscount: {
+    costPerLevel: 99999,
+    maxLevel: 1,
+    costFunction: (n: number, cpl: number) => cpl * (n + 1),
+    effects: (n: number) => {
+      return {
+        roleUnlock: n > 0,
+        quarkBonus: 1 + 0.1 * n,
+        luckBonus: 125 * n,
+        redLuckBonus: 25 * n
+      }
+    }
+  },
+
+  tutorial: {
+    costFunction: (n: number, cpl: number) => cpl + 0 * n,
+    maxLevel: 100,
+    costPerLevel: 1,
+    effects: (n: number) => {
+      const amount = Math.pow(1.01, n)
+      return {
+        cubeMult: amount,
+        obtainiumMult: amount,
+        offeringMult: amount
+      }
+    }
+  },
+
+  conversionImprovement1: {
+    costFunction: (n: number, cpl: number) => cpl * Math.pow(2, n),
+    maxLevel: 5,
+    costPerLevel: 5,
+    effects: (n: number) => {
+      return {
+        conversionImprovement: -n
+      }
+    }
+  },
+
+  conversionImprovement2: {
+    costFunction: (n: number, cpl: number) => cpl * Math.pow(4, n),
+    maxLevel: 3,
+    costPerLevel: 200,
+    effects: (n: number) => {
+      return {
+        conversionImprovement: -n
+      }
+    }
+  },
+
+  conversionImprovement3: {
+    costFunction: (n: number, cpl: number) => cpl * Math.pow(10, n),
+    maxLevel: 2,
+    costPerLevel: 10000,
+    effects: (n: number) => {
+      return {
+        conversionImprovement: -n
+      }
+    }
+  },
+
+  freeTutorialLevels: {
+    costFunction: (n: number, cpl: number) => cpl + n,
+    maxLevel: 5,
+    costPerLevel: 1,
+    effects: (n: number) => {
+      return {
+        freeLevels: n
+      }
+    }
+  },
+
+  redGenerationSpeed: {
+    costFunction: (n: number, cpl: number) => cpl * (n + 1),
+    maxLevel: 100,
+    costPerLevel: 12,
+    effects: (n: number) => {
+      return {
+        redAmbrosiaGenerationSpeed: 1 + 3 * n / 1000
+      }
+    }
+  },
+
+  redLuck: {
+    costFunction: (n: number, cpl: number) => cpl * (n + 1),
+    maxLevel: 100,
+    costPerLevel: 4,
+    effects: (n: number) => {
+      return {
+        redAmbrosiaLuck: n
+      }
+    }
+  },
+
+  redAmbrosiaCube: {
+    costFunction: (n: number, cpl: number) => cpl * (n + 1),
+    maxLevel: 1,
+    costPerLevel: 500,
+    effects: (n: number) => {
+      return {
+        unlockedRedAmbrosiaCube: n > 0
+      }
+    }
+  },
+
+  redAmbrosiaObtainium: {
+    costFunction: (n: number, cpl: number) => cpl * (n + 1),
+    maxLevel: 1,
+    costPerLevel: 1250,
+    effects: (n: number) => {
+      return {
+        unlockRedAmbrosiaObtainium: n > 0
+      }
+    }
+  },
+
+  redAmbrosiaOffering: {
+    costFunction: (n: number, cpl: number) => cpl * (n + 1),
+    maxLevel: 1,
+    costPerLevel: 4000,
+    effects: (n: number) => {
+      return {
+        unlockRedAmbrosiaOffering: n > 0
+      }
+    }
+  },
+
+  redAmbrosiaFreeAccumulator: {
+    costFunction: (level: number, _cpl: number) => [100, 400, 1000, 3000, 10000, 25000, 75000, 150000, 400000, 1000000][level] ?? 0,
+    maxLevel: 10,
+    costPerLevel: 1,
+    effects: (n: number) => {
+      return {
+        freeAccumulatorLevels: n / 1000 + 0.01 * +(n > 0),
+        freeAccumulatorLevelCapIncrease: 0.1 * n
+      }
+    }
+  },
+
+  freeOfferingUpgrades: {
+    costFunction: (level: number, _cpl: number) => [1000, 3000, 9000, 27000, 81000][level] ?? 0,
+    maxLevel: 5,
+    costPerLevel: 1,
+    effects: (n: number) => {
+      return {
+        levels: n
+      }
+    }
+  },
+
+  freeObtainiumUpgrades: {
+    costFunction: (level: number, _cpl: number) => [1500, 4500, 13500, 40500, 121500][level] ?? 0,
+    maxLevel: 5,
+    costPerLevel: 1,
+    effects: (n: number) => {
+      return {
+        levels: n
+      }
+    }
+  },
+
+  freeCubeUpgrades: {
+    costFunction: (level: number, _cpl: number) => [10000, 30000, 90000, 270000, 810000][level] ?? 0,
+    maxLevel: 5,
+    costPerLevel: 1,
+    effects: (n: number) => {
+      return {
+        levels: n
+      }
+    }
+  },
+
+  freeSpeedUpgrades: {
+    costFunction: (level: number, _cpl: number) => [15000, 45000, 135000, 405000, 1215000][level] ?? 0,
+    maxLevel: 5,
+    costPerLevel: 1,
+    effects: (n: number) => {
+      return {
+        levels: n
+      }
+    }
+  },
+
+  redAmbrosiaCubeImprover: {
+    costFunction: (n: number, cpl: number) => cpl * (n + 1),
+    maxLevel: 20,
+    costPerLevel: 100,
+    effects: (n: number) => {
+      return {
+        extraExponent: 0.01 * n
+      }
+    }
+  },
+
+  infiniteShopUpgrades: {
+    costFunction: (n: number, cpl: number) => cpl + 100 * n,
+    maxLevel: 40,
+    costPerLevel: 200,
+    effects: (n: number) => {
+      return {
+        freeLevels: n
+      }
+    }
+  },
+
+  redAmbrosiaAccelerator: {
+    costFunction: (n: number, cpl: number) => cpl + n * 0,
+    maxLevel: 100,
+    costPerLevel: 1000,
+    effects: (n: number) => {
+      return {
+        ambrosiaTimePerRedAmbrosia: 0.02 * n + 1 * +(n > 0)
+      }
+    }
+  },
+  salvageYinYang: {
+    costFunction: (n: number, baseCost: number) => baseCost * (n + 1),
+    maxLevel: 100,
+    costPerLevel: 200,
+    effects: (n: number, gameData?: Player) => {
+      const disabled = gameData?.singularityChallenges.taxmanLastStand.enabled
+      return disabled
+        ? { positiveSalvage: 0, negativeSalvage: 0 }
+        : { positiveSalvage: 10 * n, negativeSalvage: -10 * n }
+    }
+  },
+  blueberries: {
+    costFunction: (level: number, _baseCost: number) => [100000, 1400000, 3000000, 3250000, 3500000][level] ?? 0,
+    maxLevel: 5,
+    costPerLevel: 1e5,
+    effects: (n: number) => {
+      return {
+        blueberries: n
+      }
+    }
+  }
+}
+
+export const talismanMaxLevels: Record<TalismanKeys, number> = {
+  exemption: 180,
+  chronos: 180,
+  midas: 180,
+  metaphysics: 180,
+  polymath: 180,
+  mortuus: 180,
+  plastic: 180,
+  wowSquare: 210,
+  achievement: 40,
+  cookieGrandma: 6,
+  horseShoe: 12,
+}
+
+export const talismanBaseMultipliers: Record<TalismanKeys, string> = {
+  exemption: '1',
+  chronos: '10',
+  midas: '1e4',
+  metaphysics: '1e8',
+  polymath: '1e16',
+  mortuus: '100',
+  plastic: '1e5',
+  wowSquare: '1e5',
+  achievement: '1e30',
+  cookieGrandma: '1e1000',
+  horseShoe: '1e1200',
+}
+
+export const talismanCostTypes: Record<TalismanKeys, 'regular' | 'exponential'> = {
+  exemption: 'regular',
+  chronos: 'regular',
+  midas: 'regular',
+  metaphysics: 'regular',
+  polymath: 'regular',
+  mortuus: 'regular',
+  plastic: 'regular',
+  wowSquare: 'exponential',
+  achievement: 'exponential',
+  cookieGrandma: 'exponential',
+  horseShoe: 'exponential',
+}
+
+export const talismanExponentialRatios: Record<TalismanKeys, number> = {
+  exemption: 1,
+  chronos: 1,
+  midas: 1,
+  metaphysics: 1,
+  polymath: 1,
+  mortuus: 1,
+  plastic: 1,
+  wowSquare: 2,
+  achievement: 10,
+  cookieGrandma: 1e8,
+  horseShoe: 1e5,
+}
+
+export const getTalismanMaxLevel = (t: TalismanKeys): number => talismanMaxLevels[t] ?? 180;
+export const getTalismanBaseMult = (t: TalismanKeys): string => talismanBaseMultipliers[t] ?? '1';
+export const getTalismanCostType = (t: TalismanKeys): 'regular' | 'exponential' => talismanCostTypes[t] ?? 'regular';
+export const getTalismanExponentialRatio = (t: TalismanKeys): number => talismanExponentialRatios[t] ?? 1;
+
+export const synergismLevelMilestones: Record<SynergismLevelMilestones, SynergismLevelMilestoneDefinition> = {
+  offeringTimerScaling: {
+    effect: () => 1,
+    defaultValue: 0,
+    levelReq: 5
+  },
+  autoPrestige: {
+    effect: () => 1,
+    defaultValue: 0,
+    levelReq: 7
+  },
+  speedRune: {
+    effect: function (this: any) {
+      return 0.5 * (this.R_calculateSynergismLevel() - 19)
+    },
+    defaultValue: 0,
+    levelReq: 20
+  },
+  duplicationRune: {
+    effect: function (this: any) {
+      return 0.4 * (this.R_calculateSynergismLevel() - 39)
+    },
+    defaultValue: 0,
+    levelReq: 40
+  },
+  prismRune: {
+    effect: function (this: any) {
+      return 0.3 * (this.R_calculateSynergismLevel() - 59)
+    },
+    defaultValue: 0,
+    levelReq: 60
+  },
+  thriftRune: {
+    effect: function (this: any) {
+      return 0.2 * (this.R_calculateSynergismLevel() - 79)
+    },
+    defaultValue: 0,
+    levelReq: 80
+  },
+  SIRune: {
+    effect: function (this: any) {
+      return 0.1 * (this.R_calculateSynergismLevel() - 99)
+    },
+    defaultValue: 0,
+    levelReq: 100
+  },
+  tier1CrystalAutobuy: {
+    effect: () => 1,
+    defaultValue: 0,
+    levelReq: 6
+  },
+  tier2CrystalAutobuy: {
+    effect: () => 1,
+    defaultValue: 0,
+    levelReq: 9
+  },
+  tier3CrystalAutobuy: {
+    effect: () => 1,
+    defaultValue: 0,
+    levelReq: 12
+  },
+  tier4CrystalAutobuy: {
+    effect: () => 1,
+    defaultValue: 0,
+    levelReq: 15
+  },
+  tier5CrystalAutobuy: {
+    effect: () => 1,
+    defaultValue: 0,
+    levelReq: 20
+  },
+  achievementTalismanUnlock: {
+    effect: () => 1,
+    defaultValue: 0,
+    levelReq: 100
+  },
+  runeAutobuyImprover: {
+    effect: function (this: any) {
+      return 1.1 + 0.01 * (this.R_calculateSynergismLevel() - 130)
+    },
+    defaultValue: 1,
+    levelReq: 130
+  },
+  achievementTalismanEnhancement: {
+    effect: function (this: any) {
+      return this.R_calculateSynergismLevel()
+    },
+    defaultValue: 0,
+    levelReq: 160
+  },
+  salvageChallengeBuff: {
+    effect: function (this: any) {
+      if (!this.gameData) return 0
+      const data = this.gameData
+      let baseVal = 25
+      if (
+        data.currentChallenge.transcension !== 0
+        || data.currentChallenge.reincarnation !== 0
+        || data.currentChallenge.ascension !== 0
+      ) {
+        baseVal *= 2
+      }
+      if (data.currentChallenge.ascension === 15) {
+        baseVal *= 2
+      }
+      if (data.insideSingularityChallenge) {
+        baseVal *= 3
+      }
+      return baseVal
+    },
+    defaultValue: 0,
+    levelReq: 180
+  },
+  antSpeed2Autobuyer: {
+    effect: () => 1,
+    defaultValue: 0,
+    levelReq: 65
+  },
+  wowCubesAutobuyer: {
+    effect: () => 1,
+    defaultValue: 0,
+    levelReq: 80
+  },
+  ascensionScoreAutobuyer: {
+    effect: () => 1,
+    defaultValue: 0,
+    levelReq: 80
+  },
+  mortuus2Autobuyer: {
+    effect: () => 1,
+    defaultValue: 0,
+    levelReq: 225
+  }
+}
 
 export const goldenQuarkUpgradeMaxLevels: Record<GoldenQuarkUpgradeKey, GoldenQuarkUpgradeDef> = {
   goldenQuarks1: { maxLevel: 15 },
@@ -412,7 +1068,7 @@ export const octeractUpgradeMaxLevels: Record<OcteractUpgradeKey, OcteractUpgrad
 
 type GoldenQuarkUpgradeDef = {
   maxLevel: number
-  effect?: (n: number) => number
+  effect?: (n: number, key?: string) => number
   qualityOfLife?: boolean
 }
 
@@ -421,58 +1077,99 @@ type OcteractUpgradeDef = {
   effect?: (n: number) => number
 }
 
-export const SINGULARITY_CHALLENGE_DATA: Record<
-  SingularityChallengeDataKeys,
-  ISingularityChallengeData
-> = {
+export const SINGULARITY_CHALLENGE_DATA: {
+  [K in SingularityChallengeDataKeys]: ISingularityChallengeData<SingularityChallengeRewards[K]>
+} = {
   noSingularityUpgrades: {
-    achievementPointValue: (n: number) => {
-      return 5 * n + 5 * Math.max(0, n - 15)
+    baseReq: 1,
+    maxCompletions: 15,
+    unlockSingularity: 25,
+    HTMLTag: 'noSingularityUpgrades',
+    singularityRequirement: (baseReq: number, completions: number) => {
+      return baseReq + 16 * completions + 8 * (completions >= 9 ? 1 : 0)
     },
+    achievementPointValue: (n: number) => {
+      return 15 * n
+    },
+    scalingrewardcount: 2,
+    uniquerewardcount: 5,
     effect: (n: number) => {
       return {
-        cubes: 1 + 0.5 * n,
+        cubes: 1 + n,
         goldenQuarks: 1 + 0.12 * +(n > 0),
         blueberries: +(n > 0),
-        shopUpgrade: n >= 20,
-        luckBonus: n >= 30 ? 0.05 : 0,
-        shopUpgrade2: n >= 30
+        shopUpgrade: n >= 10,
+        additiveLuckMult: n >= 15 ? 0.05 : 0,
+        shopUpgrade2: n >= 15
       }
     }
   },
   oneChallengeCap: {
-    achievementPointValue: (n: number) => {
-      return 5 * n + 5 * Math.max(0, n - 12)
+    baseReq: 10,
+    maxCompletions: 15,
+    unlockSingularity: 40,
+    HTMLTag: 'oneChallengeCap',
+    singularityRequirement: (baseReq: number, completions: number) => {
+      return baseReq + 19 * completions - 2 * (completions >= 14 ? 1 : 0)
     },
+    achievementPointValue: (n: number) => {
+      return 15 * n
+    },
+    scalingrewardcount: 3,
+    uniquerewardcount: 4,
     effect: (n: number) => {
       return {
-        corrScoreIncrease: 0.03 * n,
-        blueberrySpeedMult: (1 + n / 100),
+        corrScoreIncrease: 0.05 * n,
+        blueberrySpeedMult: (1 + n / 60),
         capIncrease: 3 * +(n > 0),
-        freeCorruptionLevel: n >= 20,
-        shopUpgrade: n >= 20,
-        reinCapIncrease2: 7 * +(n >= 25),
-        ascCapIncrease2: 2 * +(n >= 25)
+        freeCorruptionLevel: +(n >= 12),
+        shopUpgrade: n >= 12,
+        reinCapIncrease2: 7 * +(n >= 15),
+        ascCapIncrease2: 2 * +(n >= 15)
       }
     }
   },
   limitedAscensions: {
-    achievementPointValue: (n: number) => {
-      return 5 * n + 5 * Math.max(0, n - 10)
+    baseReq: 7,
+    maxCompletions: 10,
+    unlockSingularity: 50,
+    HTMLTag: 'limitedAscensions',
+    singularityRequirement: (baseReq: number, completions: number) => {
+      return baseReq + 27 * completions
     },
+    achievementPointValue: (n: number) => {
+      return 30 * n
+    },
+    scalingrewardcount: 2,
+    uniquerewardcount: 3,
     effect: (n: number) => {
       return {
-        ascensionSpeedMult: (0.1 * n) / 100,
+        ascensionSpeedMult: 1 + 0.25 * n / 100,
         hepteractCap: n > 0,
-        shopUpgrade0: n >= 20,
-        shopUpgrade: n >= 25
+        shopUpgrade: n >= 8,
+        shopUpgrade2: n >= 10
       }
     }
   },
   noQuarkUpgrades: {
+    baseReq: 20,
+    maxCompletions: 10,
+    unlockSingularity: 66,
+    HTMLTag: 'noQuarkUpgrades',
+    singularityRequirement: (baseReq: number, completions: number) => {
+      if (completions > 5) {
+        return baseReq + 185 + 8 * (completions - 6)
+      } else if (completions > 2) {
+        return baseReq + 70 + 9 * (completions - 6)
+      } else {
+        return baseReq + 15 * completions
+      }
+    },
     achievementPointValue: (n: number) => {
       return 20 * n
     },
+    scalingrewardcount: 6,
+    uniquerewardcount: 3,
     effect: (n: number) => {
       return {
         freeObtainiumLevels: n,
@@ -487,9 +1184,22 @@ export const SINGULARITY_CHALLENGE_DATA: Record<
     }
   },
   noOcteracts: {
-    achievementPointValue: (n: number) => {
-      return 10 * n + 5 * Math.max(0, n - 7)
+    baseReq: 75,
+    maxCompletions: 15,
+    unlockSingularity: 100,
+    HTMLTag: 'noOcteracts',
+    singularityRequirement: (baseReq: number, completions: number) => {
+      if (completions < 10) {
+        return baseReq + 13 * completions
+      } else {
+        return baseReq + 13 * 9 + 10 * (completions - 9)
+      }
     },
+    achievementPointValue: (n: number) => {
+      return 20 * n
+    },
+    scalingrewardcount: 2,
+    uniquerewardcount: 3,
     effect: (n: number) => {
       return {
         octeractPow: (n <= 10) ? 0.02 * n : 0.2 + (n - 10) / 100,
@@ -500,58 +1210,102 @@ export const SINGULARITY_CHALLENGE_DATA: Record<
     }
   },
   noAmbrosiaUpgrades: {
-    achievementPointValue: (n: number) => {
-      return 10 * n + 5 * Math.max(0, n - 10)
+    baseReq: 150,
+    maxCompletions: 15,
+    unlockSingularity: 166,
+    HTMLTag: 'noAmbrosiaUpgrades',
+    singularityRequirement: (baseReq: number, completions: number) => {
+      if (completions < 10) {
+        return baseReq + 12 * completions
+      } else {
+        return baseReq + 12 * 9 + 4 * (completions - 9)
+      }
     },
+    achievementPointValue: (n: number) => {
+      return 25 * n
+    },
+    scalingrewardcount: 5,
+    uniquerewardcount: 8,
     effect: (n: number) => {
       return {
         bonusAmbrosia: +(n > 0),
-        blueberries: Math.floor(n / 10) + +(n > 0),
-        luckBonus: n / 200,
-        additiveLuck: 15 * n,
+        blueberries: Math.floor(n / 5) + +(n > 0),
+        additiveLuckMult: n / 200,
+        ambrosiaLuck: 20 * n,
         redLuck: 4 * n,
-        blueberrySpeedMult: (1 + n / 50),
-        redSpeedMult: 1 + n / 100,
-        shopUpgrade: n >= 15,
-        shopUpgrade2: n >= 20
+        blueberrySpeedMult: 1 + n / 25,
+        redSpeedMult: 1 + 2 * n / 100,
+        shopUpgrade: n >= 8,
+        shopUpgrade2: n >= 10
       }
     }
   },
   limitedTime: {
-    achievementPointValue: (n: number) => {
-      return 10 * n + 5 * Math.max(0, n - 10) + 5 * Math.max(0, n - 20) + 10 * Math.max(0, n - 25)
+    baseReq: 203,
+    maxCompletions: 15,
+    unlockSingularity: 216,
+    HTMLTag: 'limitedTime',
+    singularityRequirement: (baseReq: number, completions: number) => {
+      if (completions > 9) {
+        return 277 + 2 * (completions - 10)
+      } else {
+        return baseReq + 8 * completions
+      }
     },
+    achievementPointValue: (n: number) => {
+      return 30 * n
+    },
+    scalingrewardcount: 5,
+    uniquerewardcount: 3,
     effect: (n: number) => {
       return {
-        preserveQuarks: +(n > 0),
-        quarkMult: 1 + 0.01 * n,
-        globalSpeed: 0.06 * n,
-        ascensionSpeed: 0.06 * n,
-        barRequirementMultiplier: 1 - 0.01 * n,
-        tier1Upgrade: n >= 15,
-        tier2Upgrade: n >= 25
+        preserveQuarks: n > 0,
+        quarkMult: 1 + 0.02 * n,
+        globalSpeed: 1 + 0.12 * n,
+        ascensionSpeed: 1 + 0.12 * n,
+        barRequirementMultiplier: 1 - 0.02 * n,
+        shopUpgrade: n >= 5,
+        shopUpgrade2: n >= 10
       }
     },
   },
   sadisticPrequel: {
-    achievementPointValue: (n: number) => {
-      return 10 * n + 5 * Math.max(0, n - 10) + 5 * Math.max(0, n - 20) + 5 * Math.max(0, n - 25)
+    baseReq: 120,
+    maxCompletions: 15,
+    unlockSingularity: 256,
+    HTMLTag: 'sadisticPrequel',
+    singularityRequirement: (baseReq: number, completions: number) => {
+      return baseReq + 8 * completions
     },
+    achievementPointValue: (n: number) => {
+      return 40 * n
+    },
+    scalingrewardcount: 3,
+    uniquerewardcount: 4,
     effect: (n: number) => {
       return {
         extraFree: 50 * +(n > 0),
-        quarkMult: 1 + 0.03 * n,
-        freeUpgradeMult: 0.03 * n,
-        shopUpgrade: n >= 10,
-        shopUpgrade2: n >= 20,
-        shopUpgrade3: n >= 30
+        quarkMult: 1 + 0.06 * n,
+        freeUpgradeMult: 1 + 0.06 * n,
+        shopUpgrade: n >= 5,
+        shopUpgrade2: n >= 10,
+        shopUpgrade3: n >= 15
       }
     }
   },
   taxmanLastStand: {
+    baseReq: 240,
+    maxCompletions: 10,
+    unlockSingularity: 281,
+    HTMLTag: 'taxmanLastStand',
+    singularityRequirement: (baseReq: number, completions: number) => {
+      return baseReq + 4 * completions
+    },
     achievementPointValue: (n: number) => {
       return 50 * n
     },
+    scalingrewardcount: 5,
+    uniquerewardcount: 3,
     effect: (n: number) => {
       return {
         horseShoeUnlock: n > 0,
@@ -595,8 +1349,12 @@ export const c15Functions: { [key in keyof typeof challenge15Rewards]: (e: numbe
   reincarnationChallengeReduction: (e: number) => Math.pow(0.98, Math.log(e / 2.5e4) / Math.log(2)),
   antSpeed: (e: number) => Math.pow(1 + Math.log(e / 2e5) / Math.log(2), 4),
   bonusAntLevel: (e: number) => 1 + ((1 / 20) * Math.log(e / 1.5e5)) / Math.log(2),
+  achievementUnlock: (e: number) => e >= 666666 ? 1 : 0,
   cube3: (e: number) => 1 + ((1 / 150) * Math.log(e / 2.5e5)) / Math.log(2),
-  talismanBonus: (e: number) => 1 + ((1 / 20) * Math.log(e / 7.5e5)) / Math.log(2),
+  talismanBonus: (e: number) =>
+    e >= 7.5e5
+      ? 1 + 0.02 + ((1 / 1000) * Math.log(e / 7.5e5)) / Math.log(2)
+      : 1,
   globalSpeed: (e: number) => 1 + ((1 / 20) * Math.log(e / 2.5e6)) / Math.log(2),
   blessingBonus: (e: number) => 1 + (1 / 5) * Math.pow(e / 3e7, 1 / 4),
   constantBonus: (e: number) => 1 + (1 / 5) * Math.pow(e / 1e8, 2 / 3),

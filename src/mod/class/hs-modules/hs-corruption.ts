@@ -187,7 +187,9 @@ export class HSCorruption {
 
     /** Refresh the cached current/next corruption numeric levels from DOM elements. */
     static async refreshLoadedCorruptions(): Promise<void> {
-        if (!HSCorruption.#currentCorruptionEls || !HSCorruption.#nextCorruptionEls) { await HSCorruption.#cacheLoadedCorruptionElements(); }
+        if (!HSCorruption.#currentCorruptionEls || !HSCorruption.#nextCorruptionEls) {
+            await HSCorruption.#cacheLoadedCorruptionElements();
+        }
 
         if (HSCorruption.#currentCorruptionEls) {
             HSCorruption.#currentCorruptionLevels = HSCorruption.#buildCorruptionLevels(HSCorruption.#currentCorruptionEls);

@@ -5,7 +5,7 @@
 */
 
 import { GameView } from "../class/hs-core/hs-gamestate";
-import { PlayerData } from "./data-types/hs-player-savedata";
+import { Player } from "./data-types/hs-player-savedata";
 import { VIEW_TYPE, VIEW_KEY } from "./module-types/hs-gamestate-types";
 
 // Used when listing and loading modules
@@ -61,7 +61,7 @@ export interface HSPersistable {
 
 export interface HSGameDataSubscriber {
     gameDataSubscriptionId?: string;
-    gameDataCallback: (data: PlayerData) => Promise<void>;
+    gameDataCallback: (data: Player) => Promise<void>;
     subscribeGameDataChanges: () => void;
     unsubscribeGameDataChanges: () => void;
 }

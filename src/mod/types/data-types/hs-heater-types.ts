@@ -1,4 +1,5 @@
-import { PlayerData } from "./hs-player-savedata";
+import type Decimal from "break_infinity.js";
+import { Player } from "./hs-player-savedata";
 
 export interface HeaterExportPseudoCoinUpgrades {
     ambrosiaGenerationBuffLevel: number;
@@ -21,9 +22,7 @@ export interface HeaterExportRedAmbrosiaUpgrades {
     freeLevelsRow4: number;
     freeLevelsRow5: number;
     blueberryGenerationSpeed: number;
-    blueberryGenerationSpeed2: number;
     regularLuck: number;
-    regularLuck2: number;
     redGenerationSpeed: number;
     redLuck: number;
     redAmbrosiaCube: number;
@@ -33,8 +32,15 @@ export interface HeaterExportRedAmbrosiaUpgrades {
     viscount: number;
     infiniteShopUpgrades: number;
     redAmbrosiaAccelerator: number;
+    regularLuck2: number;
+    blueberryGenerationSpeed2: number;
     salvageYinYang: number;
     blueberries: number;
+    redAmbrosiaFreeAccumulator: number;
+    freeOfferingUpgrades: number;
+    freeObtainiumUpgrades: number;
+    freeCubeUpgrades: number;
+    freeSpeedUpgrades: number;
 }
 
 export interface HeaterExportHsData {
@@ -42,14 +48,15 @@ export interface HeaterExportHsData {
     lifeTimeRedAmbrosia: number;
     quarks: number;
     platonic4x4: number;
-    baseLuck: number;
+    luckBase: number;
     luckMult: number;
-    totalLuck: number;
+    luckTotal: number;
     trueBaseLuck: number;
     redAmbrosiaLuck: number;
     luckConversion: number;
     totalCubes: number;
-    effectiveSingularity: number;
+    singularityCount: number;
+    reducedSingularity: number;
     postaoag: boolean;
     transcription: number;
     ascSpeed: number;
@@ -60,12 +67,12 @@ export interface HeaterExportHsData {
     bonusRow4: number;
     bonusRow5: number;
     spread: number;
-    totalInfinityVouchers: number;
-    baseTalismanPower: number;
+    totalVouchers: number;
+    baseTalismanPower: Decimal;
     sirc: number;
-    bonussi: number;
-    totalbonusia: number;
-    talismanbonusia: number;
+    bonussi: Decimal;
+    totalbonusia: Decimal;
+    talismanbonusia: Decimal;
     tokens: number | null;
     maxTokens: number | null;
     isAtMaxTokens: boolean | null;
@@ -79,109 +86,86 @@ export interface HeaterExportHsData {
     baseObt: number;
     baseOff: number;
     bb: number;
-    runeexp: number;
+    maxRuneExp: number;
     ambrosiaSpeedMult: number;
     ambrosiaSpeed: number;
     ambrosiaGainChance: number;
     trueAmbrosiaGainChance: number;
     ambrosiaAcceleratorCount: number;
+    shopLuck: number;
+    shopAmbrosiaLuck1: number;
+    shopAmbrosiaLuck2: number;
+    shopAmbrosiaLuck3: number;
+    shopAmbrosiaLuck4: number;
+    shopAmb1: number;
+    shopAmb2: number;
+    shopAmb3: number;
+    shopAmb4: number;
+    shopRLuck1: number;
+    shopRLuck2: number;
+    shopRLuck3: number;
+    qHept: number;
+    jack: boolean;
+    baseRLuck: number;
     pseudoCoinUpgrades: HeaterExportPseudoCoinUpgrades;
     redAmbrosiaUpgrades: HeaterExportRedAmbrosiaUpgrades;
     isInsideExalt: boolean;
 }
 
-export interface HeaterSheetData {
-    lifeTimeAmbrosia: number;
-    lifeTimeRedAmbrosia: number;
-    quarks: number;
-    platonic4x4: number;
-    baseLuck: number;
-    luckMult: number;
-    totalLuck: number;
-    trueBaseLuck: number;
-    totalCubes: number;
-    effectiveSingularity: number;
-    postaoag: boolean;
+export interface HeaterOptimizerInput {
+    amb: number;
+    ramb: number;
+    ambSpeed: number;
+    luckBaseNonAmb: number;
+    luckMultNonAmb: number;
+    redLuckBase: number;
+    luckConversion: number;
+    quarksOwned: number;
+    qHept: number;
+    plat4x4: number;
+    cubesExpTotal: number;
+    reducedSingularity: number;
+    isInsideExalt: boolean;
+    postAoag: number;
     transcription: number;
     ascSpeed: number;
     ascSpeed2: number;
+    ascSpread: number;
+    baseObt: number;
+    baseOff: number;
     blueberries: number;
     bonusRow2: number;
     bonusRow3: number;
     bonusRow4: number;
     bonusRow5: number;
-    spread: number;
-    totalInfinityVouchers: number;
-    tokens: number | null;
-    maxTokens: number | null;
-    isAtMaxTokens: boolean | null;
-    isEvent: boolean | null;
-    bellStacks: number | null;
-    personalQuarkBonus: number | null;
-    isInsideExalt: boolean;
-    blueAmbrosiaBarValue: number;
-    redAmbrosiaBarValue: number;
-    blueAmbrosiaBarMax: number;
-    redAmbrosiaBarMax: number;
-    baseObt: number;
-    baseOff: number;
-    bb: number;
-    runeexp: number;
-    ambrosiaSpeedMult: number;
-    ambrosiaSpeed: number;
-    ambrosiaGainChance: number;
-    trueAmbrosiaGainChance: number;
-    ambrosiaAcceleratorCount: number;
-    redAmbrosiaLuck: number;
-    baseTalismanPower: number;
-    sirc: number;
-    bonussi: number;
-    totalbonusia: number;
-    talismanbonusia: number;
-    luckConversion: number;
-    pseudoCoinUpgrades: HeaterExportPseudoCoinUpgrades;
-}
-
-export interface HeaterPreviewResult {
-    sheetData: HeaterSheetData;
-    estimatedAmbrosiaRate: number;
-    estimatedBlueAmbrosiaBarRemaining: number;
-    estimatedRedAmbrosiaBarRemaining: number;
-    estimatedBlueAmbrosiaFillTimeSeconds: number;
-    estimatedRedAmbrosiaFillTimeSeconds: number;
-    blueAmbrosiaBarProgress: number;
-    redAmbrosiaBarProgress: number;
-}
-
-export interface HeaterOptimizerInput {
-    amb: number;
-    quark: number;
-    plat4x4: number;
-    baseluck: number;
-    multluck: number;
-    cube: number;
-    singularity: number;
-    postaoag: number;
-    transcription: number;
-    ascspeed1: number;
-    ascspeed2: number;
-    spread: number;
-    voucher: number;
-    baseobt: number;
-    baseoff: number;
-    bb: number;
-    bonusRow2: number;
-    bonusRow3: number;
-    bonusRow4: number;
-    bonusRow5: number;
-    ramb: number;
-    runeexp: number;
-    sirc: number;
-    bonussi: number;
-    totalbonusia: number;
-    talismanbonusia: number;
-    btp: number;
-    isInsideExalt: boolean;
+    runeMaxExp: number;
+    runeSiRC: number;
+    runeSiBonusLevelsTotal: Decimal;
+    runeIaBonusLevelsTotal: Decimal;
+    runeIaBonusLevelsTalisman: Decimal;
+    baseTalismanPower: Decimal;
+    totalVouchers: number;
+    shopAmbrosiaLuck1: number;
+    shopAmbrosiaLuck2: number;
+    shopAmbrosiaLuck3: number;
+    shopAmbrosiaLuck4: number;
+    shopAmbrosiaGeneration1: number;
+    shopAmbrosiaGeneration2: number;
+    shopAmbrosiaGeneration3: number;
+    shopAmbrosiaGeneration4: number;
+    shopRedLuck1: number;
+    shopRedLuck2: number;
+    shopRedLuck3: number;
+    singQuarkHepteract1: number;
+    singQuarkHepteract2: number;
+    singQuarkHepteract3: number;
+    octeractImprovedQuarkHept: number;
+    shopImproveQuarkHept1: number;
+    shopImproveQuarkHept2: number;
+    shopImproveQuarkHept3: number;
+    shopImproveQuarkHept4: number;
+    shopImproveQuarkHept5: number;
+    jack: boolean;
     active: boolean[];
 }
 
@@ -206,6 +190,6 @@ export interface HeaterOptimizationResult {
     m0?: any[];
 }
 
-export type HeaterExportData = PlayerData & {
+export type HeaterExportData = Player & {
     hs_data: HeaterExportHsData;
 };
