@@ -1,6 +1,6 @@
 import { HSGameDataSubscriber, HSModuleOptions, HSPersistable } from "../../types/hs-types";
 import { AmbrosiaUpgradeCalculationCollection, AmbrosiaUpgradeCalculationConfig } from "../../types/data-types/hs-gamedata-api-types";
-import { AmbrosiaUpgradeData, AmbrosiaUpgrades, PlayerData } from "../../types/data-types/hs-player-savedata";
+import { AmbrosiaUpgradeData, AmbrosiaUpgrades, GameData } from "../../types/data-types/hs-player-savedata";
 import { AMBROSIA_ICON, AMBROSIA_LOADOUT_SLOT, HSAmbrosiaLoadoutState } from "../../types/module-types/hs-ambrosia-types";
 import { MAIN_VIEW, SINGULARITY_VIEW, VIEW_TYPE } from "../../types/module-types/hs-gamestate-types";
 import { HSElementHooker } from "../hs-core/hs-elementhooker";
@@ -47,6 +47,20 @@ export class HSAmbrosia extends HSModule
     activeLoadout?: AMBROSIA_LOADOUT_SLOT;
 
     public quickbar: HSAmbrosiaQuickbar;
+
+    #cachedGameDataAPI?: HSGameDataAPI;
+    #cachedGameDataMod?: HSGameData;
+
+    #cachedIdleSwapOcteractSetting?: HSSelectStringSetting;
+    #cachedIdleSwapNormalLuckSetting?: HSSelectStringSetting;
+    #cachedIdleSwapRedLuckSetting?: HSSelectStringSetting;
+    #cachedIdleSwapOcteractLoadoutValue?: string;
+    #cachedIdleSwapNormalLuckLoadoutValue?: string;
+    #cachedIdleSwapRedLuckLoadoutValue?: string;
+    #cachedIdleSwapOcteractLoadout?: string;
+    #cachedIdleSwapNormalLuckLoadout?: string;
+    #cachedIdleSwapRedLuckLoadout?: string;
+    #cachedIdleSwapLoadoutButtons: Map<string, HTMLButtonElement> = new Map();
 
     #_delegateAddHandler?: (e: Event) => Promise<void>;
     #_delegateTimeHandler?: (e: Event) => Promise<void>;
@@ -555,29 +569,29 @@ export class HSAmbrosia extends HSModule
         }
     }
 
-    private calculateAmbUpgradeLevelFromSave(upgradeName: keyof AmbrosiaUpgrades, invested: number, saveData: PlayerData): number {
+    private calculateAmbUpgradeLevelFromSave(upgradeName: keyof AmbrosiaUpgrades, invested: number): number {
         const gameDataAPI = HSModuleManager.getModule<HSGameDataAPI>('HSGameDataAPI');
         if (!gameDataAPI) return 0;
 
-        const investmentParameters = ((gameDataAPI.R_ambrosiaUpgradeCalculationCollection as AmbrosiaUpgradeCalculationCollection)[upgradeName]) as AmbrosiaUpgradeCalculationConfig<any>;
+        const investmentParameters = ((gameDataAPI.ambrosia.ambrosiaUpgradeCalculationCollection as AmbrosiaUpgradeCalculationCollection)[upgradeName]) as AmbrosiaUpgradeCalculationConfig<any>;
         if (!investmentParameters) return 0;
 
-        return gameDataAPI.investToAmbrosiaUpgrade(
+        return gameDataAPI.ambrosia.investToAmbrosiaUpgrade(
             0,
             invested,
             investmentParameters.costPerLevel,
             investmentParameters.maxLevel,
-            investmentParameters.costFunction
+            investmentParameters.costFormula
         );
     }
 
-    private calculateBlueBarRequirementForLoadout(saveData: PlayerData, loadoutNumber: number): number | undefined {
-        const loadout = saveData.blueberryLoadouts?.[String(loadoutNumber)];
+    private calculateBlueBarRequirementForLoadout(saveData: GameData, loadoutNumber: number): number | undefined {
+        const loadout = saveData.blueberryLoadouts?.[loadoutNumber];
         if (!loadout || Object.keys(loadout).length === 0) return;
 
         const brickLevel = (loadout as Record<string, number>).ambrosiaBrickOfLead ?? 0;
 
-        let val = HSGlobal.HSAmbrosia.R_TIME_PER_AMBROSIA;
+        let val = HSGlobal.HSAmbrosia.TIME_PER_AMBROSIA;
         val += Math.floor(saveData.lifetimeAmbrosia / 300);
 
         const exalt5Comps = saveData.singularityChallenges.noAmbrosiaUpgrades.completions;
@@ -596,7 +610,7 @@ export class HSAmbrosia extends HSModule
         return val;
     }
 
-    public findBestMatchingAmbrosiaLoadout(saveData: PlayerData): { id: string | undefined; score: number } {
+    public findBestMatchingAmbrosiaLoadout(saveData: GameData): { id: string | undefined; score: number } {
         const currentUpgrades = saveData.ambrosiaUpgrades;
         const savedLoadouts = saveData.blueberryLoadouts;
 
@@ -622,7 +636,7 @@ export class HSAmbrosia extends HSModule
                 totalUpgrades++;
 
                 const currentLevelData = currentUpgrades[upgradeKey as keyof AmbrosiaUpgrades] as AmbrosiaUpgradeData;
-                const totalLevel = currentLevelData ? this.calculateAmbUpgradeLevelFromSave(upgradeKey as keyof AmbrosiaUpgrades, currentLevelData.ambrosiaInvested, saveData) : 0;
+                const totalLevel = currentLevelData ? this.calculateAmbUpgradeLevelFromSave(upgradeKey as keyof AmbrosiaUpgrades, currentLevelData.ambrosiaInvested) : 0;
 
                 if (totalLevel === savedLevel) {
                     matches++;
@@ -644,7 +658,7 @@ export class HSAmbrosia extends HSModule
         return { id: bestMatchId, score: highestScore };
     }
 
-    public async performInitialActiveLoadoutMatch(saveData: PlayerData): Promise<void> {
+    public async performInitialActiveLoadoutMatch(saveData: GameData): Promise<void> {
         if (!saveData) return;
 
         await this.resetActiveLoadout();
@@ -663,8 +677,6 @@ export class HSAmbrosia extends HSModule
             if (!slotEnum) { HSLogger.warn(`No slot enum found for slot ID: ${slotId}`, this.context); return; }
 
             await this.#updateActiveLoadout(slotEnum);
-            HSLogger.debug(() => `1345Updating active loadout to ${slotEnum}`, this.context);
-            HSLogger.debug(() => `Resolved active loadout slot: ${this.activeLoadout}`, this.context);
 
             HSLogger.debug(() => `Initial load - Ambrosia loadout best match: ${bestMatchId} is ${(highestScore * 100).toFixed(1)}% compliant. `, this.context);
         } else if (bestMatchId) {
@@ -672,7 +684,6 @@ export class HSAmbrosia extends HSModule
         } else {
             HSLogger.debug(() => `Initial load - No saved Ambrosia loadouts found to match.`, this.context);
         }
-        HSLogger.debug(() => `1Active loadout after initial match: ${this.activeLoadout}`, this.context);
     }
 
     public getAmbrosiaLoadoutsAmount(): number {
@@ -1172,6 +1183,7 @@ export class HSAmbrosia extends HSModule
 
         this.#cachedNormalLuckBlueBarRequired = undefined;
         this.#cachedNormalLuckLoadoutValue = undefined;
+        this.#initIdleSwapSettingsCache();
 
         if (gameStateMod) {
             const isAlreadyInAmbrosiaView =
@@ -1223,6 +1235,7 @@ export class HSAmbrosia extends HSModule
 
         this.#blueAmbrosiaProgressBar = await HSElementHooker.HookElement('#ambrosiaProgressBar') as HTMLDivElement;
         this.#redAmbrosiaProgressBar = await HSElementHooker.HookElement('#pixelProgressBar') as HTMLDivElement;
+        this.#cacheIdleSwapLoadoutButtons();
         this.#isIdleSwapEnabled = true;
         this.#maybeInsertIdleLoadoutIndicator();
         this.subscribeGameDataChanges();
@@ -1234,6 +1247,16 @@ export class HSAmbrosia extends HSModule
         this.#lastBlueBarValue = undefined;
         this.#cachedNormalLuckBlueBarRequired = undefined;
         this.#cachedNormalLuckLoadoutValue = undefined;
+        this.#cachedIdleSwapOcteractSetting = undefined;
+        this.#cachedIdleSwapNormalLuckSetting = undefined;
+        this.#cachedIdleSwapRedLuckSetting = undefined;
+        this.#cachedIdleSwapOcteractLoadoutValue = undefined;
+        this.#cachedIdleSwapNormalLuckLoadoutValue = undefined;
+        this.#cachedIdleSwapRedLuckLoadoutValue = undefined;
+        this.#cachedIdleSwapOcteractLoadout = undefined;
+        this.#cachedIdleSwapNormalLuckLoadout = undefined;
+        this.#cachedIdleSwapRedLuckLoadout = undefined;
+        this.#cachedIdleSwapLoadoutButtons.clear();
         this.unsubscribeGameDataChanges();
 
         const gameStateMod = HSModuleManager.getModule<HSGameState>('HSGameState');
@@ -1255,17 +1278,70 @@ export class HSAmbrosia extends HSModule
         this.#removeIdleLoadoutIndicator();
     }
 
+    #initIdleSwapSettingsCache() {
+        this.#cachedIdleSwapOcteractSetting = HSSettings.getSetting('ambrosiaIdleSwapOcteractLoadout') as HSSelectStringSetting;
+        this.#cachedIdleSwapNormalLuckSetting = HSSettings.getSetting('ambrosiaIdleSwapNormalLuckLoadout') as HSSelectStringSetting;
+        this.#cachedIdleSwapRedLuckSetting = HSSettings.getSetting('ambrosiaIdleSwapRedLuckLoadout') as HSSelectStringSetting;
+        this.#refreshIdleSwapSettingsCache();
+    }
+
+    #refreshIdleSwapSettingsCache() {
+        if (!this.#cachedIdleSwapOcteractSetting || !this.#cachedIdleSwapNormalLuckSetting || !this.#cachedIdleSwapRedLuckSetting) {
+            this.#cachedIdleSwapOcteractLoadoutValue = undefined;
+            this.#cachedIdleSwapNormalLuckLoadoutValue = undefined;
+            this.#cachedIdleSwapRedLuckLoadoutValue = undefined;
+            this.#cachedIdleSwapOcteractLoadout = undefined;
+            this.#cachedIdleSwapNormalLuckLoadout = undefined;
+            this.#cachedIdleSwapRedLuckLoadout = undefined;
+            return;
+        }
+
+        const octeractLoadoutValue = this.#cachedIdleSwapOcteractSetting.getValue();
+        const normalLuckLoadoutValue = this.#cachedIdleSwapNormalLuckSetting.getValue();
+        const redLuckLoadoutValue = this.#cachedIdleSwapRedLuckSetting.getValue();
+
+        if (this.#cachedIdleSwapOcteractLoadoutValue !== octeractLoadoutValue) {
+            this.#cachedIdleSwapOcteractLoadoutValue = octeractLoadoutValue;
+            this.#cachedIdleSwapOcteractLoadout = HSAmbrosiaHelper.convertSettingLoadoutToSlot(octeractLoadoutValue);
+        }
+
+        if (this.#cachedIdleSwapNormalLuckLoadoutValue !== normalLuckLoadoutValue) {
+            this.#cachedIdleSwapNormalLuckLoadoutValue = normalLuckLoadoutValue;
+            this.#cachedIdleSwapNormalLuckLoadout = HSAmbrosiaHelper.convertSettingLoadoutToSlot(normalLuckLoadoutValue);
+            this.#cachedNormalLuckBlueBarRequired = undefined;
+        }
+
+        if (this.#cachedIdleSwapRedLuckLoadoutValue !== redLuckLoadoutValue) {
+            this.#cachedIdleSwapRedLuckLoadoutValue = redLuckLoadoutValue;
+            this.#cachedIdleSwapRedLuckLoadout = HSAmbrosiaHelper.convertSettingLoadoutToSlot(redLuckLoadoutValue);
+        }
+    }
+
+    #cacheIdleSwapLoadoutButtons() {
+        this.#cachedIdleSwapLoadoutButtons.clear();
+
+        const buttons = document.querySelectorAll('.blueberryLoadoutSlot') as NodeListOf<HTMLButtonElement>;
+        for (const button of buttons) {
+            if (button.id) {
+                this.#cachedIdleSwapLoadoutButtons.set(button.id, button);
+            }
+        }
+    }
+
     subscribeGameDataChanges() {
         const gameDataMod = HSModuleManager.getModule<HSGameData>('HSGameData');
+        const gameDataAPI = HSModuleManager.getModule<HSGameDataAPI>('HSGameDataAPI');
 
-        if (gameDataMod && !this.gameDataSubscriptionId) {
+        if (gameDataMod && gameDataAPI && !this.gameDataSubscriptionId) {
+            this.#cachedGameDataMod = gameDataMod;
+            this.#cachedGameDataAPI = gameDataAPI;
             this.gameDataSubscriptionId = gameDataMod.subscribeGameDataChange(this.gameDataCallback.bind(this));
             HSLogger.debug(() => 'Subscribed to game data changes', this.context);
         }
     }
 
     unsubscribeGameDataChanges() {
-        const gameDataMod = HSModuleManager.getModule<HSGameData>('HSGameData');
+        const gameDataMod = this.#cachedGameDataMod ?? HSModuleManager.getModule<HSGameData>('HSGameData');
 
         if (gameDataMod && this.gameDataSubscriptionId) {
             // Only actually unsubscribe if all ambrosia feature which use GDS are disabled
@@ -1277,185 +1353,250 @@ export class HSAmbrosia extends HSModule
         }
     }
 
-    async #performInitialActiveLoadoutMatchOnce(gameData: PlayerData): Promise<void> {
+    async #performInitialActiveLoadoutMatchOnce(gameData: GameData): Promise<void> {
         if (this.#hasPerformedInitialLoadoutMatch) return;
 
         await this.performInitialActiveLoadoutMatch(gameData);
         this.#hasPerformedInitialLoadoutMatch = true;
     }
 
-    async gameDataCallback() {
-        const gameDataAPI = HSModuleManager.getModule<HSGameDataAPI>('HSGameDataAPI');
+    async gameDataCallback() { 
+        const gameDataAPI = this.#cachedGameDataAPI || (this.#cachedGameDataAPI = HSModuleManager.getModule<HSGameDataAPI>('HSGameDataAPI'));
         if (!gameDataAPI) return;
+
         const gameData = gameDataAPI.getGameData();
         if (!gameData) return;
 
-        if (!this.#hasPerformedInitialLoadoutMatch) {
-            await this.#performInitialActiveLoadoutMatchOnce(gameData);
-        }
-
         if (gameData.blueberryTime != null && gameData.redAmbrosiaTime != null) {
-
             const blueAmbrosiaBarValue = gameData.blueberryTime;
             const redAmbrosiaBarValue = gameData.redAmbrosiaTime;
-            const blueAmbrosiaBarMax = gameDataAPI.R_calculateRequiredBlueberryTime();
-            const redAmbrosiaBarMax = gameDataAPI.R_calculateRequiredRedAmbrosiaTime();
+            const blueAmbrosiaBarMax = gameDataAPI.ambrosia.calculateRequiredBlueberryTime();
+            const redAmbrosiaBarMax = gameDataAPI.ambrosia.calculateRequiredRedAmbrosiaTime();
             const blueAmbrosiaPercent = ((blueAmbrosiaBarValue / blueAmbrosiaBarMax) * 100);
             const redAmbrosiaPercent = ((redAmbrosiaBarValue / redAmbrosiaBarMax) * 100);
 
-            const blueberrySpeedMults = (gameDataAPI.calculateAmbrosiaSpeed() as number);
-            const blueberries = (gameDataAPI.R_calculateBlueBerries() as number);
-            const ambrosiaSpeed = blueberrySpeedMults * blueberries;
-            const ambrosiaAcceleratorCount = gameData.shopUpgrades.shopAmbrosiaAccelerator;
-            const ambrosiaLuck = gameDataAPI.calculateLuck() as { additive: number; raw: number; total: number; };
-            const bonusAmbrosia = (gameData.singularityChallenges.noAmbrosiaUpgrades.completions > 0) ? 1 : 0
-            const ambrosiaGainPerGen = (ambrosiaLuck.total / 100) + bonusAmbrosia;
-            const ambrosiaGainChance = (ambrosiaLuck.total - 100 * Math.floor(ambrosiaLuck.total / 100)) / 100;
-            let accelerationSeconds = 0;
-            let accelerationAmount = 0;
-            let accelerationPercent = 0;
-            const bluePercentageSpeed = (ambrosiaSpeed / blueAmbrosiaBarMax) * 100;
-            const bluePercentageSafeThreshold = bluePercentageSpeed;
-            const hasBlueBarReset = this.#lastBlueBarValue !== undefined && blueAmbrosiaBarValue < this.#lastBlueBarValue;
-
-            const maxAccelMultiplier = (1 / 2)
-                + (3 / 5 - 1 / 2) * +(gameData.singularityChallenges.noAmbrosiaUpgrades.completions >= 15)
-                + (2 / 3 - 3 / 5) * +(gameData.singularityChallenges.noAmbrosiaUpgrades.completions >= 19)
-                + (3 / 4 - 2 / 3) * +(gameData.singularityChallenges.noAmbrosiaUpgrades.completions >= 20);
-
-            if (ambrosiaAcceleratorCount > 0 && ambrosiaSpeed > 0) {
-                const secondsToNextAmbrosia = blueAmbrosiaBarMax / ambrosiaSpeed;
-                accelerationSeconds = Math.min(
-                    secondsToNextAmbrosia * maxAccelMultiplier,
-                    ambrosiaGainPerGen * 0.2 * ambrosiaAcceleratorCount
+            if (this.#berryMinibarsEnabled) {
+                this.#updateBerryMinibars(
+                    blueAmbrosiaBarMax,
+                    redAmbrosiaBarMax,
+                    blueAmbrosiaPercent,
+                    redAmbrosiaPercent
                 );
-                accelerationAmount = 1; //accelerationSeconds * ambrosiaSpeed;
-                accelerationPercent = (accelerationAmount / blueAmbrosiaBarMax) * 100;
             }
 
             if (this.#isIdleSwapEnabled) {
-                if (this.#blueAmbrosiaProgressBar && this.#redAmbrosiaProgressBar) {
-                    const idleSwapOcteractSetting = HSSettings.getSetting('ambrosiaIdleSwapOcteractLoadout') as HSSelectStringSetting;
-                    const idleSwapNormalLuckSetting = HSSettings.getSetting('ambrosiaIdleSwapNormalLuckLoadout') as HSSelectStringSetting;
-                    const idleSwapRedLuckSetting = HSSettings.getSetting('ambrosiaIdleSwapRedLuckLoadout') as HSSelectStringSetting;
+                this.#refreshIdleSwapSettingsCache();
 
-                    if (idleSwapOcteractSetting && idleSwapNormalLuckSetting && idleSwapRedLuckSetting) {
-                        const octeractLoadoutValue = idleSwapOcteractSetting.getValue();
-                        const normalLuckLoadoutValue = idleSwapNormalLuckSetting.getValue();
-                        const redLuckLoadoutValue = idleSwapRedLuckSetting.getValue();
+                const blueberrySpeedMults = (gameDataAPI.ambrosia.calculateAmbrosiaGenerationSpeed(true, false) as number);
+                const blueberries = (gameDataAPI.ambrosia.calculateBlueberryInventory() as number);
+                const ambrosiaSpeed = blueberrySpeedMults * blueberries;
+                const ambrosiaAcceleratorCount = gameData.shopUpgrades.shopAmbrosiaAccelerator;
+                const ambrosiaLuck = gameDataAPI.luck.calculateLuck() as { luckBase: number; luckMult: number; luckTotal: number; };
+                const bonusAmbrosia = (gameData.singularityChallenges.noAmbrosiaUpgrades.completions > 0) ? 1 : 0;
+                const ambrosiaGainPerGen = (ambrosiaLuck.luckTotal / 100) + bonusAmbrosia;
+                const bluePercentageSpeed = (ambrosiaSpeed / blueAmbrosiaBarMax) * 100;
+                const bluePercentageSafeThreshold = bluePercentageSpeed;
+                const hasBlueBarReset = this.#lastBlueBarValue !== undefined && blueAmbrosiaBarValue < this.#lastBlueBarValue;
 
-                        if (!Number.isInteger(parseInt(octeractLoadoutValue, 10)) || !Number.isInteger(parseInt(normalLuckLoadoutValue, 10)) || !Number.isInteger(parseInt(redLuckLoadoutValue, 10))) {
-                            HSLogger.warnOnce(
-                                'Idle swap is enabled but loadout settings are not fully configured; skipping autoswap logic until configured',
-                                'hs-amb-idleswap-unconfigured-loadouts'
-                            );
-                            return;
-                        }
+                const maxAccelMultiplier = (1 / 2)
+                    + (3 / 5 - 1 / 2) * +(gameData.singularityChallenges.noAmbrosiaUpgrades.completions >= 15)
+                    + (2 / 3 - 3 / 5) * +(gameData.singularityChallenges.noAmbrosiaUpgrades.completions >= 19)
+                    + (3 / 4 - 2 / 3) * +(gameData.singularityChallenges.noAmbrosiaUpgrades.completions >= 20);
 
-                        const octeractLoadout = HSAmbrosiaHelper.convertSettingLoadoutToSlot(octeractLoadoutValue);
-                        const normalLuckLoadout = HSAmbrosiaHelper.convertSettingLoadoutToSlot(normalLuckLoadoutValue);
-                        const redLuckLoadout = HSAmbrosiaHelper.convertSettingLoadoutToSlot(redLuckLoadoutValue);
+                let accelerationSeconds = 0;
+                let accelerationAmount = 0;
+                let accelerationPercent = 0;
+                if (ambrosiaAcceleratorCount > 0 && ambrosiaSpeed > 0) {
+                    const secondsToNextAmbrosia = blueAmbrosiaBarMax / ambrosiaSpeed;
+                    accelerationSeconds = Math.min(
+                        secondsToNextAmbrosia * maxAccelMultiplier,
+                        ambrosiaGainPerGen * 0.2 * ambrosiaAcceleratorCount
+                    );
+                    accelerationAmount = 1; //accelerationSeconds * ambrosiaSpeed;
+                    accelerationPercent = (accelerationAmount / blueAmbrosiaBarMax) * 100;
+                }
 
-                        if (this.#cachedNormalLuckLoadoutValue !== normalLuckLoadoutValue) {
-                            this.#cachedNormalLuckLoadoutValue = normalLuckLoadoutValue;
-                            this.#cachedNormalLuckBlueBarRequired = undefined;
-                        }
+                await this.#evaluateIdleSwap(
+                    gameData,
+                    blueAmbrosiaBarValue,
+                    redAmbrosiaBarValue,
+                    blueAmbrosiaBarMax,
+                    redAmbrosiaBarMax,
+                    blueAmbrosiaPercent,
+                    redAmbrosiaPercent,
+                    blueberrySpeedMults,
+                    blueberries,
+                    ambrosiaAcceleratorCount,
+                    ambrosiaLuck,
+                    accelerationAmount,
+                    accelerationPercent,
+                    bluePercentageSpeed,
+                    bluePercentageSafeThreshold,
+                    hasBlueBarReset
+                );
 
-                        if (this.#cachedNormalLuckBlueBarRequired === undefined) {
-                            const normalLuckLoadoutNumber = parseInt(normalLuckLoadoutValue, 10);
-                            if (Number.isInteger(normalLuckLoadoutNumber)) {
-                                this.#cachedNormalLuckBlueBarRequired = this.calculateBlueBarRequirementForLoadout(gameData, normalLuckLoadoutNumber);
-                            }
-                        }
+                this.#lastBlueBarValue = blueAmbrosiaBarValue;
+            }
+        }
+    };
 
-                        const normalLuckBlueBarRequired = this.#cachedNormalLuckBlueBarRequired;
-                        const canUseNormalLuckBlueRequirement = normalLuckBlueBarRequired !== undefined;
+    #updateBerryMinibars(
+        blueAmbrosiaBarMax: number,
+        redAmbrosiaBarMax: number,
+        blueAmbrosiaPercent: number,
+        redAmbrosiaPercent: number
+    ) {
+        if (!this.#berryMinibarsEnabled) {
+            HSLogger.logOnce('HSAmbrosia.gameDataCallback() - berryMinibarsEnabled was false', 'hs-minibars-false');
+            return;
+        }
 
-                        let blueSwapTresholdNormalMin = bluePercentageSafeThreshold + accelerationPercent;
-                        let blueSwapTresholdNormalMax = blueSwapTresholdNormalMin + bluePercentageSafeThreshold;
+        if (this.#blueProgressMinibarElement && this.#redProgressMinibarElement) {
+            if (!Number.isFinite(blueAmbrosiaBarMax) || blueAmbrosiaBarMax <= 0) {
+                HSLogger.warnOnce(`HSAmbrosia.gameDataCallback() - invalid blueAmbrosiaBarMax: ${blueAmbrosiaBarMax}`, 'hs-minibars-invalid-blue-max');
+            }
+            if (!Number.isFinite(redAmbrosiaBarMax) || redAmbrosiaBarMax <= 0) {
+                HSLogger.warnOnce(`HSAmbrosia.gameDataCallback() - invalid redAmbrosiaBarMax: ${redAmbrosiaBarMax}`, 'hs-minibars-invalid-red-max');
+            }
+            if (!Number.isFinite(blueAmbrosiaPercent) || !Number.isFinite(redAmbrosiaPercent)) {
+                HSLogger.warnOnce(`HSAmbrosia.gameDataCallback() - invalid minibar percents: blue=${blueAmbrosiaPercent}, red=${redAmbrosiaPercent}`, 'hs-minibars-invalid-percents');
+            }
+            this.#blueProgressMinibarElement.style.width = `${blueAmbrosiaPercent}% `;
+            this.#redProgressMinibarElement.style.width = `${redAmbrosiaPercent}% `;
+        } else {
+            HSLogger.warnOnce(`
+        HSAmbrosia.gameDataCallback() - minibar element(s) undefined.
+            blue: ${this.#blueProgressMinibarElement},
+        red: ${this.#redProgressMinibarElement} `, 'hs-minibars-undefined');
+        }
+    }
 
-                        let blueSwapThresholdRedMin = 100 - bluePercentageSafeThreshold;
-                        let blueSwapThresholdRedMax = 100;
+    async #evaluateIdleSwap(
+        gameData: GameData,
+        blueAmbrosiaBarValue: number,
+        redAmbrosiaBarValue: number,
+        blueAmbrosiaBarMax: number,
+        redAmbrosiaBarMax: number,
+        blueAmbrosiaPercent: number,
+        redAmbrosiaPercent: number,
+        blueberrySpeedMults: number,
+        blueberries: number,
+        ambrosiaAcceleratorCount: number,
+        ambrosiaLuck: { luckBase: number; luckMult: number; luckTotal: number; },
+        accelerationAmount: number,
+        accelerationPercent: number,
+        bluePercentageSpeed: number,
+        bluePercentageSafeThreshold: number,
+        hasBlueBarReset: boolean
+    ) {
+        if (!this.#isIdleSwapEnabled) return;
+        if (!this.#blueAmbrosiaProgressBar || !this.#redAmbrosiaProgressBar) return;
 
-                        // Swap to blue luck slightly before the projected fill point.
-                        // Buffer is derived from one tick worth of speed plus acceleration contribution.
-                        const blueSwapBufferPercent = Math.max(0, Math.min(95, bluePercentageSafeThreshold + accelerationPercent));
-                        const normalLuckBlueSwapThreshold = canUseNormalLuckBlueRequirement
-                            ? normalLuckBlueBarRequired * (1 - blueSwapBufferPercent / 100)
-                            : 0;
+        const idleSwapOcteractSetting = this.#cachedIdleSwapOcteractSetting ?? HSSettings.getSetting('ambrosiaIdleSwapOcteractLoadout') as HSSelectStringSetting;
+        const idleSwapNormalLuckSetting = this.#cachedIdleSwapNormalLuckSetting ?? HSSettings.getSetting('ambrosiaIdleSwapNormalLuckLoadout') as HSSelectStringSetting;
+        const idleSwapRedLuckSetting = this.#cachedIdleSwapRedLuckSetting ?? HSSettings.getSetting('ambrosiaIdleSwapRedLuckLoadout') as HSSelectStringSetting;
 
-                        const shouldSwapToBlueLuck = canUseNormalLuckBlueRequirement
-                            ? blueAmbrosiaBarValue >= normalLuckBlueSwapThreshold
-                            : blueAmbrosiaPercent >= blueSwapThresholdRedMin;
+        if (!idleSwapOcteractSetting || !idleSwapNormalLuckSetting || !idleSwapRedLuckSetting) return;
 
-                        let redSwapTresholdNormalMin = HSGlobal.HSAmbrosia.idleSwapMinRedThreshold;
-                        let redSwapTresholdNormalMax = redSwapTresholdNormalMin + HSGlobal.HSAmbrosia.idleSwapMinRedThreshold;
+        const octeractLoadoutValue = this.#cachedIdleSwapOcteractLoadoutValue ?? idleSwapOcteractSetting.getValue();
+        const normalLuckLoadoutValue = this.#cachedIdleSwapNormalLuckLoadoutValue ?? idleSwapNormalLuckSetting.getValue();
+        const redLuckLoadoutValue = this.#cachedIdleSwapRedLuckLoadoutValue ?? idleSwapRedLuckSetting.getValue();
 
-                        let redSwapThresholdRedMin = HSGlobal.HSAmbrosia.idleSwapMaxRedThreshold;
-                        let redSwapThresholdRedMax = 100;
+        const octeractLoadout = this.#cachedIdleSwapOcteractLoadout ?? HSAmbrosiaHelper.convertSettingLoadoutToSlot(octeractLoadoutValue);
+        const normalLuckLoadout = this.#cachedIdleSwapNormalLuckLoadout ?? HSAmbrosiaHelper.convertSettingLoadoutToSlot(normalLuckLoadoutValue);
+        const redLuckLoadout = this.#cachedIdleSwapRedLuckLoadout ?? HSAmbrosiaHelper.convertSettingLoadoutToSlot(redLuckLoadoutValue);
 
-                        // Determine target loadout based on current state and thresholds
-                        let targetLoadout: string | undefined;
+        if (!Number.isInteger(parseInt(octeractLoadoutValue, 10)) || !Number.isInteger(parseInt(normalLuckLoadoutValue, 10)) || !Number.isInteger(parseInt(redLuckLoadoutValue, 10))) {
+            HSLogger.warnOnce(
+                'Idle swap is enabled but loadout settings are not fully configured; skipping autoswap logic until configured',
+                'hs-amb-idleswap-unconfigured-loadouts'
+            );
+            return;
+        }
 
-                        if (this.#holdBlueLuckUntilReset && hasBlueBarReset) {
-                            this.#holdBlueLuckUntilReset = false;
-                        }
+        if (this.#cachedNormalLuckLoadoutValue !== normalLuckLoadoutValue) {
+            this.#cachedNormalLuckLoadoutValue = normalLuckLoadoutValue;
+            this.#cachedNormalLuckBlueBarRequired = undefined;
+        }
 
-                        if (this.#holdBlueLuckUntilReset) {
-                            targetLoadout = normalLuckLoadout;
-                        }
+        if (this.#cachedNormalLuckBlueBarRequired === undefined) {
+            const normalLuckLoadoutNumber = parseInt(normalLuckLoadoutValue, 10);
+            if (Number.isInteger(normalLuckLoadoutNumber)) {
+                this.#cachedNormalLuckBlueBarRequired = this.calculateBlueBarRequirementForLoadout(gameData, normalLuckLoadoutNumber);
+            }
+        }
 
-                        // If currently in Red Luck, only exit when red bar has dropped below normal threshold
-                        else if (this.activeLoadout === redLuckLoadout) {
-                            if (redAmbrosiaPercent < redSwapThresholdRedMin) {
-                                if (shouldSwapToBlueLuck) {
-                                    targetLoadout = normalLuckLoadout;
-                                    this.#holdBlueLuckUntilReset = true;
-                                } else {
-                                    targetLoadout = octeractLoadout;
-                                }
-                            } else {
-                                targetLoadout = redLuckLoadout; // Stay in Red Luck
-                            }
-                        }
-                        // If currently in Normal Luck, only exit when red bar has dropped below min threshold
-                        else if (this.activeLoadout === normalLuckLoadout) {
-                            if (blueAmbrosiaPercent < blueSwapThresholdRedMin) {
-                                targetLoadout = octeractLoadout;
-                            }
-                            else {
-                                targetLoadout = normalLuckLoadout;
-                            }
-                        }
-                        // Check if should swap to Red Luck (highest priority)
-                        else if (redAmbrosiaPercent >= redSwapThresholdRedMin) {
-                            targetLoadout = redLuckLoadout;
-                        }
-                        // Check if should swap to Normal Luck
-                        else if (shouldSwapToBlueLuck) {
-                            targetLoadout = normalLuckLoadout;
-                            this.#holdBlueLuckUntilReset = true;
-                        }
-                        else {
-                            targetLoadout = this.activeLoadout;
-                        }
+        const normalLuckBlueBarRequired = this.#cachedNormalLuckBlueBarRequired;
+        const canUseNormalLuckBlueRequirement = normalLuckBlueBarRequired !== undefined;
 
-                        // Perform swap if target loadout differs from current
-                        if (targetLoadout && this.activeLoadout !== targetLoadout) {
-                            const loadoutSlot = await HSElementHooker.HookElement(`#${targetLoadout} `) as HTMLButtonElement;
+        let blueSwapThresholdRedMin = 100 - bluePercentageSafeThreshold;
 
-                            await HSAmbrosiaHelper.ensureLoadoutModeIsLoad();
+        const blueSwapBufferPercent = Math.max(0, Math.min(95, bluePercentageSafeThreshold + accelerationPercent));
+        const normalLuckBlueSwapThreshold = canUseNormalLuckBlueRequirement
+            ? normalLuckBlueBarRequired * (1 - blueSwapBufferPercent / 100)
+            : 0;
 
-                            await HSUtils.hiddenAction(async () => {
-                                loadoutSlot.click();
-                            });
-                        }
-                    }
+        const shouldSwapToBlueLuck = canUseNormalLuckBlueRequirement
+            ? blueAmbrosiaBarValue >= normalLuckBlueSwapThreshold
+            : blueAmbrosiaPercent >= blueSwapThresholdRedMin;
 
-                    if (this.#debugElement && HSUI.isModPanelOpen()) {
-                        const newDebugElement = document.createElement('div');
+        let redSwapThresholdRedMin = HSGlobal.HSAmbrosia.idleSwapMaxRedThreshold;
 
-                        newDebugElement.innerHTML = `
+        let targetLoadout: string | undefined;
+
+        if (this.#holdBlueLuckUntilReset && hasBlueBarReset) {
+            this.#holdBlueLuckUntilReset = false;
+        }
+
+        if (this.#holdBlueLuckUntilReset) {
+            targetLoadout = normalLuckLoadout;
+        } else if (this.activeLoadout === redLuckLoadout) {
+            if (redAmbrosiaPercent < redSwapThresholdRedMin) {
+                if (shouldSwapToBlueLuck) {
+                    targetLoadout = normalLuckLoadout;
+                    this.#holdBlueLuckUntilReset = true;
+                } else {
+                    targetLoadout = octeractLoadout;
+                }
+            } else {
+                targetLoadout = redLuckLoadout;
+            }
+        } else if (this.activeLoadout === normalLuckLoadout) {
+            if (blueAmbrosiaPercent < blueSwapThresholdRedMin) {
+                targetLoadout = octeractLoadout;
+            } else {
+                targetLoadout = normalLuckLoadout;
+            }
+        } else if (redAmbrosiaPercent >= redSwapThresholdRedMin) {
+            targetLoadout = redLuckLoadout;
+        } else if (shouldSwapToBlueLuck) {
+            targetLoadout = normalLuckLoadout;
+            this.#holdBlueLuckUntilReset = true;
+        } else {
+            targetLoadout = this.activeLoadout;
+        }
+
+        if (targetLoadout && this.activeLoadout !== targetLoadout) {
+            let loadoutSlot = this.#cachedIdleSwapLoadoutButtons.get(targetLoadout);
+            if (!loadoutSlot) {
+                loadoutSlot = await HSElementHooker.HookElement(`#${targetLoadout} `) as HTMLButtonElement;
+                if (loadoutSlot) {
+                    this.#cachedIdleSwapLoadoutButtons.set(targetLoadout, loadoutSlot);
+                }
+            }
+
+            if (loadoutSlot) {
+                await HSAmbrosiaHelper.ensureLoadoutModeIsLoad();
+                await HSUtils.hiddenAction(async () => {
+                    loadoutSlot!.click();
+                });
+            }
+        }
+
+        if (this.#debugElement && HSUI.isModPanelOpen()) {
+            const newDebugElement = document.createElement('div');
+
+            newDebugElement.innerHTML = `
         BLUE - Value: ${blueAmbrosiaBarValue.toFixed(2)}, Max: ${blueAmbrosiaBarMax}, Percent: ${blueAmbrosiaPercent.toFixed(2)} <br>
             RED - Value: ${redAmbrosiaBarValue.toFixed(2)}, Max: ${redAmbrosiaBarMax}, Percent: ${redAmbrosiaPercent.toFixed(2)} <br>
                 BLUE SPD MLT: ${blueberrySpeedMults.toFixed(2)} <br>
@@ -1463,40 +1604,21 @@ export class HSAmbrosia extends HSModule
                         BERRY: ${blueberries} </br>
                         TOT BLU: ${(blueberrySpeedMults * blueberries).toFixed(2)} </br>
         ------------------------</br>
-                        ADD LUK: ${ambrosiaLuck.additive.toFixed(2)} </br>
-                        RAW LUK: ${ambrosiaLuck.raw.toFixed(2)} </br>
-                        TOT LUK: ${ambrosiaLuck.total.toFixed(2)} </br>
+                        BASE LUK: ${ambrosiaLuck.luckBase.toFixed(2)} </br>
+                        MULT LUK: ${ambrosiaLuck.luckMult.toFixed(2)} </br>
+                        TOT LUK: ${ambrosiaLuck.luckTotal.toFixed(2)} </br>
         ------------------------</br>
                         ACC CNT: ${ambrosiaAcceleratorCount} </br>
                         ACCEL AMOUNT: ${accelerationAmount.toFixed(2)} </br>
         ACCEL %: ${accelerationPercent.toFixed(2)} </br>
             `;
 
-                        this.#debugElement.innerHTML = '';
-                        while (newDebugElement.firstChild) {
-                            this.#debugElement.appendChild(newDebugElement.firstChild);
-                        }
-                    }
-                }
+            this.#debugElement.innerHTML = '';
+            while (newDebugElement.firstChild) {
+                this.#debugElement.appendChild(newDebugElement.firstChild);
             }
-
-            if (this.#berryMinibarsEnabled) {
-                if (this.#blueProgressMinibarElement && this.#redProgressMinibarElement) {
-                    this.#blueProgressMinibarElement.style.width = `${blueAmbrosiaPercent}% `;
-                    this.#redProgressMinibarElement.style.width = `${redAmbrosiaPercent}% `;
-                } else {
-                    HSLogger.warnOnce(`
-        HSAmbrosia.gameDataCallback() - minibar element(s) undefined.
-            blue: ${this.#blueProgressMinibarElement},
-        red: ${this.#redProgressMinibarElement} `, 'hs-minibars-undefined');
-                }
-            } else {
-                HSLogger.logOnce('HSAmbrosia.gameDataCallback() - berryMinibarsEnabled was false', 'hs-minibars-false');
-            }
-
-            this.#lastBlueBarValue = blueAmbrosiaBarValue;
         }
-    };
+    }
 
     #gameStateCallbackMain(previousView: GameView<VIEW_TYPE>, currentView: GameView<VIEW_TYPE>) {
         const gameStateMod = HSModuleManager.getModule<HSGameState>('HSGameState');

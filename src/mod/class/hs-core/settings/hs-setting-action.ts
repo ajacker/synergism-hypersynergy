@@ -172,19 +172,14 @@ export class HSSettingActions {
             const context = params.contextName ?? "HSSettings";
 
             const ambrosiaMod = HSModuleManager.getModule<HSAmbrosia>('HSAmbrosia');
-            let newState: boolean | undefined;
 
             const startAutosingEnabled = HSSettings.getSetting('startAutosing')?.isEnabled() ?? false;
-            HSLogger.debug(
-                () => `ambrosiaIdleSwapAction called disable=${Boolean(params.disable)} startAutosingEnabled=${startAutosingEnabled}`,
-                context
-            );
+            HSLogger.debug(() => `ambrosiaIdleSwapAction called disable=${Boolean(params.disable)} startAutosingEnabled=${startAutosingEnabled}`, context);
 
             if (ambrosiaMod) {
                 if (params.disable && params.disable === true) {
-                    HSLogger.debug(() => `ambrosiaIdleSwapAction disable stack: ${new Error().stack ?? 'n/a'}`, context);
+                    // HSLogger.debug(() => `ambrosiaIdleSwapAction disable stack: ${new Error().stack ?? 'n/a'}`, context);
                     ambrosiaMod.disableIdleSwap();
-                    newState = false;
                 } else {
                     // Auto-enable GDS if not already enabled
                     const gdsSettingEnabled = HSSettings.getSetting('useGameData')?.isEnabled();
@@ -192,7 +187,6 @@ export class HSSettingActions {
                         HSSettings.getSetting('useGameData')?.enable();
                     }
                     await ambrosiaMod.enableIdleSwap();
-                    newState = true;
                 }
             }
         },

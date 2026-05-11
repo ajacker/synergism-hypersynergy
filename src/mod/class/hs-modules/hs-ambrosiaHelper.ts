@@ -12,6 +12,32 @@ import { HSElementHooker } from "../hs-core/hs-elementhooker";
  */
 export class HSAmbrosiaHelper {
     static #context: string = 'HSAmbrosiaHelper';
+    static #cachedBlueberryToggleModeButton: HTMLButtonElement | undefined;
+    static #cachedQuickbarSummaryElements: HTMLElement[] | undefined;
+
+    static async getCachedBlueberryToggleModeButton(): Promise<HTMLButtonElement | undefined> {
+        if (this.#cachedBlueberryToggleModeButton instanceof HTMLButtonElement) {
+            return this.#cachedBlueberryToggleModeButton;
+        }
+
+        const element = await HSElementHooker.HookElement('#blueberryToggleMode');
+        if (element instanceof HTMLButtonElement) {
+            this.#cachedBlueberryToggleModeButton = element;
+            return element;
+        }
+
+        return undefined;
+    }
+
+    static getCachedQuickbarSummaryElements(): HTMLElement[] {
+        if (this.#cachedQuickbarSummaryElements) {
+            return this.#cachedQuickbarSummaryElements;
+        }
+
+        const elements = Array.from(document.querySelectorAll<HTMLElement>('.hs-quickbar-summary-wrapper'));
+        this.#cachedQuickbarSummaryElements = elements;
+        return elements;
+    }
 
     /** Resolve an ambrosia icon enum by its ID string. */
     static getIconEnumById(iconId: string): AMBROSIA_ICON | undefined {
@@ -71,7 +97,7 @@ export class HSAmbrosiaHelper {
     /** Ensure the game is in LOAD mode before clicking slots. */
     static async ensureLoadoutModeIsLoad(): Promise<void> {
         // The module interacts with the real loadout buttons; game must be in load state to avoid accidental save.
-        const modeButton = await HSElementHooker.HookElement('#blueberryToggleMode') as HTMLButtonElement;
+        const modeButton = await this.getCachedBlueberryToggleModeButton();
 
         if (modeButton) {
             const currentMode = modeButton.innerText;
@@ -87,7 +113,7 @@ export class HSAmbrosiaHelper {
 
     /** Show or hide other quickbars' summary headers. */
     static setQuickbarTopTextVisibility(visibility: boolean): void {
-        const quickbarSummaryElements = document.querySelectorAll('.hs-quickbar-summary-wrapper');
+        const quickbarSummaryElements = this.getCachedQuickbarSummaryElements();
 
         quickbarSummaryElements.forEach(
             (el) => el.classList.toggle('hs-hidden', !visibility)

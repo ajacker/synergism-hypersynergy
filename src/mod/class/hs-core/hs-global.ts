@@ -508,9 +508,9 @@ export const HSGlobal: IHSGlobal = class {
         idleSwapMinRedThreshold: 1,
 
         // Constants ripped from the game code
-        R_TIME_PER_AMBROSIA: 45,
-        R_TIME_PER_RED_AMBROSIA: 100000,
-        R_digitReduction: 4,
+        TIME_PER_AMBROSIA: 45,
+        TIME_PER_RED_AMBROSIA: 100000,
+        digitReduction: 4,
 
         blueBarId: 'hs-blue-progress-bar',
         blueBarProgressId: 'hs-blue-progress',
@@ -650,6 +650,7 @@ export const HSGlobal: IHSGlobal = class {
     static HSGameData = {
         fetchedDataRefreshInterval: 60000,
         campaignTokenRefreshInterval: 60000,
+        globalEventRefreshInterval: 1000 * 60 * 10, // 10 minutes
         turboModeSpeedMs: 66,
         turboCSSId: 'hs-game-data-turbo-css'
     }

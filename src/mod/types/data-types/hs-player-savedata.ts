@@ -1,7 +1,112 @@
 /*
-    NOTE: THIS WHOLE THING IS GENERATE BY GOOGLE GEMINI PRO 2.5
+    NOTE: THIS WHOLE THING IS GENERATE BY GOOGLE GEMINI PRO 2.5 (... And by the free Raptor mini 'preview'... x)
     The main interface for the save data is: export interface PlayerData
 */
+
+import type {
+    AmbrosiaUpgradeNames,
+    ProgressiveAchievements,
+    RedAmbrosiaNames,
+    RuneKeys,
+    SingularityChallengeDataKeys,
+    TalismanCraftItems,
+    TalismanKeys
+} from './hs-gamedata-api-types'
+
+export type BuyAmount = 1 | 10 | 100 | 1000 | 10000 | 100000
+export type OcteractUpgrades = string
+export type RuneBlessingKeys = string
+export type RuneSpiritKeys = string
+export type ShopUpgradeNames = string
+export type SingularityChallenge = SingularityChallengeStatus
+
+export type SingularityDataKeys = keyof goldenQuarkUpgrades
+
+export type WowCubes = number
+export type WowTesseracts = number
+export type WowHypercubes = number
+export type WowPlatonicCubes = number
+
+export type JsonDecimal = string | number
+export type JsonDate = string | null
+
+
+export type ArrayStartingWithNull<T> = [null, ...T[]]
+export type AutoResetModes = 'amount' | 'time'
+export type AutoAscensionModes = 'amount' | 'percentage'
+export type AutoAscensionResetModes = 'c10Completions' | 'realAscensionTime'
+export type Tabs =
+  | 'Buildings'
+  | 'Upgrades'
+  | 'Achievements'
+  | 'Runes'
+  | 'Challenges'
+  | 'Research'
+  | 'AntHill'
+  | 'WowCubes'
+  | 'Campaign'
+  | 'Corruption'
+  | 'Singularity'
+  | 'Settings'
+  | 'Shop'
+  | 'Event'
+  | 'Purchase'
+
+
+export interface CampaignManager {
+  currentCampaign?: string
+  campaigns?: Record<string, number>
+}
+
+export type HepteractKeys =
+  | 'chronos'
+  | 'hyperrealism'
+  | 'quark'
+  | 'challenge'
+  | 'abyss'
+  | 'accelerator'
+  | 'acceleratorBoost'
+  | 'multiplier'
+
+export interface HepteractValues {
+  BAL: number
+  TIMES_CAP_EXTENDED: number
+  AUTO: boolean
+}
+
+export interface PlayerAnts {
+  producers: Record<string, {
+    purchased: number
+    generated: Decimal
+  }>
+  masteries: Record<string, {
+    mastery: number
+    highestMastery: number
+  }>
+  upgrades: Record<string, number>
+  crumbs: Decimal
+  crumbsThisSacrifice: Decimal
+  crumbsEverMade: Decimal
+  immortalELO: number
+  rebornELO: number
+  highestRebornELODaily: Array<{ elo: number; sacrificeId: number }>
+  highestRebornELOEver: Array<{ elo: number; sacrificeId: number }>
+  quarksGainedFromAnts: number
+  antSacrificeCount: number
+  currentSacrificeId: number
+  toggles: {
+    autobuyProducers: boolean
+    autobuyMasteries: boolean
+    autobuyUpgrades: boolean
+    maxBuyProducers: boolean
+    maxBuyUpgrades: boolean
+    autoSacrificeEnabled: boolean
+    autoSacrificeThreshold: number
+    autoSacrificeMode: number | string
+    alwaysSacrificeMaxRebornELO: boolean
+    onlySacrificeMaxRebornELO: boolean
+  }
+}
 
 /**
  * Represents the state of a single type of building or generator (Coins, Diamonds, Mythos, etc.).
@@ -48,33 +153,47 @@ export interface CurrentChallenge {
  * Represents the unlocked features.
  */
 export interface Unlocks {
-    coinone: boolean;
-    cointwo: boolean;
-    cointhree: boolean;
-    coinfour: boolean;
-    prestige: boolean;
-    generation: boolean;
-    transcend: boolean;
-    reincarnate: boolean;
-    rrow1: boolean;
-    rrow2: boolean;
-    rrow3: boolean;
-    rrow4: boolean;
+    coinone: boolean
+    cointwo: boolean
+    cointhree: boolean
+    coinfour: boolean
+    prestige: boolean
+    generation: boolean
+    transcend: boolean
+    reincarnate: boolean
+    rrow1: boolean
+    rrow2: boolean
+    rrow3: boolean
+    rrow4: boolean
+    anthill: boolean
+    blessings: boolean
+    spirits: boolean
+    talismans: boolean
+    ascensions: boolean
+    tesseracts: boolean
+    hypercubes: boolean
+    platonics: boolean
+    hepteracts: boolean
     // Add others if they exist
 }
 /**
- * Represents the exp for each rune
+ * Represents the raw rune experience values for each rune.
+ *
+ * In vanilla save/runtime handling, rune EXP is the source data used
+ * to derive effective rune levels and heater export values.
+ * Raw values are normalized to Decimal for internal runtime consistency.
  */
 export interface Runes {
-    speed: number;
-    duplication: number;
-    prism: number;
-    thrift: number;
-    superiorIntellect: number;
-    infiniteAscent: number;
-    antiquities: number;
-    horseShoe: number;
-    finiteDescent: number;
+    speed: string; // scientific notation string
+    duplication: string;
+    prism: string;
+    thrift: string;
+    superiorIntellect: string;
+    infiniteAscent: string;
+    antiquities: string;
+    horseShoe: string;
+    topHat: string;
+    finiteDescent: string;
 }
 
 interface Ants {
@@ -87,7 +206,7 @@ interface Ants {
         highestMastery: number;
     }>;
     upgrades: Record<string, number>;
-    crumbs: Decimal;
+    crumbs: string;
     crumbsThisSacrifice: string;
     crumbsEverMade: string;
     immortalELO: number;
@@ -196,6 +315,7 @@ export interface ShopUpgrades {
     shopEXUltra: number;
     shopChronometerS: number;
     shopAmbrosiaUltra: number;
+    shopPanthema: number;
     shopSingularitySpeedup: number;
     shopSingularityPotency: number;
     shopSadisticRune: number;
@@ -374,21 +494,6 @@ export interface CorruptionLevels {
     hyperchallenge: number;
 }
 
-export class CorruptionLoadout {
-    totalScoreMult = 1
-    corruptionScoreMults = [1, 3, 4, 5, 6, 7, 7.75, 8.5, 9.25, 10, 10.75, 11.5, 12.25, 13, 16, 20, 25, 33, 35]
-    levels: CorruptionLevels = {
-        viscosity: 0,
-        drought: 0,
-        deflation: 0,
-        extinction: 0,
-        illiteracy: 0,
-        recession: 0,
-        dilation: 0,
-        hyperchallenge: 0,
-    }
-}
-
 /**
  * Represents saved loadouts for corruptions.
  * Keys are the names of the saved loadouts.
@@ -429,27 +534,27 @@ export interface AntSacrificeHistoryEntry {
 }
 
 export interface TalismanShards {
-    commonFragment: number;
-    epicFragment: number;
-    legendaryFragment: number;
-    mythicalFragment: number;
-    rareFragment: number;
-    shard: number;
-    uncommonFragment: number;
+    shard: string; // Very large number stored as string
+    commonFragment: string;
+    uncommonFragment: string;
+    rareFragment: string;
+    epicFragment: string;
+    legendaryFragment: string;
+    mythicalFragment: string;
 }
 
 export interface Talismans {
-    achievement: TalismanShards;
-    chronos: TalismanShards;
-    cookieGrandma: TalismanShards;
     exemption: TalismanShards;
-    horseShoe: TalismanShards;
-    metaphysics: TalismanShards;
+    chronos: TalismanShards;
     midas: TalismanShards;
+    metaphysics: TalismanShards;
+    polymath: TalismanShards;
     mortuus: TalismanShards;
     plastic: TalismanShards;
-    polymath: TalismanShards;
     wowSquare: TalismanShards;
+    achievement: TalismanShards;
+    cookieGrandma: TalismanShards;
+    horseShoe: TalismanShards;
 }
 
 /**
@@ -493,13 +598,6 @@ export interface AutoChallengeTimer {
     start: number;
     exit: number;
     enter: number;
-}
-
-/**
- * Represents timing information related to promo codes.
- */
-export interface PromoCodeTiming {
-    time: number; // Timestamp
 }
 
 /**
@@ -675,9 +773,82 @@ export interface SingularityChallengeStatus {
 }
 
 export interface SingularityChallengeRewards {
-    talismanFreeLevel: number;
-    talismanRuneEffect: number;
-    antiquityOOM: number;
+    noSingularityUpgrades: {
+        cubes: number;
+        goldenQuarks: number;
+        blueberries: number;
+        shopUpgrade: boolean;
+        additiveLuckMult: number;
+        shopUpgrade2: boolean;
+    };
+    oneChallengeCap: {
+        corrScoreIncrease: number;
+        blueberrySpeedMult: number;
+        capIncrease: number;
+        freeCorruptionLevel: number;
+        shopUpgrade: boolean;
+        reinCapIncrease2: number;
+        ascCapIncrease2: number;
+    };
+    noOcteracts: {
+        octeractPow: number;
+        offeringBonus: boolean;
+        obtainiumBonus: boolean;
+        shopUpgrade: boolean;
+    };
+    limitedAscensions: {
+        ascensionSpeedMult: number;
+        hepteractCap: boolean;
+        shopUpgrade: boolean;
+        shopUpgrade2: boolean;
+    };
+    noAmbrosiaUpgrades: {
+        bonusAmbrosia: number;
+        blueberries: number;
+        additiveLuckMult: number;
+        ambrosiaLuck: number;
+        redLuck: number;
+        blueberrySpeedMult: number;
+        redSpeedMult: number;
+        shopUpgrade: boolean;
+        shopUpgrade2: boolean;
+    };
+    noQuarkUpgrades: {
+        freeObtainiumLevels: number;
+        freeOfferingLevels: number;
+        freeSpeedLevels: number;
+        freeCubeLevels: number;
+        freeQuarkLevel: number;
+        freeInfinityLevels: number;
+        shopUpgrade: boolean;
+        topHatUnlock: boolean;
+    };
+    limitedTime: {
+        preserveQuarks: boolean;
+        quarkMult: number;
+        globalSpeed: number;
+        ascensionSpeed: number;
+        barRequirementMultiplier: number;
+        shopUpgrade: boolean;
+        shopUpgrade2: boolean;
+    };
+    sadisticPrequel: {
+        extraFree: number;
+        quarkMult: number;
+        freeUpgradeMult: number;
+        shopUpgrade: boolean;
+        shopUpgrade2: boolean;
+        shopUpgrade3: boolean;
+    };
+    taxmanLastStand: {
+        horseShoeUnlock: boolean;
+        shopUpgrade: boolean;
+        talismanUnlock: boolean;
+        talismanFreeLevel: number;
+        talismanRuneEffect: number;
+        antiquityOOM: number;
+        horseShoeOOM: number;
+    };
 }
 
 /**
@@ -687,6 +858,7 @@ export interface SingularityChallenges {
     noSingularityUpgrades: SingularityChallengeStatus;
     oneChallengeCap: SingularityChallengeStatus;
     limitedAscensions: SingularityChallengeStatus;
+    noQuarkUpgrades: SingularityChallengeStatus;
     noOcteracts: SingularityChallengeStatus;
     noAmbrosiaUpgrades: SingularityChallengeStatus;
     limitedTime: SingularityChallengeStatus;
@@ -782,20 +954,25 @@ export interface RedAmbrosiaUpgrades {
     freeLevelsRow4: number;
     freeLevelsRow5: number;
     blueberryGenerationSpeed: number;
-    blueberryGenerationSpeed2: number;
     regularLuck: number;
-    regularLuck2: number;
     redGenerationSpeed: number;
     redLuck: number;
     redAmbrosiaCube: number;
     redAmbrosiaObtainium: number;
     redAmbrosiaOffering: number;
     redAmbrosiaCubeImprover: number;
+    redAmbrosiaFreeAccumulator: number;
     viscount: number;
     infiniteShopUpgrades: number;
     redAmbrosiaAccelerator: number;
+    regularLuck2: number;
+    blueberryGenerationSpeed2: number;
     salvageYinYang: number;
     blueberries: number;
+    freeOfferingUpgrades: number;
+    freeObtainiumUpgrades: number;
+    freeCubeUpgrades: number;
+    freeSpeedUpgrades: number;
 }
 
 export interface Campaigns {
@@ -866,23 +1043,549 @@ export interface progressiveAchievements {
     "redAmbrosiaUpgrades": number;
 }
 
-
 /**
- * The main interface representing the entire player save data structure.
+ * The 'true' Player interface (with the same types as vanilla)
  */
 export interface PlayerData {
-    // Basic Info & Timestamps
-    firstPlayed: string; // ISO Date string
-    version: string;
-    rngCode: number;
-    seed: number[];
-    lastExportedSave: number; // Timestamp
-    dayCheck: string; // ISO Date string
-    dayTimer: number;
-    dailyCodeUsed: boolean;
-    promoCodeTiming: PromoCodeTiming;
+  firstPlayed: string
+  worlds: number
+  coins: Decimal
+  coinsThisPrestige: Decimal
+  coinsThisTranscension: Decimal
+  coinsThisReincarnation: Decimal
+  coinsTotal: Decimal
 
-    // Core Currencies & Progression
+  firstOwnedCoin: number
+  firstGeneratedCoin: Decimal
+  firstCostCoin: Decimal
+  firstProduceCoin: number
+
+  secondOwnedCoin: number
+  secondGeneratedCoin: Decimal
+  secondCostCoin: Decimal
+  secondProduceCoin: number
+
+  thirdOwnedCoin: number
+  thirdGeneratedCoin: Decimal
+  thirdCostCoin: Decimal
+  thirdProduceCoin: number
+
+  fourthOwnedCoin: number
+  fourthGeneratedCoin: Decimal
+  fourthCostCoin: Decimal
+  fourthProduceCoin: number
+
+  fifthOwnedCoin: number
+  fifthGeneratedCoin: Decimal
+  fifthCostCoin: Decimal
+  fifthProduceCoin: number
+
+  firstOwnedDiamonds: number
+  firstGeneratedDiamonds: Decimal
+  firstCostDiamonds: Decimal
+  firstProduceDiamonds: number
+
+  secondOwnedDiamonds: number
+  secondGeneratedDiamonds: Decimal
+  secondCostDiamonds: Decimal
+  secondProduceDiamonds: number
+
+  thirdOwnedDiamonds: number
+  thirdGeneratedDiamonds: Decimal
+  thirdCostDiamonds: Decimal
+  thirdProduceDiamonds: number
+
+  fourthOwnedDiamonds: number
+  fourthGeneratedDiamonds: Decimal
+  fourthCostDiamonds: Decimal
+  fourthProduceDiamonds: number
+
+  fifthOwnedDiamonds: number
+  fifthGeneratedDiamonds: Decimal
+  fifthCostDiamonds: Decimal
+  fifthProduceDiamonds: number
+
+  firstOwnedMythos: number
+  firstGeneratedMythos: Decimal
+  firstCostMythos: Decimal
+  firstProduceMythos: number
+
+  secondOwnedMythos: number
+  secondGeneratedMythos: Decimal
+  secondCostMythos: Decimal
+  secondProduceMythos: number
+
+  thirdOwnedMythos: number
+  thirdGeneratedMythos: Decimal
+  thirdCostMythos: Decimal
+  thirdProduceMythos: number
+
+  fourthOwnedMythos: number
+  fourthGeneratedMythos: Decimal
+  fourthCostMythos: Decimal
+  fourthProduceMythos: number
+
+  fifthOwnedMythos: number
+  fifthGeneratedMythos: Decimal
+  fifthCostMythos: Decimal
+  fifthProduceMythos: number
+
+  firstOwnedParticles: number
+  firstGeneratedParticles: Decimal
+  firstCostParticles: Decimal
+  firstProduceParticles: number
+
+  secondOwnedParticles: number
+  secondGeneratedParticles: Decimal
+  secondCostParticles: Decimal
+  secondProduceParticles: number
+
+  thirdOwnedParticles: number
+  thirdGeneratedParticles: Decimal
+  thirdCostParticles: Decimal
+  thirdProduceParticles: number
+
+  fourthOwnedParticles: number
+  fourthGeneratedParticles: Decimal
+  fourthCostParticles: Decimal
+  fourthProduceParticles: number
+
+  fifthOwnedParticles: number
+  fifthGeneratedParticles: Decimal
+  fifthCostParticles: Decimal
+  fifthProduceParticles: number
+
+  ants: PlayerAnts
+
+  ascendBuilding1: {
+    cost: number
+    owned: number
+    generated: Decimal
+    multiplier: number
+  }
+  ascendBuilding2: {
+    cost: number
+    owned: number
+    generated: Decimal
+    multiplier: number
+  }
+  ascendBuilding3: {
+    cost: number
+    owned: number
+    generated: Decimal
+    multiplier: number
+  }
+  ascendBuilding4: {
+    cost: number
+    owned: number
+    generated: Decimal
+    multiplier: number
+  }
+  ascendBuilding5: {
+    cost: number
+    owned: number
+    generated: Decimal
+    multiplier: number
+  }
+
+  multiplierCost: Decimal
+  multiplierBought: number
+
+  acceleratorCost: Decimal
+  acceleratorBought: number
+
+  acceleratorBoostBought: number
+  acceleratorBoostCost: Decimal
+
+  upgrades: number[]
+
+  prestigeCount: number
+  transcendCount: number
+  reincarnationCount: number
+
+  prestigePoints: Decimal
+  transcendPoints: Decimal
+  reincarnationPoints: Decimal
+
+  prestigeShards: Decimal
+  transcendShards: Decimal
+  reincarnationShards: Decimal
+
+  toggles: Record<number, boolean>
+
+  challengecompletions: number[]
+  highestchallengecompletions: number[]
+  challenge15Exponent: number
+  highestChallenge15Exponent: number
+
+  retrychallenges: boolean
+  currentChallenge: {
+    transcension: number
+    reincarnation: number
+    ascension: number
+  }
+
+  obtainium: Decimal
+  maxObtainium: Decimal
+  obtainiumtimer: number
+
+  // Ignore the first index. The other 25 are shaped in a 5x5 grid similar to the production appearance
+  researches: number[]
+
+  unlocks: {
+    coinone: boolean
+    cointwo: boolean
+    cointhree: boolean
+    coinfour: boolean
+    prestige: boolean
+    generation: boolean
+    transcend: boolean
+    reincarnate: boolean
+    rrow1: boolean
+    rrow2: boolean
+    rrow3: boolean
+    rrow4: boolean
+    anthill: boolean
+    blessings: boolean
+    spirits: boolean
+    talismans: boolean
+    ascensions: boolean
+    tesseracts: boolean
+    hypercubes: boolean
+    platonics: boolean
+    hepteracts: boolean
+  }
+  achievements: number[]
+  progressiveAchievements: Record<ProgressiveAchievements, number>
+
+  achievementPoints: number
+
+  prestigenomultiplier: boolean
+  prestigenoaccelerator: boolean
+  transcendnomultiplier: boolean
+  transcendnoaccelerator: boolean
+  reincarnatenomultiplier: boolean
+  reincarnatenoaccelerator: boolean
+  prestigenocoinupgrades: boolean
+  transcendnocoinupgrades: boolean
+  transcendnocoinorprestigeupgrades: boolean
+  reincarnatenocoinupgrades: boolean
+  reincarnatenocoinorprestigeupgrades: boolean
+  reincarnatenocoinprestigeortranscendupgrades: boolean
+  reincarnatenocoinprestigetranscendorgeneratorupgrades: boolean
+
+  crystalUpgrades: number[]
+  crystalUpgradesCost: number[]
+
+  runes: Record<RuneKeys, Decimal>
+  runeBlessings: Record<RuneBlessingKeys, Decimal>
+  runeSpirits: Record<RuneSpiritKeys, Decimal>
+
+  offerings: Decimal
+  maxOfferings: Decimal
+
+  prestigecounter: number
+  transcendcounter: number
+  reincarnationcounter: number
+  offlinetick: number
+
+  prestigeamount: number
+  transcendamount: number
+  reincarnationamount: number
+
+  fastestprestige: number
+  fastesttranscend: number
+  fastestreincarnate: number
+
+  resetToggleModes: {
+    prestige: AutoResetModes
+    transcend: AutoResetModes
+    reincarnation: AutoResetModes
+    ascension: AutoAscensionModes
+  }
+
+  tesseractAutoBuyerToggle: boolean
+  tesseractAutoBuyerAmount: number
+
+  coinbuyamount: BuyAmount
+  crystalbuyamount: BuyAmount
+  mythosbuyamount: BuyAmount
+  particlebuyamount: BuyAmount
+  offeringbuyamount: BuyAmount
+  tesseractbuyamount: BuyAmount
+
+  shoptoggles: {
+    coin: boolean
+    prestige: boolean
+    transcend: boolean
+    generators: boolean
+    reincarnate: boolean
+  }
+
+  // create a Map with keys defaulting to boolean
+  codes: Map<number, boolean>
+
+  shopUpgrades: Record<ShopUpgradeNames, number>
+
+  shopPotionsConsumed: {
+    offering: number
+    obtainium: number
+  }
+
+  shopConfirmationToggle: boolean
+  shopBuyMaxToggle: boolean | 'TEN' | 'ANY'
+  shopHideToggle: boolean
+  autoPotionTimer: number
+  autoPotionTimerObtainium: number
+
+  autoSacrificeToggle: boolean
+  autoBuyFragment: boolean
+  autoFortifyToggle: boolean
+  autoEnhanceToggle: boolean
+  autoResearchToggle: boolean
+  researchBuyMaxToggle: boolean
+  autoResearchMode: 'cheapest' | 'manual'
+  autoResearch: number
+  autoSacrifice: number
+  sacrificeTimer: number
+  quarkstimer: number
+  goldenQuarksTimer: number
+
+  antSacrificeTimer: number
+  antSacrificeTimerReal: number
+
+  talismans: Record<TalismanKeys, Record<TalismanCraftItems, Decimal>>
+
+  talismanShards: Decimal
+  commonFragments: Decimal
+  uncommonFragments: Decimal
+  rareFragments: Decimal
+  epicFragments: Decimal
+  legendaryFragments: Decimal
+  mythicalFragments: Decimal
+
+  buyTalismanShardPercent: number
+
+  ascensionCount: number
+  ascensionCounter: number
+  ascensionCounterReal: number
+  ascensionCounterRealReal: number
+  autoOpenCubes: boolean
+  openCubes: number
+  autoOpenTesseracts: boolean
+  openTesseracts: number
+  autoOpenHypercubes: boolean
+  openHypercubes: number
+  autoOpenPlatonicsCubes: boolean
+  openPlatonicsCubes: number
+  cubeUpgrades: ArrayStartingWithNull<number>
+  cubeUpgradesBuyMaxToggle: boolean
+  autoCubeUpgradesToggle: boolean
+  autoPlatonicUpgradesToggle: boolean
+  platonicUpgrades: number[]
+  maxPlatToggle: boolean
+  wowCubes: WowCubes
+  wowTesseracts: WowTesseracts
+  wowHypercubes: WowHypercubes
+  wowPlatonicCubes: WowPlatonicCubes
+  wowAbyssals: number
+  wowOcteracts: number
+  totalWowOcteracts: number
+  cubeBlessings: {
+    accelerator: number
+    multiplier: number
+    offering: number
+    runeExp: number
+    obtainium: number
+    antSpeed: number
+    antSacrifice: number
+    antELO: number
+    talismanBonus: number
+    globalSpeed: number
+  }
+  tesseractBlessings: {
+    accelerator: number
+    multiplier: number
+    offering: number
+    runeExp: number
+    obtainium: number
+    antSpeed: number
+    antSacrifice: number
+    antELO: number
+    talismanBonus: number
+    globalSpeed: number
+  }
+  hypercubeBlessings: {
+    accelerator: number
+    multiplier: number
+    offering: number
+    runeExp: number
+    obtainium: number
+    antSpeed: number
+    antSacrifice: number
+    antELO: number
+    talismanBonus: number
+    globalSpeed: number
+  }
+  platonicBlessings: {
+    cubes: number
+    tesseracts: number
+    hypercubes: number
+    platonics: number
+    hypercubeBonus: number
+    taxes: number
+    scoreBonus: number
+    globalSpeed: number
+  }
+  ascendShards: Decimal
+  autoAscend: boolean
+  autoAscendMode: AutoAscensionResetModes
+  autoAscendThreshold: number
+  roombaResearchIndex: number
+  ascStatToggles: Record<number, boolean>
+
+  campaigns: CampaignManager
+
+  corruptions: {
+    next: CorruptionLevels
+    used: CorruptionLevels
+    saves: CorruptionSaves
+    showStats: boolean
+  }
+
+  constantUpgrades: ArrayStartingWithNull<number>
+  history: Record<string, unknown[]>
+  historyShowPerSecond: boolean
+
+  autoChallengeRunning: boolean
+  autoChallengeIndex: number
+  autoChallengeToggles: boolean[]
+  autoChallengeStartExponent: number
+  autoChallengeTimer: {
+    start: number
+    exit: number
+    enter: number
+  }
+
+  runeBlessingBuyAmount: number
+  runeSpiritBuyAmount: number
+
+  autoTesseracts: boolean[]
+
+  saveString: string
+  exporttest: string | boolean
+
+  dayCheck: Date | null
+  dayTimer: number
+  cubeOpenedDaily: number
+  cubeQuarkDaily: number
+  tesseractOpenedDaily: number
+  tesseractQuarkDaily: number
+  hypercubeOpenedDaily: number
+  hypercubeQuarkDaily: number
+  platonicCubeOpenedDaily: number
+  platonicCubeQuarkDaily: number
+
+  version: string
+
+  rngCode: number
+  skillCode?: number
+  promoCodeTiming: {
+    time: number
+  }
+
+  hepteracts: Record<HepteractKeys, HepteractValues>
+
+  /*hepteractCrafts: {
+    chronos: HepteractCraft
+    hyperrealism: HepteractCraft
+    quark: HepteractCraft
+    challenge: HepteractCraft
+    abyss: HepteractCraft
+    accelerator: HepteractCraft
+    acceleratorBoost: HepteractCraft
+    multiplier: HepteractCraft
+  }*/
+  overfluxOrbs: number
+  overfluxOrbsAutoBuy: boolean
+  overfluxPowder: number
+  dailyPowderResetUses: number
+  autoWarpCheck: boolean
+
+  singularityCount: number
+  highestSingularityCount: number
+  singularityCounter: number
+  singularityElevatorTarget: number
+  singularityElevatorSlowClimb: boolean
+  singularityElevatorLocked: boolean
+  singularityMatter: number
+  goldenQuarks: number
+  quarksThisSingularity: number
+  totalQuarksEver: number
+  hotkeys: Record<number, string[]>
+  theme: string
+  iconSet: number
+  notation: 'Pure Scientific' | 'Pure Engineering' | 'Default'
+
+  goldenQuarkUpgrades: Record<SingularityDataKeys, {
+    level: number
+    freeLevel: number
+    goldenQuarksInvested: number
+  }>
+
+  octUpgrades: Record<OcteractUpgrades, {
+    level: number
+    freeLevel: number
+    octeractsInvested: number
+  }>
+
+  ambrosiaUpgrades: Record<AmbrosiaUpgradeNames, {
+    ambrosiaInvested: number
+    blueberriesInvested: number
+  }>
+
+  dailyCodeUsed: boolean
+  hepteractAutoCraftPercentage: number
+  octeractTimer: number
+
+  insideSingularityChallenge: boolean
+  singularityChallenges: Record<
+    SingularityChallengeDataKeys,
+    SingularityChallenge
+  >
+
+  ambrosia: number
+  lifetimeAmbrosia: number
+
+  blueberryTime: number
+  ambrosiaRNG: number // DEPRECIATED, DO NOT USE
+  spentBlueberries: number
+
+  blueberryLoadouts: BlueberryLoadouts
+  blueberryLoadoutMode: 'saveTree' | 'loadTree'
+
+  redAmbrosia: number
+  lifetimeRedAmbrosia: number
+  redAmbrosiaTime: number
+  redAmbrosiaUpgrades: Record<RedAmbrosiaNames, number>
+
+  singChallengeTimer: number
+
+  lastExportedSave: number
+
+  seed: number[]
+
+  stats: {
+    totalAddCodesUsed: number
+  }
+}
+
+/**
+ * The Player save data structure, using JSON-friendly primitives for raw save input.
+ */
+export interface GameData {
+    firstPlayed: string; // ISO Date string
+
     worlds: number;
     coins: Decimal;
     coinsThisPrestige: string;
@@ -890,55 +1593,6 @@ export interface PlayerData {
     coinsThisReincarnation: string;
     coinsTotal: string;
 
-    prestigeCount: number;
-    transcendCount: number;
-    reincarnationCount: number;
-    ascensionCount: number;
-    singularityCount: number;
-    highestSingularityCount: number;
-
-    prestigePoints: Decimal; // Can be large/decimal stored as string
-    transcendPoints: Decimal;
-    reincarnationPoints: Decimal;
-    prestigeShards: Decimal;
-    transcendShards: Decimal;
-    reincarnationShards: Decimal;
-    ascendShards: Decimal;
-
-    campaigns: Campaigns;
-
-    researchPoints: number;
-    runeshards: number;
-    maxofferings: number;
-    offeringpersecond: number;
-    obtainiumtimer: number;
-    obtainiumpersecond: number;
-    maxobtainiumpersecond: number;
-    maxobtainium: number;
-    overfluxOrbs: number;
-    overfluxPowder: number;
-    dailyPowderResetUses: number;
-    quarks: number;
-    quarksThisSingularity: number;
-    totalQuarksEver: number;
-    goldenQuarks: number;
-    wowCubes: number;
-    wowTesseracts: number;
-    wowHypercubes: number;
-    wowPlatonicCubes: number;
-    wowAbyssals: number;
-    wowOcteracts: number;
-    totalWowOcteracts: number;
-    ambrosia: number;
-    lifetimeAmbrosia: number;
-    ambrosiaRNG: number;
-    redAmbrosia: number;
-    lifetimeRedAmbrosia: number;
-    spentBlueberries: number;
-    ultimateProgress: number;
-
-    // Generators (Coins, Diamonds, Mythos, Particles, Ants)
-    ants: Ants;
     firstOwnedCoin: number;
     firstGeneratedCoin: string;
     firstCostCoin: string;
@@ -1023,6 +1677,8 @@ export interface PlayerData {
     fifthCostParticles: string;
     fifthProduceParticles: number;
 
+    ants: Ants;
+
     // Buildings & Accelerators
     ascendBuilding1: AscendBuilding;
     ascendBuilding2: AscendBuilding;
@@ -1039,122 +1695,37 @@ export interface PlayerData {
 
     // Upgrades & Research
     upgrades: number[]; // Array of upgrade levels/statuses (0 or 1)
-    researches: number[]; // Array of research levels
-    crystalUpgrades: number[];
-    crystalUpgradesCost: number[]; // Costs corresponding to crystalUpgrades
-    cubeUpgrades: (number | null)[]; // Array of cube upgrade levels (starts with null)
-    platonicUpgrades: number[];
-    constantUpgrades: (number | null)[]; // Array of constant upgrade levels (starts with null)
-    shopUpgrades: ShopUpgrades;
-    shopHorseShoe: ShopUpgrades;
-    goldenQuarkUpgrades: goldenQuarkUpgrades;
-    octUpgrades: octUpgrades;
-    ambrosiaUpgrades: AmbrosiaUpgrades;
-    redAmbrosiaUpgrades: RedAmbrosiaUpgrades;
 
-    // Runes & Talismans
-    runes: Runes;
-    runeexp: number[];
-    runeBlessingLevels: number[];
-    runeSpiritLevels: number[];
-    talismans: Talismans;
-    talismanShards: Decimal;
-    commonFragments: Decimal;
-    uncommonFragments: Decimal;
-    rareFragments: Decimal;
-    epicFragments: Decimal;
-    legendaryFragments: Decimal;
-    mythicalFragments: Decimal;
+    prestigeCount: number;
+    transcendCount: number;
+    reincarnationCount: number;
 
-    // Blessings & Crafts
-    cubeBlessings: CubeTesseractHypercubeBlessings;
-    tesseractBlessings: CubeTesseractHypercubeBlessings;
-    hypercubeBlessings: CubeTesseractHypercubeBlessings;
-    platonicBlessings: PlatonicBlessings;
-    hepteracts: hepteracts;
+    prestigePoints: string; // Can be large/decimal stored as string
+    transcendPoints: string;
+    reincarnationPoints: string;
+    prestigeShards: string;
+    transcendShards: string;
+    reincarnationShards: string;
+
+    // Automation & Toggles
+    toggles: Toggles;
 
     // Challenges & Corruptions
     challengecompletions: number[]; // Completions per challenge
     highestchallengecompletions: number[]; // Highest completions per challenge
     challenge15Exponent: number;
     highestChallenge15Exponent: number;
-    currentChallenge: CurrentChallenge;
     retrychallenges: boolean;
-    corruptions: Corruptions;
-    insideSingularityChallenge: boolean;
-    singularityChallenges: SingularityChallenges;
-    singChallengeTimer: number;
+    currentChallenge: CurrentChallenge;
+    obtainium: string;
+    maxObtainium: string;
 
-
-    // Automation & Toggles
-    toggles: Toggles;
+    obtainiumtimer: number;
+    researches: number[]; // Array of research levels
     unlocks: Unlocks;
     achievements: number[]; // Status per achievement (0 or 1)
     progressiveAchievements: progressiveAchievements;
     achievementPoints: number;
-    shoptoggles: ShopToggles;
-    shopBuyMaxToggle: boolean;
-    shopHideToggle: boolean;
-    shopConfirmationToggle: boolean;
-    resettoggle1: number;
-    resettoggle2: number;
-    resettoggle3: number;
-    resettoggle4: number;
-    saveOfferingToggle: boolean;
-    ascStatToggles: AscStatToggles;
-    autoSacrificeToggle: boolean;
-    autoBuyFragment: boolean;
-    autoFortifyToggle: boolean;
-    autoEnhanceToggle: boolean;
-    autoResearchToggle: boolean;
-    researchBuyMaxToggle: boolean;
-    autoResearchMode: string; // e.g., "cheapest"
-    autoResearch: number;
-    autoSacrifice: number;
-    buyTalismanShardPercent: number;
-    cubeUpgradesBuyMaxToggle: boolean;
-    autoCubeUpgradesToggle: boolean;
-    autoPlatonicUpgradesToggle: boolean;
-    autoAscend: boolean;
-    autoAscendMode: string; // e.g., "realAscensionTime"
-    autoAscendThreshold: number;
-    autoOpenCubes: boolean;
-    openCubes: number;
-    autoOpenTesseracts: boolean;
-    openTesseracts: number;
-    autoOpenHypercubes: boolean;
-    openHypercubes: number;
-    autoOpenPlatonicsCubes: boolean;
-    openPlatonicsCubes: number;
-    autoChallengeRunning: boolean;
-    autoChallengeIndex: number;
-    autoChallengeToggles: boolean[];
-    autoChallengeStartExponent: number;
-    autoChallengeTimer: AutoChallengeTimer;
-    autoPotionTimer: number;
-    autoPotionTimerObtainium: number;
-    shopPotionsConsumed: ShopPotionsConsumed;
-    autoTesseracts: boolean[]; // Toggles for auto-opening Tesseract types
-    autoWarpCheck: boolean;
-    overfluxOrbsAutoBuy: boolean;
-    hepteractAutoCraftPercentage: number;
-
-    // Timers & Counters
-    prestigecounter: number;
-    transcendcounter: number;
-    reincarnationcounter: number;
-    ascensionCounter: number;
-    ascensionCounterReal: number;
-    ascensionCounterRealReal: number;
-    singularityCounter: number;
-    offlinetick: number; // Timestamp? Large number
-    sacrificeTimer: number;
-    quarkstimer: number;
-    goldenQuarksTimer: number;
-    octeractTimer: number;
-    blueberryTime: number;
-    redAmbrosiaTime: number;
-
 
     // Reset Related Flags & Stats
     prestigenomultiplier: boolean;
@@ -1170,29 +1741,35 @@ export interface PlayerData {
     reincarnatenocoinorprestigeupgrades: boolean;
     reincarnatenocoinprestigeortranscendupgrades: boolean;
     reincarnatenocoinprestigetranscendorgeneratorupgrades: boolean;
-    fastestprestige: number;
-    fastesttranscend: number;
-    fastestreincarnate: number;
+    crystalUpgrades: number[];
+    crystalUpgradesCost: number[]; // Costs corresponding to crystalUpgrades
+
+    // Runes & Talismans
+    runes: Runes;
+    runeBlessings: Record<RuneBlessingKeys, string>;
+    runeSpirits: Record<RuneSpiritKeys, string>;
+    offerings: string;
+    maxOfferings: string;
+
+    // Timers & Counters
+    prestigecounter: number;
+    transcendcounter: number;
+    reincarnationcounter: number;
+    offlinetick: number; // Timestamp? Large number
     prestigeamount: number;
     transcendamount: number;
     reincarnationamount: number;
-
-    // UI & Settings
-    tabnumber: number;
-    subtabNumber: number;
-    saveString: string; // Format string for save file names
-    exporttest: boolean; // Internal/debug flag?
-    hotkeys: Record<string, any>; // Structure depends on defined hotkeys
-    theme: string; // e.g., "Dark Mode"
-    iconSet: number;
-    notation: string; // e.g., "Default"
-    historyShowPerSecond: boolean;
-    roombaResearchIndex: number;
-    visitedAmbrosiaSubtab: boolean;
-    visitedAmbrosiaSubtabRed: boolean;
-    blueberryLoadoutMode: string; // e.g., "loadTree"
-    blueberryLoadouts: BlueberryLoadouts;
-
+    fastestprestige: number;
+    fastesttranscend: number;
+    fastestreincarnate: number;
+    resetToggleModes: {
+      prestige: AutoResetModes;
+      transcend: AutoResetModes;
+      reincarnation: AutoResetModes;
+      ascension: AutoAscensionModes;
+    };
+    tesseractAutoBuyerToggle: number; // Likely boolean represented as number
+    tesseractAutoBuyerAmount: number;
 
     // Buy Amounts
     coinbuyamount: number;
@@ -1201,31 +1778,113 @@ export interface PlayerData {
     particlebuyamount: number;
     offeringbuyamount: number;
     tesseractbuyamount: number;
-    tesseractAutoBuyerToggle: number; // Likely boolean represented as number
-    tesseractAutoBuyerAmount: number;
+    shoptoggles: ShopToggles;
+
+    codes: [number, boolean][]; // Array of [codeId, redeemedStatus] tuples
+
+    shopUpgrades: ShopUpgrades;
+
+    shopPotionsConsumed: ShopPotionsConsumed;
+
+    shopConfirmationToggle: boolean;
+    shopBuyMaxToggle: boolean | 'TEN' | 'ANY';
+    shopHideToggle: boolean;
+    autoPotionTimer: number;
+    autoPotionTimerObtainium: number;
+
+    autoSacrificeToggle: boolean;
+    autoBuyFragment: boolean;
+    autoFortifyToggle: boolean;
+    autoEnhanceToggle: boolean;
+    autoResearchToggle: boolean;
+    researchBuyMaxToggle: boolean;
+    autoResearchMode: 'cheapest' | 'manual';
+    autoResearch: number;
+    autoSacrifice: number;
+    sacrificeTimer: number;
+    quarkstimer: number;
+    goldenQuarksTimer: number;
+
+    antSacrificeTimer: number;
+    antSacrificeTimerReal: number;
+
+    talismans: Talismans;
+
+    talismanShards: string; // Large values stored as string
+    commonFragments: string;
+    uncommonFragments: string;
+    rareFragments: string;
+    epicFragments: string;
+    legendaryFragments: string;
+    mythicalFragments: string;
+
+    buyTalismanShardPercent: number;
+    ascensionCount: number;
+
+    ascensionCounter: number;
+    ascensionCounterReal: number;
+    ascensionCounterRealReal: number;
+    autoOpenCubes: boolean;
+    openCubes: number;
+    autoOpenTesseracts: boolean;
+    openTesseracts: number;
+    autoOpenHypercubes: boolean;
+    openHypercubes: number;
+    autoOpenPlatonicsCubes: boolean;
+    openPlatonicsCubes: number;
+    cubeUpgrades: (number | null)[]; // Array of cube upgrade levels (starts with null)
+    cubeUpgradesBuyMaxToggle: boolean;
+    autoCubeUpgradesToggle: boolean;
+    autoPlatonicUpgradesToggle: boolean;
+    platonicUpgrades: number[];
+    maxPlatToggle: boolean;
+    wowCubes: number;
+    wowTesseracts: number;
+    wowHypercubes: number;
+    wowPlatonicCubes: number;
+    wowAbyssals: number;
+    wowOcteracts: number;
+    totalWowOcteracts: number;
+
+    cubeBlessings: CubeTesseractHypercubeBlessings;
+    tesseractBlessings: CubeTesseractHypercubeBlessings;
+    hypercubeBlessings: CubeTesseractHypercubeBlessings;
+    platonicBlessings: PlatonicBlessings;
+
+    ascendShards: string; // Large values stored as string
+    autoAscend: boolean;
+    autoAscendMode: string; // e.g., "realAscensionTime"
+    autoAscendThreshold: number;
+    roombaResearchIndex: number;
+    ascStatToggles: AscStatToggles;
+
+    campaigns: Campaigns;
+    corruptions: Corruptions;
+
+    constantUpgrades: (number | null)[]; // Array of constant upgrade levels (starts with null)
+    history: History;
+    historyShowPerSecond: boolean;
+
+    autoChallengeRunning: boolean;
+    autoChallengeIndex: number;
+    autoChallengeToggles: boolean[];
+    autoChallengeStartExponent: number;
+    autoChallengeTimer: {
+        start: number
+        exit: number
+        enter: number
+    };
+
     runeBlessingBuyAmount: number;
     runeSpiritBuyAmount: number;
 
-    // Codes & Version Loads
-    codes: [number, boolean][]; // Array of [codeId, redeemedStatus] tuples
-    loaded1009: boolean;
-    loaded1009hotfix1: boolean;
-    loaded10091: boolean;
-    loaded1010: boolean;
-    loaded10101: boolean;
-    loadedOct4Hotfix: boolean; // Example old version flag
-    loadedNov13Vers: boolean;
-    loadedDec16Vers: boolean;
-    loadedV253: boolean;
-    loadedV255: boolean;
-    loadedV297Hotfix1: boolean;
-    loadedV2927Hotfix1: boolean;
-    loadedV2930Hotfix1: boolean;
-    loadedV2931Hotfix1: boolean;
-    loadedV21003Hotfix1: boolean;
-    loadedV21007Hotfix1: boolean;
+    autoTesseracts: boolean[]; // Toggles for auto-opening Tesseract types
 
-    // Daily Stats
+    saveString: string; // Format string for save file names
+    exporttest: boolean; // Internal/debug flag?
+
+    dayCheck: string; // ISO Date string
+    dayTimer: number;
     cubeOpenedDaily: number;
     cubeQuarkDaily: number;
     tesseractOpenedDaily: number;
@@ -1234,9 +1893,72 @@ export interface PlayerData {
     hypercubeQuarkDaily: number;
     platonicCubeOpenedDaily: number;
     platonicCubeQuarkDaily: number;
+    
+    version: string
 
-    // History Data
-    history: History;
+    rngCode: number;
+    skillCode?: number;
+    promoCodeTiming: {
+        time: number
+    }
+    hepteracts: hepteracts;
+
+    overfluxOrbs: number;
+    overfluxOrbsAutoBuy: boolean;
+    overfluxPowder: number;
+    dailyPowderResetUses: number;
+    autoWarpCheck: boolean;
+
+    singularityCount: number;
+    highestSingularityCount: number;
+    singularityCounter: number;
+    singularityElevatorTarget: number;
+    singularityElevatorSlowClimb: boolean;
+    singularityElevatorLocked: boolean;
+    singularityMatter: number;
+    goldenQuarks: number;
+    quarksThisSingularity: number;
+    totalQuarksEver: number;
+    hotkeys: Record<string, any>; // Structure depends on defined hotkeys
+    theme: string; // e.g., "Dark Mode"
+    iconSet: number;
+    notation: 'Pure Scientific' | 'Pure Engineering' | 'Default';
+    
+    goldenQuarkUpgrades: goldenQuarkUpgrades;
+    octUpgrades: octUpgrades;
+    ambrosiaUpgrades: AmbrosiaUpgrades;
+
+    dailyCodeUsed: boolean;
+    hepteractAutoCraftPercentage: number;
+    octeractTimer: number;
+
+    insideSingularityChallenge: boolean;
+    singularityChallenges: SingularityChallenges;
+
+    ambrosia: number;
+    lifetimeAmbrosia: number;
+
+    blueberryTime: number;
+    ambrosiaRNG: number; // DEPRECIATED, DO NOT USE
+    spentBlueberries: number;
+
+    blueberryLoadouts: BlueberryLoadouts;
+    blueberryLoadoutMode: 'saveTree' | 'loadTree';
+
+    redAmbrosia: number;
+    lifetimeRedAmbrosia: number;
+    redAmbrosiaTime: number;
+    redAmbrosiaUpgrades: RedAmbrosiaUpgrades;
+
+    singChallengeTimer: number;
+
+    lastExportedSave: number; // Timestamp
+
+    seed: number[];
+
+    stats: {
+        totalAddCodesUsed: number;
+    }
 
     // Add any missing top-level keys if necessary
 }

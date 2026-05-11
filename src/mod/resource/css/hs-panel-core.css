@@ -4,28 +4,32 @@
 /* Custom scrollbar styling for panel elements */
 .hs-panel-body::-webkit-scrollbar,
 #hs-ui-log::-webkit-scrollbar,
-.hs-timer-content::-webkit-scrollbar {
+.hs-timer-content::-webkit-scrollbar,
+.hs-heater-scrollable::-webkit-scrollbar {
     width: 5px;
     height: 5px;
 }
 
 .hs-panel-body::-webkit-scrollbar-track,
 #hs-ui-log::-webkit-scrollbar-track,
-.hs-timer-content::-webkit-scrollbar-track {
+.hs-timer-content::-webkit-scrollbar-track,
+.hs-heater-scrollable::-webkit-scrollbar-track {
     background: #1c1b22;
     border-radius: 3px;
 }
 
 .hs-panel-body::-webkit-scrollbar-thumb,
 #hs-ui-log::-webkit-scrollbar-thumb,
-.hs-timer-content::-webkit-scrollbar-thumb {
+.hs-timer-content::-webkit-scrollbar-thumb,
+.hs-heater-scrollable::-webkit-scrollbar-thumb {
     background: #a22a2a;
     border-radius: 3px;
 }
 
 .hs-panel-body::-webkit-scrollbar-corner,
 #hs-ui-log::-webkit-scrollbar-corner,
-.hs-timer-content::-webkit-scrollbar-corner {
+.hs-timer-content::-webkit-scrollbar-corner,
+.hs-heater-scrollable::-webkit-scrollbar-corner {
     background: #1c1b22;
 }
 
@@ -33,7 +37,8 @@
 @supports not selector(::-webkit-scrollbar) {
     .hs-panel-body::-webkit-scrollbar,
     #hs-ui-log::-webkit-scrollbar,
-    .hs-timer-content::-webkit-scrollbar {
+    .hs-timer-content::-webkit-scrollbar,
+    .hs-heater-scrollable::-webkit-scrollbar {
         scrollbar-color: #a22a2a #1c1b22;
     }
 }

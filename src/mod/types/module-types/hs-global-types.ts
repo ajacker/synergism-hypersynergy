@@ -89,9 +89,9 @@ export interface HSGlobalAmbrosia extends IStoreable {
     idleSwapMaxRedThreshold: number;
     idleSwapMinRedThreshold: number;
 
-    R_TIME_PER_AMBROSIA: number;
-    R_TIME_PER_RED_AMBROSIA: number;
-    R_digitReduction: number;
+    TIME_PER_AMBROSIA: number;
+    TIME_PER_RED_AMBROSIA: number;
+    digitReduction: number;
 
     blueBarId: string;
     blueBarProgressId: string;
@@ -127,6 +127,7 @@ export interface HSGlobalGameState {
 export interface HSGlobalGameData {
     fetchedDataRefreshInterval: number;
     campaignTokenRefreshInterval: number;
+    globalEventRefreshInterval: number;
     turboModeSpeedMs: number;
     turboCSSId: string;
 }
