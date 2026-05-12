@@ -11,40 +11,42 @@ export class HSHeaterAPI {
             amb,
             ramb,
             ambSpeedNonAmb,
-            ambSpeedPatreon,
+            blueberries,
             luckBaseNonAmb,
             luckMultNonAmb,
             redLuckBase,
             luckConversion,
             quarksOwned,
             qHept,
-            plat4x4,
             cubesExpTotal,
-            reducedSingularity,
-            isInsideExalt,
+            currentSingularity,
+            singularityReducers,
+            exalt,
             postAoag,
             transcription,
             ascSpeed,
             ascSpread,
             baseObt,
             baseOff,
-            blueberries,
             bonusRow2,
             bonusRow3,
             bonusRow4,
             bonusRow5,
-            runeMaxExp,
+            runeSiExp,
             runeSiRC,
             runeSiBonusLevelsTotal,
+            runeIaExp,
             runeIaBonusLevelsTotal,
             runeIaBonusLevelsTalisman,
             baseTalismanPower,
+            patreonBonus,
+            activeBells,
             jack,
-            totalVouchers,
-            shopAmbrosiaGeneration1,
-            shopAmbrosiaGeneration2,
-            shopAmbrosiaGeneration3,
-            shopAmbrosiaGeneration4,
+            freeShopLevelsInfinity,
+            freeShopLevelsCube,
+            freeShopLevelsSpeed,
+            freeShopLevelsQuark,
+            chronometerLevel,
             shopAmbrosiaLuck1,
             shopAmbrosiaLuck2,
             shopAmbrosiaLuck3,
@@ -52,6 +54,10 @@ export class HSHeaterAPI {
             shopRedLuck1,
             shopRedLuck2,
             shopRedLuck3,
+            shopAmbrosiaGeneration1,
+            shopAmbrosiaGeneration2,
+            shopAmbrosiaGeneration3,
+            shopAmbrosiaGeneration4,
             shopImproveQuarkHept1,
             shopImproveQuarkHept2,
             shopImproveQuarkHept3,
@@ -61,8 +67,10 @@ export class HSHeaterAPI {
         } = input;
 
         const shopQuark = shopImproveQuarkHept1 + shopImproveQuarkHept2 + shopImproveQuarkHept3 + shopImproveQuarkHept4 + shopImproveQuarkHept5;
-        const exalt = Number(isInsideExalt);
+        const reducedSingularity = currentSingularity - singularityReducers;
         const qHeptExp = 0;
+        const runeSiExpNumber = Number(runeSiExp);
+        const plat4x4 = 0;
 
         const baseluck = luckBaseNonAmb;
         const multluck = luckMultNonAmb;
@@ -154,8 +162,8 @@ export class HSHeaterAPI {
         const reduced_asc = Math.pow(Math.pow(ascSpeed, 1 / (1 + ascSpread * greater_than_1)), greater_than_1);
         const transcriptionEffect = 0.55 + transcription / 150;
         const l4_digits = 2 + Math.floor(Math.log10(Math.max(1, amb))) + Math.floor(Math.log10(Math.max(1, ramb)));
-        const originalSItotal = new Decimal(Math.floor((runeMaxExp - 12) * runeSiRC)).plus(runeSiBonusLevelsTotal);
-        const originalIAtotal = new Decimal(Math.floor((runeMaxExp - 75) * (0.5 + 0.001 * bonus[2][0]))).plus(runeIaBonusLevelsTotal);
+        const originalSItotal = new Decimal(Math.floor((runeSiExpNumber - 12) * runeSiRC)).plus(runeSiBonusLevelsTotal);
+        const originalIAtotal = new Decimal(Math.floor((runeSiExpNumber - 75) * (0.5 + 0.001 * bonus[2][0]))).plus(runeIaBonusLevelsTotal);
         const originalIAtotalNumber = originalIAtotal.toNumber();
 
         function singDebuff(singnum: number): [number, number] {
@@ -231,7 +239,7 @@ export class HSHeaterAPI {
             if (ctype === 1) {
                 newIAtotal = originalIAtotal.plus(runeIaBonusLevelsTalisman.times(delta).dividedBy(baseTalismanPower));
             } else if (ctype === 2) {
-                newIAtotal = new Decimal(runeMaxExp - 75).times(new Decimal(0.5).plus(delta)).floor().plus(runeIaBonusLevelsTotal);
+                newIAtotal = new Decimal(runeSiExpNumber - 75).times(new Decimal(0.5).plus(delta)).floor().plus(runeIaBonusLevelsTotal);
             }
             return newIAtotal.minus(originalIAtotal);
         }
@@ -241,7 +249,7 @@ export class HSHeaterAPI {
             if (ctype === 1) {
                 newIAtotal = originalIAtotal.plus(runeIaBonusLevelsTalisman.times(delta).dividedBy(baseTalismanPower));
             } else if (ctype === 2) {
-                newIAtotal = new Decimal(runeMaxExp - 75).times(new Decimal(0.5).plus(delta)).floor().plus(runeIaBonusLevelsTotal);
+                newIAtotal = new Decimal(runeSiExpNumber - 75).times(new Decimal(0.5).plus(delta)).floor().plus(runeIaBonusLevelsTotal);
             }
             const qchange = newIAtotal.plus(500).div(originalIAtotal.plus(500));
             const cchange = newIAtotal.plus(100).div(originalIAtotal.plus(100));
@@ -259,14 +267,14 @@ export class HSHeaterAPI {
             speed *= 1 + 0.01 * level / (1 + 0.01 * shopAmbrosiaGeneration3);
             speed *= 1 + 0.001 * level / (1 + 0.001 * shopAmbrosiaGeneration4);
             if (jack)
-                speed *= 1 + 0.001 * (1 + 0.01 * totalVouchers) * level;
+                speed *= 1 + 0.001 * (1 + 0.01 * freeShopLevelsInfinity) * level;
             return speed;
         }
 
         function shopQuarkEffect(level = 0): number {
             const base = 1 + 0.2 * Math.log2(1 + qHept / 500);
             let result = Math.pow(base, qHeptExp * 0.001 * level);
-            const jackBonus = 0.001 * (1 + 0.01 * totalVouchers);
+            const jackBonus = 0.001 * (1 + 0.01 * freeShopLevelsInfinity);
             result *= 1 + jackBonus * 0.1 * level / (1 + jackBonus * shopQuark);
             return result;
         }
@@ -295,7 +303,7 @@ export class HSHeaterAPI {
             if (shopRedLuck3 > 0)
                 result += level * 0.2;
             if (jack)
-                result += 0.05 * (1 + 0.01 * totalVouchers);
+                result += 0.05 * (1 + 0.01 * freeShopLevelsInfinity);
             return result;
         }
 
@@ -309,7 +317,7 @@ export class HSHeaterAPI {
         }
 
         function rcmO(level: number): Decimal {
-            const newSI = new Decimal(Math.floor((runeMaxExp - 12) * (runeSiRC + level - bonus[2][0]))).plus(runeSiBonusLevelsTotal);
+            const newSI = new Decimal(Math.floor((runeSiExpNumber - 12) * (runeSiRC + level - bonus[2][0]))).plus(runeSiBonusLevelsTotal);
             return newSI.div(originalSItotal);
         }
 
@@ -568,28 +576,28 @@ export class HSHeaterAPI {
                         0,
                         1,
                         Math.pow(1.012 * Math.pow(1.006, 1 + ascSpread * greater_than_1), level) *
-                            Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((totalVouchers + level) / 40) - Math.floor(totalVouchers / 40))),
+                            Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((freeShopLevelsInfinity + level) / 40) - Math.floor(freeShopLevelsInfinity / 40))),
                         Math.pow(1.012, level * 1.25) *
                             Math.pow(
-                                Math.pow(1.006, level * (1 + ascSpread * greater_than_1)) * Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((totalVouchers + level) / 40) - Math.floor(totalVouchers / 40))),
+                                Math.pow(1.006, level * (1 + ascSpread * greater_than_1)) * Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((freeShopLevelsInfinity + level) / 40) - Math.floor(freeShopLevelsInfinity / 40))),
                                 transcriptionEffect
                             ),
                         0,
-                        Math.pow(1.012, level) * Math.pow(1.06, Math.floor((totalVouchers + level) / 25) - Math.floor(totalVouchers / 25)),
+                        Math.pow(1.012, level) * Math.pow(1.06, Math.floor((freeShopLevelsInfinity + level) / 25) - Math.floor(freeShopLevelsInfinity / 25)),
                     ];
                 case 27:
                     return [
                         0,
                         1,
                         Math.pow(1.012 * Math.pow(1.006, 1 + ascSpread * greater_than_1), level) *
-                            Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((totalVouchers + level + altlevel) / 40) - Math.floor((totalVouchers + altlevel) / 40))),
+                            Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((freeShopLevelsInfinity + level + altlevel) / 40) - Math.floor((freeShopLevelsInfinity + altlevel) / 40))),
                         Math.pow(1.012, level * 1.25) *
                             Math.pow(
-                                Math.pow(1.006, level * (1 + ascSpread * greater_than_1)) * Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((totalVouchers + level + altlevel) / 40) - Math.floor((totalVouchers + altlevel) / 40))),
+                                Math.pow(1.006, level * (1 + ascSpread * greater_than_1)) * Math.pow(reduced_asc * Math.pow(1.006, level), 0.001 * (Math.floor((freeShopLevelsInfinity + level + altlevel) / 40) - Math.floor((freeShopLevelsInfinity + altlevel) / 40))),
                                 transcriptionEffect
                             ),
                         0,
-                        Math.pow(1.012, level) * Math.pow(1.06, Math.floor((totalVouchers + level + altlevel) / 25) - Math.floor((totalVouchers + altlevel) / 25)),
+                        Math.pow(1.012, level) * Math.pow(1.06, Math.floor((freeShopLevelsInfinity + level + altlevel) / 25) - Math.floor((freeShopLevelsInfinity + altlevel) / 25)),
                     ];
                 case 28:
                     return [0.0001 * l4_digits * level, 1, 1, 1, 0, 1];

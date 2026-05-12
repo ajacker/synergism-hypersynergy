@@ -100,11 +100,14 @@ export const createQuarkShopCalculationCacheEntries = (): Record<string, CachedV
 
     for (const upgradeKey of upgradeKeys) {
         addCacheEntry(`QUARKSHOP_SHOP_LEVEL_${upgradeKey}`);
+        addCacheEntry(`QUARKSHOP_SHOP_LEVEL_${upgradeKey}_FREE`);
         addCacheEntry(`QUARKSHOP_BONUS_LEVELS_${upgradeKey}`);
+        addCacheEntry(`QUARKSHOP_BONUS_LEVELS_${upgradeKey}_FREE`);
     }
 
     for (const group of Object.values(ShopUpgradeGroups).filter((value): value is ShopUpgradeGroups => typeof value === 'number')) {
         addCacheEntry(`QUARKSHOP_TYPE_BONUS_${group}`);
+        addCacheEntry(`QUARKSHOP_TYPE_BONUS_${group}_FREE`);
     }
 
     addCacheEntry('QUARKSHOP_FREE_QUARK_BONUS_LEVELS');

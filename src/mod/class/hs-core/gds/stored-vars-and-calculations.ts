@@ -375,7 +375,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   blueberryGenerationSpeed2: {
     costPerLevel: 8000,
     maxLevel: 250,
@@ -387,7 +386,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   freeLevelsRow2: {
     costPerLevel: 10,
     maxLevel: 5,
@@ -398,7 +396,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   freeLevelsRow3: {
     costPerLevel: 250,
     maxLevel: 5,
@@ -409,7 +406,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   freeLevelsRow4: {
     costPerLevel: 5000,
     maxLevel: 5,
@@ -420,7 +416,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   freeLevelsRow5: {
     costPerLevel: 50000,
     maxLevel: 5,
@@ -431,7 +426,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   regularLuck: {
     costPerLevel: 1,
     maxLevel: 100,
@@ -442,7 +436,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   regularLuck2: {
     costPerLevel: 8000,
     maxLevel: 250,
@@ -453,7 +446,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   viscount: {
     costPerLevel: 99999,
     maxLevel: 1,
@@ -467,7 +459,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   tutorial: {
     costFunction: (n: number, cpl: number) => cpl + 0 * n,
     maxLevel: 100,
@@ -481,7 +472,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   conversionImprovement1: {
     costFunction: (n: number, cpl: number) => cpl * Math.pow(2, n),
     maxLevel: 5,
@@ -492,7 +482,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   conversionImprovement2: {
     costFunction: (n: number, cpl: number) => cpl * Math.pow(4, n),
     maxLevel: 3,
@@ -503,7 +492,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   conversionImprovement3: {
     costFunction: (n: number, cpl: number) => cpl * Math.pow(10, n),
     maxLevel: 2,
@@ -514,7 +502,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   freeTutorialLevels: {
     costFunction: (n: number, cpl: number) => cpl + n,
     maxLevel: 5,
@@ -525,7 +512,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   redGenerationSpeed: {
     costFunction: (n: number, cpl: number) => cpl * (n + 1),
     maxLevel: 100,
@@ -536,7 +522,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   redLuck: {
     costFunction: (n: number, cpl: number) => cpl * (n + 1),
     maxLevel: 100,
@@ -547,7 +532,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   redAmbrosiaCube: {
     costFunction: (n: number, cpl: number) => cpl * (n + 1),
     maxLevel: 1,
@@ -558,7 +542,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   redAmbrosiaObtainium: {
     costFunction: (n: number, cpl: number) => cpl * (n + 1),
     maxLevel: 1,
@@ -569,7 +552,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   redAmbrosiaOffering: {
     costFunction: (n: number, cpl: number) => cpl * (n + 1),
     maxLevel: 1,
@@ -580,7 +562,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   redAmbrosiaFreeAccumulator: {
     costFunction: (level: number, _cpl: number) => [100, 400, 1000, 3000, 10000, 25000, 75000, 150000, 400000, 1000000][level] ?? 0,
     maxLevel: 10,
@@ -592,7 +573,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   freeOfferingUpgrades: {
     costFunction: (level: number, _cpl: number) => [1000, 3000, 9000, 27000, 81000][level] ?? 0,
     maxLevel: 5,
@@ -603,7 +583,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   freeObtainiumUpgrades: {
     costFunction: (level: number, _cpl: number) => [1500, 4500, 13500, 40500, 121500][level] ?? 0,
     maxLevel: 5,
@@ -614,7 +593,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   freeCubeUpgrades: {
     costFunction: (level: number, _cpl: number) => [10000, 30000, 90000, 270000, 810000][level] ?? 0,
     maxLevel: 5,
@@ -625,7 +603,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   freeSpeedUpgrades: {
     costFunction: (level: number, _cpl: number) => [15000, 45000, 135000, 405000, 1215000][level] ?? 0,
     maxLevel: 5,
@@ -636,7 +613,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   redAmbrosiaCubeImprover: {
     costFunction: (n: number, cpl: number) => cpl * (n + 1),
     maxLevel: 20,
@@ -647,7 +623,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   infiniteShopUpgrades: {
     costFunction: (n: number, cpl: number) => cpl + 100 * n,
     maxLevel: 40,
@@ -658,7 +633,6 @@ export const redAmbrosiaUpgradeCalculationCollection: RedAmbrosiaUpgradeCalculat
       }
     }
   },
-
   redAmbrosiaAccelerator: {
     costFunction: (n: number, cpl: number) => cpl + n * 0,
     maxLevel: 100,

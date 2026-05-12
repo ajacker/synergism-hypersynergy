@@ -2103,6 +2103,12 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
             + 7 * Math.min((this.gameData?.constantUpgrades[7] ?? 0), 1000);
     }
 
+    freeInfinityLevels = () => {
+        return this.calculateAllShopTablets()
+        + this.getSingularityChallengeEffect('noQuarkUpgrades', 'freeInfinityLevels')
+        + this.rune.getRuneEffects('topHat').freeInfinityLevels;
+    }
+
     calculateAllShopTablets(): number;
     calculateAllShopTablets(reduce_vals: true): number;
     calculateAllShopTablets(reduce_vals: false): number[];
@@ -2356,11 +2362,11 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         return reduced;
     }
 
-    private calculateAmbrosiaGenerationSpeedPatreonBonus(): number {
+    private calculatePatreonBonus(): number {
         if (!this.meData) return 1;
         const me = this.meData;
         const blueberryGeneration = this.ambrosia.getAmbrosiaUpgradeEffects('ambrosiaPatreon').blueberryGeneration;
-        return 1 + (blueberryGeneration * 100 * (1 + me.globalBonus / 100) * (1 + me.personalBonus / 100) - 100) / 100;
+        return (blueberryGeneration * 100 * (1 + me.globalBonus / 100) * (1 + me.personalBonus / 100) - 100) / 100;
     }
 
     private getAmbrosiaLuckShopUpgradeCalculationDeps(): number[] {
@@ -2401,6 +2407,22 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         return total;
     }
 
+    getActiveExalt(): number {
+        if (!this.gameData) return 0;
+        const data = this.gameData;
+        
+        if      (data.singularityChallenges.noSingularityUpgrades.enabled) return 1;
+        else if (data.singularityChallenges.oneChallengeCap.enabled) return 2;
+        else if (data.singularityChallenges.limitedAscensions.enabled) return 3;
+        else if (data.singularityChallenges.noQuarkUpgrades.enabled) return 4;
+        else if (data.singularityChallenges.noOcteracts.enabled) return 5;
+        else if (data.singularityChallenges.noAmbrosiaUpgrades.enabled) return 6;
+        else if (data.singularityChallenges.limitedTime.enabled) return 7;
+        else if (data.singularityChallenges.sadisticPrequel.enabled) return 8;
+        else if (data.singularityChallenges.taxmanLastStand.enabled) return 9;
+        else return 0;
+    }
+
     async dumpDataForHeater(): Promise<HeaterExportData | undefined> {
         const gameDataModule = HSModuleManager.getModule("HSGameData") as HSGameData;
 
@@ -2415,92 +2437,97 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         if (!this.gameData) return undefined;
         const gameData = this.gameData;
         const meData = this.meData;
+        const eventData = this.eventData;
 
         try {
             const luck =                    this.luck.calculateLuck(true)       as { luckBase: number, luckMult: number, luckTotal: number };
             const nonAmbLuck =              this.luck.calculateLuck(true, true) as { luckBase: number, luckMult: number, luckTotal: number };
             const ambrosiaGainChance =      (luck.luckTotal - 100 * Math.floor(luck.luckTotal / 100)) / 100;
             const trueAmbrosiaGainChance =  (nonAmbLuck.luckTotal - 100 * Math.floor(nonAmbLuck.luckTotal / 100)) / 100;
-            const talismanRuneBonuses = this.talisman.getRuneBonusFromAllTalismansBatch();
+            const talismanRuneBonuses =     this.talisman.getRuneBonusFromAllTalismansBatch();
 
-            const baseOff = this.allBaseOfferingStats.reduce((a, b) => a + b.stat(), 0);
+            HSLogger.info(`BEGIN`, this.context);
+
+
+            HSLogger.info(`PLOP`, this.context);
 
             const heaterData = {
                 ...this.gameData,
                 hs_data: {
-                    lifetimeAmbrosia:    gameData.lifetimeAmbrosia,
-                    lifetimeRedAmbrosia: gameData.lifetimeRedAmbrosia,
-                    ambSpeed:            (this.ambrosia.calculateAmbrosiaGenerationSpeed(true, false) as number),
-                    ambSpeedNonAmb:      (this.ambrosia.calculateAmbrosiaGenerationSpeed(true, true) as number),
-                    ambSpeedPatreon:     this.calculateAmbrosiaGenerationSpeedPatreonBonus(),
-                    luckBase:            luck.luckBase,
-                    luckMult:            luck.luckMult,
-                    luckTotal:           luck.luckTotal,
-                    luckBaseNonAmb:      nonAmbLuck.luckBase,
-                    luckMultNonAmb:      nonAmbLuck.luckMult,
-                    luckTotalNonAmb:     nonAmbLuck.luckTotal,
-                    redLuckBase:        (this.luck.calculateRedAmbrosiaLuck(true, true) as number),
-                    luckConversion:     (this.luck.calculateLuckConversion(true, true) as number),
-                    quarksOwned:        Number(gameData.worlds.valueOf() || 0),
-                    qHept:              gameData.hepteracts.quark.BAL,
-                    cubesExp3D:         this.log10PlusOne(gameData.wowCubes),
-                    cubesExp4D:         this.log10PlusOne(gameData.wowTesseracts),
-                    cubesExp5D:         this.log10PlusOne(gameData.wowHypercubes),
-                    cubesExp6D:         this.log10PlusOne(gameData.wowPlatonicCubes),
-                    cubesExp7D:         this.log10PlusOne(gameData.wowAbyssals),
-                    cubesExp8D:         this.log10PlusOne(gameData.wowOcteracts),
-                    cubesExpTotal:      this.calculateTotalCubesExp(), // Vanilla adds +6
-                    plat4x4:            gameData.platonicUpgrades[19],
-                    reducedSingularity: gameData.singularityCount - (this.calculateSingularityReductions() as number),
-                    isInsideExalt:      gameData.insideSingularityChallenge,
-                    postAoag:           gameData.runes.antiquities ? 1 : 0,
-                    transcription:      gameData.octUpgrades.octeractOneMindImprover.level,
-                    ascSpeed:           this.calculateAscensionSpeedMult(),
-                    ascSpread:          this.calculateAscensionSpread(),
-                    baseObt:            this.allBaseObtainiumStats.reduce((a, b) => a + b.stat(), 0),
-                    baseOff:            baseOff,
-                    blueberries:        (this.ambrosia.calculateBlueberryInventory() as number),
-                    bonusRow2:          this.ambrosia.getRedAmbrosiaUpgradeEffects('freeLevelsRow2').freeLevels,
-                    bonusRow3:          this.ambrosia.getRedAmbrosiaUpgradeEffects('freeLevelsRow3').freeLevels,
-                    bonusRow4:          this.ambrosia.getRedAmbrosiaUpgradeEffects('freeLevelsRow4').freeLevels,
-                    bonusRow5:          this.ambrosia.getRedAmbrosiaUpgradeEffects('freeLevelsRow5').freeLevels,
-                    runeMaxExp:                 this.rune.calculateHeaterMaxRuneExp(),
+                    lifetimeAmbrosia:       gameData.lifetimeAmbrosia,
+                    lifetimeRedAmbrosia:    gameData.lifetimeRedAmbrosia,
+                    ambSpeed:               (this.ambrosia.calculateAmbrosiaGenerationSpeed(true, false) as number),
+                    ambSpeedNonAmb:         (this.ambrosia.calculateAmbrosiaGenerationSpeed(true, true) as number),
+                    blueberries:            (this.ambrosia.calculateBlueberryInventory() as number),
+                    luckBase:               luck.luckBase,
+                    luckMult:               luck.luckMult,
+                    luckTotal:              luck.luckTotal,
+                    luckBaseNonAmb:         nonAmbLuck.luckBase,
+                    luckMultNonAmb:         nonAmbLuck.luckMult,
+                    luckTotalNonAmb:        nonAmbLuck.luckTotal,
+                    redLuckBase:            (this.luck.calculateRedAmbrosiaLuck(true, true) as number),
+                    luckConversion:         (this.luck.calculateLuckConversion(true, true) as number),
+                    quarksOwned:            Number(gameData.worlds.valueOf() || 0),
+                    qHept:                  gameData.hepteracts.quark.BAL,
+                    cubesExp3D:             this.log10PlusOne(gameData.wowCubes),
+                    cubesExp4D:             this.log10PlusOne(gameData.wowTesseracts),
+                    cubesExp5D:             this.log10PlusOne(gameData.wowHypercubes),
+                    cubesExp6D:             this.log10PlusOne(gameData.wowPlatonicCubes),
+                    cubesExp7D:             this.log10PlusOne(gameData.wowAbyssals),
+                    cubesExp8D:             this.log10PlusOne(gameData.wowOcteracts),
+                    cubesExpTotal:          this.calculateTotalCubesExp(), // Vanilla adds +6
+                    currentSingularity:     gameData.singularityCount,
+                    singularityReducers:    (this.calculateSingularityReductions() as number),
+                    exalt:                  this.getActiveExalt(),
+                    postAoag:               gameData.runes.antiquities ? 1 : 0,
+                    transcription:          gameData.octUpgrades.octeractOneMindImprover.level,
+                    ascSpeed:               this.calculateAscensionSpeedMult(),
+                    ascSpread:              this.calculateAscensionSpread(),
+                    baseObt:                this.allBaseObtainiumStats.reduce((a, b) => a + b.stat(), 0),
+                    baseOff:                this.allBaseOfferingStats.reduce((a, b) => a + b.stat(), 0),
+                    bonusRow2:              this.ambrosia.getRedAmbrosiaUpgradeEffects('freeLevelsRow2').freeLevels,
+                    bonusRow3:              this.ambrosia.getRedAmbrosiaUpgradeEffects('freeLevelsRow3').freeLevels,
+                    bonusRow4:              this.ambrosia.getRedAmbrosiaUpgradeEffects('freeLevelsRow4').freeLevels,
+                    bonusRow5:              this.ambrosia.getRedAmbrosiaUpgradeEffects('freeLevelsRow5').freeLevels,
+                    runeSiExp:                  parseGameDataDecimal(gameData.runes.superiorIntellect),
                     runeSiRC:                   this.rune.getLevelsPerOOM('superiorIntellect'),
                     runeSiBonusLevelsTotal:     new Decimal(this.firstFiveFreeLevels() + talismanRuneBonuses.superiorIntellect),
+                    runeIaExp:                  parseGameDataDecimal(gameData.runes.infiniteAscent),
                     runeIaBonusLevelsTotal:     new Decimal(this.getRuneBonusLevels('infiniteAscent')),
                     runeIaBonusLevelsTalisman:  new Decimal(talismanRuneBonuses.infiniteAscent),
                     baseTalismanPower:          new Decimal(this.talisman.allTalismanRuneBonusStatsSum()),
+                    patreonBonus:               (1 + (meData?.globalBonus ?? 0) / 100) * (1 + (meData?.personalBonus ?? 0) / 100) - 1,
+                    activeBells:                eventData?.HAPPY_HOUR_BELL.amount,
+                    jack:                       gameData.shopUpgrades.shopPanthema > 0,
+                    freeShopLevelsInfinity:     this.freeInfinityLevels(),
+                    freeShopLevelsCube:         this.quarkShop.getShopFreeLevelsCube(),
+                    freeShopLevelsSpeed:        this.quarkShop.getShopFreeLevelsAscensionSpeed(),
+                    freeShopLevelsQuark:        this.quarkShop.getShopFreeLevelsQuark(),
                     chronometerLevel:           this.quarkShop.getShopLevel('chronometerInfinity'),
-                    freeShopQLevels:            this.quarkShop.getQuarkShopBonusLevels(),
-                    totalVouchers:              this.calculateAllShopTablets(),
                     shopAmbrosiaLuck1:          gameData.shopUpgrades.shopAmbrosiaLuck1,
                     shopAmbrosiaLuck2:          gameData.shopUpgrades.shopAmbrosiaLuck2,
                     shopAmbrosiaLuck3:          gameData.shopUpgrades.shopAmbrosiaLuck3,
                     shopAmbrosiaLuck4:          gameData.shopUpgrades.shopAmbrosiaLuck4,
+                    shopRedLuck1:               gameData.shopUpgrades.shopRedLuck1,
+                    shopRedLuck2:               gameData.shopUpgrades.shopRedLuck2,
+                    shopRedLuck3:               gameData.shopUpgrades.shopRedLuck3,
                     shopAmbrosiaGeneration1:    gameData.shopUpgrades.shopAmbrosiaGeneration1,
                     shopAmbrosiaGeneration2:    gameData.shopUpgrades.shopAmbrosiaGeneration2,
                     shopAmbrosiaGeneration3:    gameData.shopUpgrades.shopAmbrosiaGeneration3,
                     shopAmbrosiaGeneration4:    gameData.shopUpgrades.shopAmbrosiaGeneration4,
-                    shopRedLuck1:               gameData.shopUpgrades.shopRedLuck1,
-                    shopRedLuck2:               gameData.shopUpgrades.shopRedLuck2,
-                    shopRedLuck3:               gameData.shopUpgrades.shopRedLuck3,
-                    singQuarkHepteract1:        gameData.goldenQuarkUpgrades.singQuarkHepteract.level,
-                    singQuarkHepteract2:        gameData.goldenQuarkUpgrades.singQuarkHepteract2.level,
-                    singQuarkHepteract3:        gameData.goldenQuarkUpgrades.singQuarkHepteract3.level,
-                    octeractImprovedQuarkHept:  gameData.octUpgrades.octeractImprovedQuarkHept.level,
                     shopImproveQuarkHept1:      gameData.shopUpgrades.improveQuarkHept,
                     shopImproveQuarkHept2:      gameData.shopUpgrades.improveQuarkHept2,
                     shopImproveQuarkHept3:      gameData.shopUpgrades.improveQuarkHept3,
                     shopImproveQuarkHept4:      gameData.shopUpgrades.improveQuarkHept4,
                     shopImproveQuarkHept5:      gameData.shopUpgrades.improveQuarkHept5,
-                    jack:                       gameData.shopUpgrades.shopPanthema > 0,
                     // Not Heater
+                    totalVouchers:              this.calculateAllShopTablets(),
+                    plat4x4:                gameData.platonicUpgrades[19],
                     tokens:                 this.campaignData?.tokens,
                     maxTokens:              this.campaignData?.maxTokens,
                     isAtMaxTokens:          this.campaignData?.isAtMaxTokens,
                     isEvent:                this.isEvent,
-                    bellStacks:             this.eventData?.HAPPY_HOUR_BELL.amount,
-                    personalQuarkBonus:     this.meData?.bonus.quarks,
+                    bellStacks:             eventData?.HAPPY_HOUR_BELL.amount,
                     blueAmbrosiaBarValue:   gameData.blueberryTime,
                     redAmbrosiaBarValue:    gameData.redAmbrosiaTime,
                     blueAmbrosiaBarMax:     this.ambrosia.calculateRequiredBlueberryTime(),

@@ -10,70 +10,89 @@ import { HSUtils } from "../../hs-utils/hs-utils";
 
 export class HSHeaterUI {
     private static readonly inputDefinitions = [
-        { key: "amb",                       label: "Lifetime Ambrosia",     type: "number",  url: "Pictures/Achievements/Progressive/AmbrosiaCount.png" },
-        { key: "ramb",                      label: "Lifetime Red Ambrosia", type: "number",  url: "Pictures/Achievements/Progressive/RedAmbrosiaCount.png" },
-        { key: "ambSpeedNonAmb",            label: "Base Amb Speed/s",      type: "number",  url: "Pictures/PseudoShop/AMBROSIATimeSkip.png" },
-        { key: "ambSpeedPatreon",           label: "Patreon Bonus",         type: "number",  url: "Pictures/PseudoShop/GOLDEN_QUARK_BUFF.png" },
-        { key: "luckBaseNonAmb",            label: "Base Luck",             type: "number",  url: "Pictures/Achievements/Rewards/AmbrosiaLuck.png" },
-        { key: "luckMultNonAmb",            label: "Base Luck Mult",        type: "number",  url: "Pictures/PseudoShop/AMBROSIA_LUCK_BUFF.png" },
-        { key: "redLuckBase",               label: "Base Red Luck",         type: "number",  url: "Pictures/Achievements/Rewards/RedAmbrosiaLuck.png" },
-        { key: "luckConversion",            label: "Luck Conversion",       type: "number",  url: "Pictures/RedAmbrosia/RedAmbrosiaConversionImprovement1.png" },
-        { key: "quarksOwned",               label: "Quarks Owned",          type: "number",  url: "Pictures/Default/Quark.png" },
-        { key: "qHept",                     label: "Quark Hepteract",       type: "number",  url: "Pictures/Default/HepteractQuark.png" },
-        { key: "plat4x4",                   label: "Plat 4x4",              type: "number",  url: "Pictures/Default/PlatonicUpgrade19.png" },
-        { key: "cubesExpTotal",             label: "Total Cubes Exp.",      type: "number",  url: "Pictures/Default/WowCube.png" },
-        { key: "reducedSingularity",        label: "Reduced Singularity",   type: "number",  url: "Pictures/Default/Singularity.png" },
-        { key: "isInsideExalt",             label: "Inside Exalt",          type: "boolean", url: "Pictures/Default/TinySChalTime.png" },
-        { key: "postAoag",                  label: "Post-AoAG (Obt/Off)",   type: "boolean", url: "Pictures/Runes/Antiquities.png" },
-        { key: "transcription",             label: "Transcription",         type: "number",  url: "Pictures/Default/OcteractOneMindImprover.png" },
-        { key: "ascSpeed",                  label: "Asc. Speed",            type: "number",  url: "Pictures/Default/TinySpeedAscension.png" },
-        { key: "ascSpread",                 label: "Asc. Spread",           type: "number",  url: "Pictures/Default/SingularityAscensionSpeed.png" },
-        { key: "baseObt",                   label: "Base Obtainium",        type: "number",  url: "Pictures/Default/Obtainium.png" },
-        { key: "baseOff",                   label: "Base Offering",         type: "number",  url: "Pictures/Default/Offering.png" },
-        { key: "blueberries",               label: "Blueberries Owned",     type: "number",  url: "Pictures/Default/Blueberries.png" },
-        { key: "bonusRow2",                 label: "Bonus Row 2",           type: "number",  url: "Pictures/RedAmbrosia/RedAmbrosiaFreeLevelsRow2.png" },
-        { key: "bonusRow3",                 label: "Bonus Row 3",           type: "number",  url: "Pictures/RedAmbrosia/RedAmbrosiaFreeLevelsRow3.png" },
-        { key: "bonusRow4",                 label: "Bonus Row 4",           type: "number",  url: "Pictures/RedAmbrosia/RedAmbrosiaFreeLevelsRow4.png" },
-        { key: "bonusRow5",                 label: "Bonus Row 5",           type: "number",  url: "Pictures/RedAmbrosia/RedAmbrosiaFreeLevelsRow5.png" },
-        { key: "runeMaxExp",                label: "Max Rune Exp.",         type: "number",  url: "Pictures/Runes/Speed.png" },
-        { key: "runeSiRC",                  label: "SI Rune Coeff",         type: "number",  url: "Pictures/Runes/SuperiorIntellect.png" },
-        { key: "runeSiBonusLevelsTotal",    label: "SI Bonus Levels (total)",      type: "number",  url: "Pictures/Runes/SuperiorIntellect.png" },
-        { key: "runeIaBonusLevelsTotal",    label: "IA Bonus Levels (total)",      type: "number",  url: "Pictures/Runes/InfiniteAscent.png" },
-        { key: "runeIaBonusLevelsTalisman", label: "IA Bonus Levels (talisman)",   type: "number",  url: "Pictures/Runes/InfiniteAscent.png" },
-        { key: "baseTalismanPower",         label: "Talisman Power Mult.",  type: "number",  url: "Pictures/Default/BlueberryTalismanBonusRuneLevel.png" },
-        { key: "jack",                      label: "Jack of All Trades",    type: "boolean", url: "Pictures/Default/ShopPanthema.png" },
-        { key: "chronometerLevel",          label: "Chronometer Level",     type: "number",  url: "Pictures/Default/ShopChronometerInfinity.png" },
-        { key: "freeShopQLevels",           label: "Free Shop Q. Levels",   type: "number",  url: "Pictures/Default/Quark.png" },
-        { key: "totalVouchers",             label: "Total Vouchers",        type: "number",  url: "Pictures/Default/ShopInfiniteShopUpgrades.png" },
-        { key: "shopAmbrosiaGeneration1",   label: "Shop Ambrosia Gen 1",   type: "number",  url: "Pictures/Default/ShopAmbrosiaGeneration1.png" },
-        { key: "shopAmbrosiaGeneration2",   label: "Shop Ambrosia Gen 2",   type: "number",  url: "Pictures/Default/ShopAmbrosiaGeneration2.png" },
-        { key: "shopAmbrosiaGeneration3",   label: "Shop Ambrosia Gen 3",   type: "number",  url: "Pictures/Default/ShopAmbrosiaGeneration3.png" },
-        { key: "shopAmbrosiaGeneration4",   label: "Shop Ambrosia Gen 4",   type: "number",  url: "Pictures/Default/ShopAmbrosiaGeneration4.png" },
-        { key: "shopAmbrosiaLuck1",         label: "Shop Ambrosia Luck 1",  type: "number",  url: "Pictures/Default/ShopAmbrosiaLuck1.png" },
-        { key: "shopAmbrosiaLuck2",         label: "Shop Ambrosia Luck 2",  type: "number",  url: "Pictures/Default/ShopAmbrosiaLuck2.png" },
-        { key: "shopAmbrosiaLuck3",         label: "Shop Ambrosia Luck 3",  type: "number",  url: "Pictures/Default/ShopAmbrosiaLuck3.png" },
-        { key: "shopAmbrosiaLuck4",         label: "Shop Ambrosia Luck 4",  type: "number",  url: "Pictures/Default/ShopAmbrosiaLuck4.png" },
-        { key: "shopRedLuck1",              label: "Shop Red Luck 1",       type: "number",  url: "Pictures/Default/ShopRedLuck1.png" },
-        { key: "shopRedLuck2",              label: "Shop Red Luck 2",       type: "number",  url: "Pictures/Default/ShopRedLuck2.png" },
-        { key: "shopRedLuck3",              label: "Shop Red Luck 3",       type: "number",  url: "Pictures/Default/ShopRedLuck3.png" },
-        { key: "shopImproveQuarkHept1",     label: "Shop QHept 1",          type: "number",  url: "Pictures/Default/ShopImprovedQuarkHepteract0.png" },
-        { key: "shopImproveQuarkHept2",     label: "Shop QHept 2",          type: "number",  url: "Pictures/Default/ShopImprovedQuarkHepteract.png" },
-        { key: "shopImproveQuarkHept3",     label: "Shop QHept 3",          type: "number",  url: "Pictures/Default/ShopImprovedQuarkHepteract2.png" },
-        { key: "shopImproveQuarkHept4",     label: "Shop QHept 4",          type: "number",  url: "Pictures/Default/ShopImprovedQuarkHepteract3.png" },
-        { key: "shopImproveQuarkHept5",     label: "Shop QHept 5",          type: "number",  url: "Pictures/Default/ShopImprovedQuarkHepteractInfinity.png" },
+        { key: "amb",                       label: "Lifetime Ambrosia",         type: "number",  url: "Pictures/Achievements/Progressive/AmbrosiaCount.png" },
+        { key: "ramb",                      label: "Lifetime Red Ambrosia",     type: "number",  url: "Pictures/Achievements/Progressive/RedAmbrosiaCount.png" },
+        { key: "ambSpeedNonAmb",            label: "Base Amb Speed/s",          type: "number",  url: "Pictures/PseudoShop/AMBROSIATimeSkip.png" },
+        { key: "blueberries",               label: "Blueberries Owned",         type: "number",  url: "Pictures/Default/Blueberries.png" },
+        { key: "luckBaseNonAmb",            label: "Base Luck",                 type: "number",  url: "Pictures/Achievements/Rewards/AmbrosiaLuck.png" },
+        { key: "luckMultNonAmb",            label: "Base Luck Mult",            type: "number",  url: "Pictures/PseudoShop/AMBROSIA_LUCK_BUFF.png" },
+        { key: "redLuckBase",               label: "Base Red Luck",             type: "number",  url: "Pictures/Achievements/Rewards/RedAmbrosiaLuck.png" },
+        { key: "luckConversion",            label: "Luck Conversion",           type: "number",  url: "Pictures/RedAmbrosia/RedAmbrosiaConversionImprovement1.png" },
+        { key: "quarksOwned",               label: "Quarks Owned",              type: "number",  url: "Pictures/Default/Quark.png" },
+        { key: "qHept",                     label: "Quark Hepteract",           type: "number",  url: "Pictures/Default/HepteractQuark.png" },
+        { key: "cubesExpTotal",             label: "Total Cubes Exp.",          type: "number",  url: "Pictures/Default/WowCube.png" },
+        { key: "currentSingularity",        label: "Current Singularity",       type: "number",  url: "Pictures/Default/Singularity.png" },
+        { key: "singularityReducers",       label: "Singularity Reducers",      type: "number",  url: "Pictures/Default/BlueberrySingReduction.png" },
+        { key: "exalt",                     label: "Exalt?",                    type: "number",  url: "Pictures/Default/TinySChalTime.png" },
+        { key: "postAoag",                  label: "Post-AoAG (Obt/Off)",       type: "boolean", url: "Pictures/Runes/Antiquities.png" },
+        { key: "transcription",             label: "Transcription",             type: "number",  url: "Pictures/Default/OcteractOneMindImprover.png" },
+        { key: "ascSpeed",                  label: "Asc. Speed",                type: "number",  url: "Pictures/Default/TinySpeedAscension.png" },
+        { key: "ascSpread",                 label: "Asc. Spread",               type: "number",  url: "Pictures/Default/SingularityAscensionSpeed.png" },
+        { key: "baseObt",                   label: "Base Obtainium",            type: "number",  url: "Pictures/Default/Obtainium.png" },
+        { key: "baseOff",                   label: "Base Offering",             type: "number",  url: "Pictures/Default/Offering.png" },
+        { key: "bonusRow2",                 label: "Bonus Row 2",               type: "number",  url: "Pictures/RedAmbrosia/RedAmbrosiaFreeLevelsRow2.png" },
+        { key: "bonusRow3",                 label: "Bonus Row 3",               type: "number",  url: "Pictures/RedAmbrosia/RedAmbrosiaFreeLevelsRow3.png" },
+        { key: "bonusRow4",                 label: "Bonus Row 4",               type: "number",  url: "Pictures/RedAmbrosia/RedAmbrosiaFreeLevelsRow4.png" },
+        { key: "bonusRow5",                 label: "Bonus Row 5",               type: "number",  url: "Pictures/RedAmbrosia/RedAmbrosiaFreeLevelsRow5.png" },
+        { key: "runeSiExp",                 label: "SI Rune Exp.",              type: "text",    url: "Pictures/Runes/SuperiorIntellect.png" },
+        { key: "runeSiRC",                  label: "SI Rune Coeff",             type: "number",  url: "Pictures/Runes/SuperiorIntellect.png" },
+        { key: "runeSiBonusLevelsTotal",    label: "SI Bonus Levels",           type: "number",  url: "Pictures/Runes/SuperiorIntellect.png" },
+        { key: "runeIaExp",                 label: "IA Rune Exp.",              type: "text",    url: "Pictures/Runes/InfiniteAscent.png" },
+        { key: "runeIaBonusLevelsTotal",    label: "IA Bonus Levels (total)",   type: "number",  url: "Pictures/Runes/InfiniteAscent.png" },
+        { key: "runeIaBonusLevelsTalisman", label: "IA Bonus Levels (talisman)",type: "number",  url: "Pictures/Runes/InfiniteAscent.png" },
+        { key: "baseTalismanPower",         label: "Talisman Power Mult.",      type: "number",  url: "Pictures/Default/BlueberryTalismanBonusRuneLevel.png" },
+        { key: "patreonBonus",              label: "Patreon Bonus",             type: "number",  url: "Pictures/PseudoShop/GOLDEN_QUARK_BUFF.png" },
+        { key: "activeBells",               label: "Active Bells",              type: "number",  url: "Pictures/PseudoShop/HAPPY_HOUR_BELL.png" },
+        { key: "jack",                      label: "Jack of All Trades",        type: "boolean", url: "Pictures/Default/ShopPanthema.png" },
+        { key: "freeShopLevelsInfinity",    label: "Free Infinity Upgrades",    type: "number",  url: "Pictures/Default/ShopInfiniteShopUpgrades.png" },
+        { key: "freeShopLevelsCube",        label: "Free Shop C. Levels",       type: "number",  url: "Pictures/Default/Quark.png" },
+        { key: "freeShopLevelsSpeed",       label: "Free Shop Sp. Levels",      type: "number",  url: "Pictures/Default/Quark.png" },
+        { key: "freeShopLevelsQuark",       label: "Free Shop Q. Levels",       type: "number",  url: "Pictures/Default/Quark.png" },
+        { key: "chronometerLevel",          label: "Chronometer Level",         type: "number",  url: "Pictures/Default/ShopChronometerInfinity.png" },
+        { key: "shopAmbrosiaLuck1",         label: "Shop Ambrosia Luck 1",      type: "number",  url: "Pictures/Default/ShopAmbrosiaLuck1.png" },
+        { key: "shopAmbrosiaLuck2",         label: "Shop Ambrosia Luck 2",      type: "number",  url: "Pictures/Default/ShopAmbrosiaLuck2.png" },
+        { key: "shopAmbrosiaLuck3",         label: "Shop Ambrosia Luck 3",      type: "number",  url: "Pictures/Default/ShopAmbrosiaLuck3.png" },
+        { key: "shopAmbrosiaLuck4",         label: "Shop Ambrosia Luck 4",      type: "number",  url: "Pictures/Default/ShopAmbrosiaLuck4.png" },
+        { key: "shopRedLuck1",              label: "Shop Red Luck 1",           type: "number",  url: "Pictures/Default/ShopRedLuck1.png" },
+        { key: "shopRedLuck2",              label: "Shop Red Luck 2",           type: "number",  url: "Pictures/Default/ShopRedLuck2.png" },
+        { key: "shopRedLuck3",              label: "Shop Red Luck 3",           type: "number",  url: "Pictures/Default/ShopRedLuck3.png" },
+        { key: "shopAmbrosiaGeneration1",   label: "Shop Ambrosia Gen 1",       type: "number",  url: "Pictures/Default/ShopAmbrosiaGeneration1.png" },
+        { key: "shopAmbrosiaGeneration2",   label: "Shop Ambrosia Gen 2",       type: "number",  url: "Pictures/Default/ShopAmbrosiaGeneration2.png" },
+        { key: "shopAmbrosiaGeneration3",   label: "Shop Ambrosia Gen 3",       type: "number",  url: "Pictures/Default/ShopAmbrosiaGeneration3.png" },
+        { key: "shopAmbrosiaGeneration4",   label: "Shop Ambrosia Gen 4",       type: "number",  url: "Pictures/Default/ShopAmbrosiaGeneration4.png" },
+        { key: "shopImproveQuarkHept1",     label: "Shop QHept 1",              type: "number",  url: "Pictures/Default/ShopImprovedQuarkHepteract0.png" },
+        { key: "shopImproveQuarkHept2",     label: "Shop QHept 2",              type: "number",  url: "Pictures/Default/ShopImprovedQuarkHepteract.png" },
+        { key: "shopImproveQuarkHept3",     label: "Shop QHept 3",              type: "number",  url: "Pictures/Default/ShopImprovedQuarkHepteract2.png" },
+        { key: "shopImproveQuarkHept4",     label: "Shop QHept 4",              type: "number",  url: "Pictures/Default/ShopImprovedQuarkHepteract3.png" },
+        { key: "shopImproveQuarkHept5",     label: "Shop QHept ∞",              type: "number",  url: "Pictures/Default/ShopImprovedQuarkHepteractInfinity.png" },
     ] as const;
 
-    private static readonly activeLabels = ["C1: Quarks", "C2: 3-7D Cubes", "C3: Octeracts", "C4: Luck", "A: Obt/Off", "H: p4x4 (pre-AOAG)", "S: Max SR", "M: Amb + Oct"];
+    private static readonly activeLabels = [
+        "C1: Luck",
+        "C2: Red Luck",
+        "C3: All Amb",
+        "C4: Quarks",
+        "C5: 3-7D Cubes",
+        "C6: Octeracts",
+        "C7: Obtaining",
+        "C8: Offering",
+        "H: p4x4 (pre-AOAG)",
+        "S: Max SR",
+        "M: Max Luck",
+        "G: Gen + Oct"
+    ];
 
     private static currentResultModalId: string | null = null;
 
     private static readonly resultKeyDisplayMap: Record<string, string> = {
-        c1: 'C1: Quarks',
-        c2: 'C2: 3-7D Cubes',
-        c3: 'C3: Octeracts',
-        c4: 'C4: Luck',
-        a1: 'A1: Obtaining',
-        a2: 'A2: Offering',
+        c1: 'C1: Luck',
+        c2: 'C2: Red Luck',
+        c3: 'C3: All Amb',
+        c4: 'C4: Quarks',
+        c5: 'C5: 3-7D Cubes',
+        c6: 'C6: Octeracts',
+        c7: 'C7: Obtaining',
+        c8: 'C8: Offering',
         h0: 'H0: Octeracts',
         h1: 'H1',
         h2: 'H2',
@@ -82,9 +101,11 @@ export class HSHeaterUI {
         h5: 'H5',
         h6: 'H6',
         h7: 'H7',
-        s1: 'S1: Max SR1',
-        s2: 'S2: Max SR2',
+        s0: 'S: Max SR',
         m0: 'M0: Max Luck',
+        g1: 'G1: Gen 1 + Oct',
+        g2: 'G2: Gen 2 + Oct',
+        g3: 'G3: Gen 3 + Oct',
     };
 
     private static translateResultKey(key: string): string {
@@ -119,7 +140,7 @@ export class HSHeaterUI {
             .hs-heater-input-table td:nth-child(3), .hs-heater-input-table th:nth-child(3) { width: auto; text-align: center; }
             .hs-heater-results-table th:first-child, .hs-heater-results-table td:first-child { width: auto; white-space: nowrap; }
             .hs-heater-results-table th:last-child, .hs-heater-results-table td:last-child { width: auto; }
-            .hs-heater-input-table input { width: 100%; min-width: 155px; box-sizing: border-box; height: 18px; }
+            .hs-heater-input-table input { width: 100%; min-width: 165px; box-sizing: border-box; height: 18px; }
             .hs-heater-lock-button { border: none; background: transparent; cursor: pointer; padding: 0; }
             .hs-heater-lock-button:hover { transform: scale(1.05); }
             .hs-heater-lock-cell-locked { background: rgba(179, 25, 25, 0.58); }
@@ -199,7 +220,7 @@ export class HSHeaterUI {
     private static updateResultModalContent(result: HeaterOptimizationResult): boolean {
         if (!this.currentResultModalId) return false;
         const modal = document.getElementById(this.currentResultModalId);
-        if (!modal)return false;
+        if (!modal) return false;
         const body = modal.querySelector('.hs-modal-body');
         if (!body) return false;
 
@@ -219,52 +240,56 @@ export class HSHeaterUI {
 
     private static buildOptimizerInput(exportData: any): HeaterOptimizerInput {
         return {
-            amb:                exportData.hs_data.lifetimeAmbrosia,
-            ramb:               exportData.hs_data.lifetimeRedAmbrosia,
-            ambSpeedNonAmb:     exportData.hs_data.ambSpeedNonAmb,
-            ambSpeedPatreon:    exportData.hs_data.ambSpeedPatreon,
-            luckBaseNonAmb:     exportData.hs_data.luckBaseNonAmb,
-            luckMultNonAmb:     exportData.hs_data.luckMultNonAmb,
-            redLuckBase:        exportData.hs_data.redLuckBase,
-            luckConversion:     exportData.hs_data.luckConversion,
-            quarksOwned:        exportData.hs_data.quarksOwned,
-            qHept:              exportData.hs_data.qHept,
-            plat4x4:            exportData.hs_data.plat4x4,
-            cubesExpTotal:      exportData.hs_data.cubesExpTotal,
-            reducedSingularity: exportData.hs_data.reducedSingularity,
-            isInsideExalt:      exportData.hs_data.isInsideExalt,
-            postAoag:           exportData.hs_data.postAoag,
-            transcription:      exportData.hs_data.transcription,
-            ascSpeed:           exportData.hs_data.ascSpeed,
-            ascSpread:          exportData.hs_data.ascSpread,
-            baseObt:            exportData.hs_data.baseObt,
-            baseOff:            exportData.hs_data.baseOff,
-            blueberries:        exportData.hs_data.blueberries,
-            bonusRow2:          exportData.hs_data.bonusRow2,
-            bonusRow3:          exportData.hs_data.bonusRow3,
-            bonusRow4:          exportData.hs_data.bonusRow4,
-            bonusRow5:          exportData.hs_data.bonusRow5,
-            runeMaxExp:                 exportData.hs_data.runeMaxExp,
+            amb:                    exportData.hs_data.lifetimeAmbrosia,
+            ramb:                   exportData.hs_data.lifetimeRedAmbrosia,
+            ambSpeedNonAmb:         exportData.hs_data.ambSpeedNonAmb,
+            blueberries:            exportData.hs_data.blueberries,
+            luckBaseNonAmb:         exportData.hs_data.luckBaseNonAmb,
+            luckMultNonAmb:         exportData.hs_data.luckMultNonAmb,
+            redLuckBase:            exportData.hs_data.redLuckBase,
+            luckConversion:         exportData.hs_data.luckConversion,
+            quarksOwned:            exportData.hs_data.quarksOwned,
+            qHept:                  exportData.hs_data.qHept,
+            cubesExpTotal:          exportData.hs_data.cubesExpTotal,
+            currentSingularity:     exportData.hs_data.currentSingularity,
+            singularityReducers:    exportData.hs_data.singularityReducers,
+            exalt:                  exportData.hs_data.exalt,
+            postAoag:               exportData.hs_data.postAoag,
+            transcription:          exportData.hs_data.transcription,
+            ascSpeed:               exportData.hs_data.ascSpeed,
+            ascSpread:              exportData.hs_data.ascSpread,
+            baseObt:                exportData.hs_data.baseObt,
+            baseOff:                exportData.hs_data.baseOff,
+            bonusRow2:              exportData.hs_data.bonusRow2,
+            bonusRow3:              exportData.hs_data.bonusRow3,
+            bonusRow4:              exportData.hs_data.bonusRow4,
+            bonusRow5:              exportData.hs_data.bonusRow5,
+            runeSiExp:                  exportData.hs_data.runeSiExp,
             runeSiRC:                   exportData.hs_data.runeSiRC,
             runeSiBonusLevelsTotal:     exportData.hs_data.runeSiBonusLevelsTotal,
+            runeIaExp:                  exportData.hs_data.runeIaExp,
             runeIaBonusLevelsTotal:     exportData.hs_data.runeIaBonusLevelsTotal,
             runeIaBonusLevelsTalisman:  exportData.hs_data.runeIaBonusLevelsTalisman,
             baseTalismanPower:          exportData.hs_data.baseTalismanPower,
+            patreonBonus:               exportData.hs_data.patreonBonus,
+            activeBells:                exportData.hs_data.activeBells,
             jack:                       exportData.hs_data.jack,
+            freeShopLevelsInfinity:     exportData.hs_data.freeShopLevelsInfinity,
+            freeShopLevelsCube:         exportData.hs_data.freeShopLevelsCube,
+            freeShopLevelsSpeed:        exportData.hs_data.freeShopLevelsSpeed,
+            freeShopLevelsQuark:        exportData.hs_data.freeShopLevelsQuark,
             chronometerLevel:           exportData.hs_data.chronometerLevel,
-            freeShopQLevels:            exportData.hs_data.freeShopQLevels,
-            totalVouchers:              exportData.hs_data.totalVouchers,
             shopAmbrosiaLuck1:          exportData.hs_data.shopAmbrosiaLuck1,
             shopAmbrosiaLuck2:          exportData.hs_data.shopAmbrosiaLuck2,
             shopAmbrosiaLuck3:          exportData.hs_data.shopAmbrosiaLuck3,
             shopAmbrosiaLuck4:          exportData.hs_data.shopAmbrosiaLuck4,
+            shopRedLuck1:               exportData.hs_data.shopRedLuck1,
+            shopRedLuck2:               exportData.hs_data.shopRedLuck2,
+            shopRedLuck3:               exportData.hs_data.shopRedLuck3,
             shopAmbrosiaGeneration1:    exportData.hs_data.shopAmbrosiaGeneration1,
             shopAmbrosiaGeneration2:    exportData.hs_data.shopAmbrosiaGeneration2,
             shopAmbrosiaGeneration3:    exportData.hs_data.shopAmbrosiaGeneration3,
             shopAmbrosiaGeneration4:    exportData.hs_data.shopAmbrosiaGeneration4,
-            shopRedLuck1:               exportData.hs_data.shopRedLuck1,
-            shopRedLuck2:               exportData.hs_data.shopRedLuck2,
-            shopRedLuck3:               exportData.hs_data.shopRedLuck3,
             shopImproveQuarkHept1:      exportData.hs_data.shopImproveQuarkHept1,
             shopImproveQuarkHept2:      exportData.hs_data.shopImproveQuarkHept2,
             shopImproveQuarkHept3:      exportData.hs_data.shopImproveQuarkHept3,
@@ -290,7 +315,14 @@ export class HSHeaterUI {
                 : '';
             const inputHtml = field.type === "boolean"
                 ? HSUIC.Input({ id: fieldId, type: HSInputType.CHECK, props: value ? { checked: 'true' } : undefined })
-                : HSUIC.Input({ id: fieldId, type: HSInputType.NUMBER, props: { value: displayedValue, step: 'any', min: '0' }, styles: { width: '100%' } });
+                : HSUIC.Input({
+                    id: fieldId,
+                    type: field.type === 'text' ? HSInputType.TEXT : HSInputType.NUMBER,
+                    props: field.type === 'text'
+                        ? { value: displayedValue }
+                        : { value: displayedValue, step: 'any', min: '0' },
+                    styles: { width: '100%' }
+                });
 
             return `
                 <tr>
@@ -599,7 +631,17 @@ export class HSHeaterUI {
         };
 
         const readDecimal = (id: string, fallback = 0): Decimal => {
-            return new Decimal(readNumber(id, fallback));
+            const element = modal.querySelector<HTMLInputElement>(`#${id}`);
+            if (!element) return new Decimal(fallback);
+
+            const value = element.value.trim();
+            if (value === '') return new Decimal(fallback);
+
+            try {
+                return new Decimal(value);
+            } catch {
+                return new Decimal(fallback);
+            }
         };
 
         const readBoolean = (id: string): boolean => {
@@ -615,17 +657,16 @@ export class HSHeaterUI {
             amb:                readNumber('hs-heater-input-amb'),
             ramb:               readNumber('hs-heater-input-ramb'),
             ambSpeedNonAmb:     readNumber('hs-heater-input-ambSpeedNonAmb'),
-            ambSpeedPatreon:    readNumber('hs-heater-input-ambSpeedPatreon'),
             luckBaseNonAmb:     readNumber('hs-heater-input-luckBaseNonAmb'),
             luckMultNonAmb:     readNumber('hs-heater-input-luckMultNonAmb'),
             redLuckBase:        readNumber('hs-heater-input-redLuckBase'),
             luckConversion:     readNumber('hs-heater-input-luckConversion'),
             quarksOwned:        readNumber('hs-heater-input-quarksOwned'),
             qHept:              readNumber('hs-heater-input-qHept'),
-            plat4x4:            readNumber('hs-heater-input-plat4x4'),
             cubesExpTotal:      readNumber('hs-heater-input-cubesExpTotal'),
-            reducedSingularity: readNumber('hs-heater-input-reducedSingularity'),
-            isInsideExalt:      readBoolean('hs-heater-input-isInsideExalt'),
+            currentSingularity: readNumber('hs-heater-input-currentSingularity'),
+            singularityReducers:readNumber('hs-heater-input-singularityReducers'),
+            exalt:              readNumber('hs-heater-input-exalt'),
             postAoag:           readBoolean('hs-heater-input-postaoag') ? 1 : 0,
             transcription:      readNumber('hs-heater-input-transcription'),
             ascSpeed:           readNumber('hs-heater-input-ascSpeed'),
@@ -637,16 +678,21 @@ export class HSHeaterUI {
             bonusRow3:          readNumber('hs-heater-input-bonusRow3'),
             bonusRow4:          readNumber('hs-heater-input-bonusRow4'),
             bonusRow5:          readNumber('hs-heater-input-bonusRow5'),
-            runeMaxExp:         readNumber('hs-heater-input-runeMaxExp'),
-            runeSiRC:           readNumber('hs-heater-input-runeSiRC'),
+            runeSiExp:                  readDecimal('hs-heater-input-runeSiExp'),
+            runeSiRC:                   readNumber('hs-heater-input-runeSiRC'),
             runeSiBonusLevelsTotal:     readDecimal('hs-heater-input-runeSiBonusLevelsTotal'),
+            runeIaExp:                  readDecimal('hs-heater-input-runeIaExp'),
             runeIaBonusLevelsTotal:     readDecimal('hs-heater-input-runeIaBonusLevelsTotal'),
             runeIaBonusLevelsTalisman:  readDecimal('hs-heater-input-runeIaBonusLevelsTalisman'),
             baseTalismanPower:          readDecimal('hs-heater-input-baseTalismanPower'),
+            patreonBonus:               readNumber('hs-heater-input-patreonBonus'),
+            activeBells:                readNumber('hs-heater-input-activeBells'),
             jack:                       readBoolean('hs-heater-input-jack'),
-            freeShopQLevels:            readNumber('hs-heater-input-freeShopQLevels'),
+            freeShopLevelsInfinity:         readNumber('hs-heater-input-freeShopLevelsInfinity'),
+            freeShopLevelsCube:            readNumber('hs-heater-input-freeShopLevelsCube'),
+            freeShopLevelsSpeed:           readNumber('hs-heater-input-freeShopLevelsSpeed'),
+            freeShopLevelsQuark:            readNumber('hs-heater-input-freeShopLevelsQuark'),
             chronometerLevel:           readNumber('hs-heater-input-chronometerLevel'),
-            totalVouchers:              readNumber('hs-heater-input-totalVouchers'),
             shopAmbrosiaGeneration1:    readNumber('hs-heater-input-shopAmbrosiaGeneration1'),
             shopAmbrosiaGeneration2:    readNumber('hs-heater-input-shopAmbrosiaGeneration2'),
             shopAmbrosiaGeneration3:    readNumber('hs-heater-input-shopAmbrosiaGeneration3'),
