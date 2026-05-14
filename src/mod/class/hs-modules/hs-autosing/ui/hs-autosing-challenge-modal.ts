@@ -1,6 +1,6 @@
 import { AutosingStrategyPhase, Challenge, CorruptionLoadoutDefinition, LOADOUT_ACTION_VALUE } from "../../../../types/module-types/hs-autosing-types";
 import { HSUI } from "../../../hs-core/hs-ui";
-import { SPECIAL_ACTIONS, IF_JUMP_VALUE, IsJumpChallenge } from "../../../../types/module-types/hs-autosing-types";
+import { SPECIAL_ACTIONS, IF_JUMP_VALUE, IsJumpChallenge, ModalInput } from "../../../../types/module-types/hs-autosing-types";
 import { HSUtils } from "../../../hs-utils/hs-utils";
 
 /** Challenge Modal Builder for Autosing
@@ -72,22 +72,22 @@ export async function openAutosingChallengesModal(
         }
 
         return `
-    <div class="hs-challenge-item hs-if-block"
-        data-index="${index}"
-        data-if-index="${index}"
-        data-if-id="${entry.ifJump.id}">
-        <div class="hs-challenge-drag-handle">⋮⋮</div>
-        
-        <div class="hs-if-content">
-            ${contentHtml}
+        <div class="hs-challenge-item hs-if-block"
+            data-index="${index}"
+            data-if-index="${index}"
+            data-if-id="${entry.ifJump.id}">
+            <div class="hs-challenge-drag-handle">⋮⋮</div>
+            
+            <div class="hs-if-content">
+                ${contentHtml}
+            </div>
+
+            <div style="flex-grow: 1;"></div>
+
+            <div class="hs-challenge-btn hs-challenge-btn-edit" id="hs-challenge-edit-${index}" data-index="${index}">✎</div>
+            <div class="hs-challenge-btn hs-challenge-btn-delete" id="hs-challenge-delete-${index}" data-index="${index}">×</div>
         </div>
-
-        <div style="flex-grow: 1;"></div>
-
-        <div class="hs-challenge-btn hs-challenge-btn-edit" id="hs-challenge-edit-${index}" data-index="${index}">✎</div>
-        <div class="hs-challenge-btn hs-challenge-btn-delete" id="hs-challenge-delete-${index}" data-index="${index}">×</div>
-    </div>
-    `;
+        `;
     };
 
     // Render a jump target placeholder for IF jumps
@@ -703,19 +703,24 @@ export async function openAutosingChallengesModal(
         const ifJumpMode = ifJumpModeSelect?.value ?? "challenges";
         const isChallengesMode = ifJumpMode === "challenges";
 
-        const standardInputs = [
-            "hs-challenge-num-input",
-            "hs-challenge-completions-input",
-            "hs-challenge-max-time-input",
-            "hs-challenge-wait-inside-input"
+        const standardInputs: { id: string; key: ModalInput }[] = [
+            { id: "hs-challenge-num-input",          key: "challengeNum" },
+            { id: "hs-challenge-completions-input",  key: "completions" },
+            { id: "hs-challenge-max-time-input",     key: "maxTime" },
+            { id: "hs-challenge-wait-inside-input",  key: "waitTime" },
         ];
 
+        const enabledForAction = new Set<string>(
+            SPECIAL_ACTIONS.find(a => String(a.value) === actionValue)?.inputs ?? []
+        );
+
         // Toggle standard inputs
-        standardInputs.forEach(id => {
+        standardInputs.forEach(({ id, key }) => {
             const el = document.getElementById(id) as HTMLInputElement;
             if (el) {
-                el.disabled = isSpecial;
-                el.parentElement!.style.opacity = isSpecial ? "0.4" : "1";
+                const enabled = !isSpecial || enabledForAction.has(key);
+                el.disabled = !enabled;
+                el.parentElement!.style.opacity = enabled ? "1" : "0.4";
                 el.parentElement!.style.display = isIfJump ? "none" : "";
             }
         });
@@ -897,10 +902,10 @@ export async function openAutosingChallengesModal(
                         challengeNumber: isSpecial
                             ? Number(actionValue)
                             : Number((document.getElementById("hs-challenge-num-input") as HTMLInputElement).value),
-                        challengeCompletions: isSpecial ? 0 : Number((document.getElementById("hs-challenge-completions-input") as HTMLInputElement).value),
+                        challengeCompletions: Number((document.getElementById("hs-challenge-completions-input") as HTMLInputElement).value),
                         challengeWaitTime: Number((document.getElementById("hs-challenge-wait-inside-input") as HTMLInputElement).value),
                         challengeWaitBefore: Number((document.getElementById("hs-challenge-wait-before-input") as HTMLInputElement).value),
-                        challengeMaxTime: isSpecial ? 0 : Number((document.getElementById("hs-challenge-max-time-input") as HTMLInputElement).value)
+                        challengeMaxTime: Number((document.getElementById("hs-challenge-max-time-input") as HTMLInputElement).value)
                     };
                     if (commentValue) (newEntry as any).comment = commentValue;
                 }

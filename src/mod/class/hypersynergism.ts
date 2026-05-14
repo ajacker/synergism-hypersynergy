@@ -15,7 +15,7 @@ import strategyEditionCSS from "inline:../resource/css/hs-strategy-edition.css";
 import { HSInputType, HSNotifyPosition, HSNotifyType } from "../types/module-types/hs-ui-types";
 import { HSGameDataAPI } from "./hs-core/gds/hs-gamedata-api";
 import { HSAmbrosia } from "./hs-modules/hs-ambrosia";
-import { HSHeaterUI } from "./hs-modules/hs-heater/hs-heater-ui";
+import { HSHeaterModalManager } from "./hs-modules/hs-heater/hs-heater-modal-manager";
 import { HSUtils } from "./hs-utils/hs-utils";
 import { HSGithub } from "./hs-core/github/hs-github";
 
@@ -177,7 +177,7 @@ export class Hypersynergism {
             HSUIC.Grid({
                 html: [
                     this.#buildGridSectionHeader('Export tools'),
-                    this.#buildGridFullSpanDiv('hs-panel-amb-heater-p', `Export an extended save file string for the <a href="${HSGlobal.General.heaterUrl}" class="hs-link" target="_blank">Ambrosia Heater.</a>`),
+                    this.#buildGridFullSpanDiv('hs-panel-amb-heater-p', `Export an extended save file string for the <a href="${HSGlobal.General.heaterUrl}" class="hs-link" target="_blank">Ambrosia Heater</a>.`),
                     HSUIC.Button({ id: 'hs-panel-amb-heater-btn', text: 'Copy Heater Data' }),
                     HSUIC.Button({ id: 'hs-panel-amb-heater-compute-btn', text: 'Ambrosia Heater' }),
                     this.#buildGridSectionHeader('References'),
@@ -273,7 +273,7 @@ export class Hypersynergism {
                 notificationType: 'success'
             });
             */
-            await HSHeaterUI.openHeaterComputationModal();
+            await HSHeaterModalManager.openHeaterComputationModal();
         });
 
         this.#bindToolsButton('#hs-panel-cor-ref-btn', () => {
@@ -372,12 +372,12 @@ export class Hypersynergism {
         }
 
         if (exposedPlayer.insideSingularityChallenge === false) {
-            HSLogger.debug(() => 'No active Exalt found in DOM or exposed stuff... Are you sure you have a bug?', this.#context);
+            HSLogger.info('No active Exalt found in DOM or exposed stuff... Are you sure you have a bug?', this.#context);
             return;
         }
 
         exposedPlayer.insideSingularityChallenge = true;
-        HSLogger.log('Exalt bug fix done with exposed stuff (?)', this.#context);
+        HSLogger.info('Exalt bug fixed.', this.#context);
     }
 
     #runCalculation(mode: 'reduced' | 'components') {

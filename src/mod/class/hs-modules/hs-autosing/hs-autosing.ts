@@ -815,13 +815,13 @@ export class HSAutosing extends HSModule {
 
         const isEndPhase = phaseConfig.endPhase === "end";
         for (let i = 0; i < phaseConfig.strat.length; i++) {
+            if (this.#autosingModal?.getIsPaused()) await this.#waitIfAutosingPaused();
+
             // Autosing disabled or AOAG observer activated
             if (!this.#autosingEnabled || (this.#antiquitiesObserverActivated && !isEndPhase && !ignoreObserverActivated)) {
                 this.#autosingModal?.recordPhase(phaseLabel);
                 return;
             }
-
-            if (this.#autosingModal?.getIsPaused()) await this.#waitIfAutosingPaused();
 
             const jumpIndex = await this.#executeStrategyAction(phaseConfig, i);
             if (typeof jumpIndex === 'number') {
@@ -930,7 +930,7 @@ export class HSAutosing extends HSModule {
             case 104: // Ascend
                 this.#ascendBtn.click();
                 break;
-            case 151: // Wait
+            case 151: // Wait (done in the waitBefore)
                 break;
             case 152: // Ant sac
                 this.#antSacrifice.click();
@@ -950,7 +950,7 @@ export class HSAutosing extends HSModule {
             case 212:
             case 213:
             case 214: // Max C11-C14
-                await this.#maxC11to14WithC10((actionId - 200) as 11 | 12 | 13 | 14);
+                await this.#maxC11to14WithC10((actionId - 200) as 11 | 12 | 13 | 14, maxTime);
                 break;
             case 215: // store C15
                 this.#storedC15 = this.#isExposureReady
@@ -1046,12 +1046,12 @@ export class HSAutosing extends HSModule {
                 : challengeIndex <= 10
                     ? () => p.currentChallenge.reincarnation === challengeIndex
                     : () => p.currentChallenge.ascension     === challengeIndex;
-            while (isChallengeActive()) await HSUtils.yield();
+            // while (isChallengeActive()) await HSUtils.yield();
             this.#fastDoubleClick(challengeBtn!);
             while (!isChallengeActive()) await HSUtils.yield();
         } else {
             const isActive = accessor.isActive;
-            // The challenge DOM is not always updated when not in the Challenges tab, this is a quickfix for that...
+            /* // The challenge DOM is not always updated when not in the Challenges tab, this is a quickfix for that...
             // I think we could even skip the 'not inside' check and go directly to the double click...?
             const exitButton = challengeIndex <= 5
                 ? this.#exitTranscBtn
@@ -1061,7 +1061,7 @@ export class HSAutosing extends HSModule {
             const skipInactiveWait = !BACKGROUND_COLOR_REGEX.test(exitButton?.getAttribute('style') ?? '');
             if (!skipInactiveWait) {
                 await this.#waitForClassCondition(challengeBtn!, () => !isActive());
-            }
+            } */
             this.#fastDoubleClick(challengeBtn!);
             await this.#waitForClassCondition(challengeBtn!, () => isActive());
         }
@@ -1132,7 +1132,7 @@ export class HSAutosing extends HSModule {
         }
     }
 
-    async #maxC11to14WithC10(challengeIndex: 11 | 12 | 13 | 14): Promise<void> {
+    async #maxC11to14WithC10(challengeIndex: 11 | 12 | 13 | 14, maxTime = 2000): Promise<void> {
         await this.#waitForCompletion(challengeIndex, 0, 0, 0);
         await this.#waitForCompletion(10, 0, 0, 0);
 
@@ -1149,7 +1149,6 @@ export class HSAutosing extends HSModule {
                     this.#cleanupChallengeObserver();
                 }
 
-                // I should maybe add back a timeout for this observer...
                 this.#challengeObserverActive = {
                     predicate: () => this.#exposedPlayer!.challengecompletions[challengeIndex] >= maxPossible,
                     resolve,
@@ -1159,6 +1158,7 @@ export class HSAutosing extends HSModule {
                 this.#challengeCompletionObserver?.disconnect();
                 this.#challengeCompletionObserver?.observe(levelElement!, { childList: true, characterData: true, subtree: true });
                 if (this.#challengeObserverActive.predicate()) this.#cleanupChallengeObserver();
+                window.setTimeout(() => this.#cleanupChallengeObserver(), maxTime);
             });
         } else {
             // Fallback: DOM text parsing + Decimal
@@ -1180,6 +1180,7 @@ export class HSAutosing extends HSModule {
                 this.#challengeCompletionObserver?.disconnect();
                 this.#challengeCompletionObserver?.observe(levelElement!, { childList: true, characterData: true, subtree: true });
                 if (this.#challengeObserverActive.predicate()) this.#cleanupChallengeObserver();
+                window.setTimeout(() => this.#cleanupChallengeObserver(), maxTime);
             });
         }
     }
@@ -1410,8 +1411,9 @@ export class HSAutosing extends HSModule {
 
         this.#prevActionTime = performance.now();
         await this.#matchStageToStrategy('final');
+        if (!this.#autosingEnabled) return; // If the user stopped during the very last step
 
-        // Export to gather a few quarks... (maybe not worth anymore...??? Or maybe for lower sing players...)
+        // Export to gather a few quarks
         await this.#setAmbrosiaLoadout(this.#ambrosia_quark);
         const exportBtn = this.#exportBtnClone ?? this.#exportBtn;
         if (exportBtn) {
@@ -1852,4 +1854,3 @@ export class HSAutosing extends HSModule {
         if (success) resolve(); else reject(new Error("Wait for inner text aborted")); // We can probably drop the 'reject'
     }
 }
-

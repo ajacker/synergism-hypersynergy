@@ -1189,28 +1189,31 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         return reduce_vals ? reduced : vals;
     }
 
-    calculateSingularityReductions(reduce_vals = true) {
+    calculateSingularityReductions(reduce_vals = true, true_base = false) {
         if (!this.gameData) return 0;
         const data = this.gameData;
-        const cacheName = 'SingularityReductions' as keyof CalculationCache;
+        const cacheName = (`SingularityReductions${true_base ? '_TRUE_BASE' : ''}`) as keyof CalculationCache;
 
         const calculationVars: number[] = [
             data.insideSingularityChallenge ? 1 : 0,
             data.ambrosiaUpgrades.ambrosiaSingReduction2.ambrosiaInvested,
             data.ambrosiaUpgrades.ambrosiaSingReduction1.ambrosiaInvested,
             ...this.quarkShop.getShopLevelDependencies('shopSingularityPenaltyDebuff'),
+            true_base ? 1 : 0,
         ];
 
         const cached = checkCalculationCache(this.#calculationCache, cacheName, calculationVars);
 
         if (reduce_vals && cached !== undefined) return cached;
 
-        let redu;
+        let redu = 0;
 
-        if (data.insideSingularityChallenge) {
-            redu = this.ambrosia.getAmbrosiaUpgradeEffects("ambrosiaSingReduction2").singularityReduction;
-        } else {
-            redu = this.ambrosia.getAmbrosiaUpgradeEffects("ambrosiaSingReduction1").singularityReduction;
+        if (!true_base) {
+            if (data.insideSingularityChallenge) {
+                redu = this.ambrosia.getAmbrosiaUpgradeEffects("ambrosiaSingReduction2").singularityReduction;
+            } else {
+                redu = this.ambrosia.getAmbrosiaUpgradeEffects("ambrosiaSingReduction1").singularityReduction;
+            }
         }
 
         const vals = [
@@ -1229,7 +1232,7 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
         if (!this.gameData) return 1;
         const data = this.gameData;
         const resolvedSingularityCount = singularityCount === -1 ? data.singularityCount : singularityCount;
-        const reduction = this.calculateSingularityReductions() as number;
+        const reduction = this.calculateSingularityReductions(true, false) as number;
         const debuffIndex = [
             'Offering',
             'Obtainium',
@@ -2471,9 +2474,9 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                     cubesExp6D:             this.log10PlusOne(gameData.wowPlatonicCubes),
                     cubesExp7D:             this.log10PlusOne(gameData.wowAbyssals),
                     cubesExp8D:             this.log10PlusOne(gameData.wowOcteracts),
-                    cubesExpTotal:          this.calculateTotalCubesExp(), // Vanilla adds +6
+                    cubesExpTotal:          this.calculateTotalCubesExp() - 6, // Vanilla adds +6
                     currentSingularity:     gameData.singularityCount,
-                    singularityReducers:    (this.calculateSingularityReductions() as number),
+                    singularityReducers:    (this.calculateSingularityReductions(true, true) as number),
                     exalt:                  this.getActiveExalt(),
                     postAoag:               gameData.runes.antiquities ? 1 : 0,
                     transcription:          gameData.octUpgrades.octeractOneMindImprover.level,

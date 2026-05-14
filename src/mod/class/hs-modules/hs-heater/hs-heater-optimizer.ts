@@ -1,8 +1,20 @@
-import type { HeaterOptimizerInput, HeaterOptimizationResult } from "../../../types/data-types/hs-heater-types";
+import type {
+    HeaterOptimizerInput,
+    HeaterOptimizationResult,
+    HeaterResultRow,
+    HeaterResultRowMatrix,
+} from "../../../types/data-types/hs-heater-types";
 
-// ---------------------------------------------------------------------------
+/*
+    This file closely match the script on Rus9384's sheet (credits to him),
+    in order to be easily updatable when the sheet updates (and vice-versa...)
+    Sheet link: https://docs.google.com/spreadsheets/d/105yoI41lk8UJ2PThTkV0tWKNli5R0K1WuaSphKl13R0/edit?gid=1484254243#gid=1484254243
+*/
+
+
+// ===========================================================================
 // Internal state types
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
 interface UpgradeEffectMap {
     luck?:  (input: number, level: number, loadout: Loadout) => number;
@@ -30,9 +42,10 @@ interface UpgradeParameters {
     costArray?:     number[];
 }
 
-// ---------------------------------------------------------------------------
+
+// ===========================================================================
 // Stats object (mirrors the sheet_script `stats` const, populated from input)
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
 interface Stats {
     amb:             number;
@@ -80,9 +93,10 @@ interface Stats {
     viscount:        boolean;
 }
 
-// ---------------------------------------------------------------------------
+
+// ===========================================================================
 // Options (mirrors the sheet_script `options` const, populated from input)
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
 interface Options {
     calculateAmb:      boolean;
@@ -95,9 +109,10 @@ interface Options {
     calculateGen:      boolean;
 }
 
-// ---------------------------------------------------------------------------
+
+// ===========================================================================
 // Module-level mutable state (reset on each call to createHeaterOptimizerResultFromInput)
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
 let stats: Stats = {
     amb: 0, rAmb: 0, lifetimeAmbExp: 0, ambSpeed: 1,
@@ -121,9 +136,10 @@ let options: Options = {
     calculateOff: false, calculateHyperflux: false, calculateAmbOct: false, calculateGen: false,
 };
 
-// ---------------------------------------------------------------------------
+
+// ===========================================================================
 // Upgrade class
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
 class Upgrade {
 
@@ -137,6 +153,7 @@ class Upgrade {
     costArray?:     number[];
 
     constructor(parameters: Partial<UpgradeParameters> = {}) {
+
         this.maxLevel      = parameters.maxLevel      ?? 0;
         this.cost          = parameters.cost          ?? (() => 0);
         this.effects       = parameters.effects       ?? {};
@@ -144,33 +161,44 @@ class Upgrade {
         this.blueberryCost = parameters.blueberryCost ?? 0;
         this.prerequisites = parameters.prerequisites ?? {};
         this.ignoresExalt  = parameters.ignoresExalt  ?? false;
+
         if (parameters.costArray !== undefined) {
             this.costArray = parameters.costArray;
         }
+
     }
 
     static singDebuff(sing = 0, stat = ""): number {
+
         const effectiveSing = (): number => {
             let eff = sing * Math.min(4.75, 0.075 * sing + 1);
-            if (sing > 10)  eff *= 1.5 * Math.min(4, 0.125 * sing - 0.25);
-            if (sing > 25)  eff *= 2.5 * Math.min(6, 0.06 * sing - 0.5);
-            if (sing > 36)  eff *= 4 * Math.min(5, sing / 18 - 1) * Math.pow(1.1, Math.min(sing - 36, 64));
-            if (sing > 50)  eff *= 5 * Math.min(8, 0.04 * sing - 1) * Math.pow(1.1, Math.min(sing - 50, 50));
-            if (sing > 100) eff *= 0.08 * sing * Math.pow(1.1, sing - 100);
-            if (sing > 150) eff *= 2 * Math.pow(1.05, sing - 150);
-            if (sing > 200) eff *= 1.5 * Math.pow(1.275, sing - 200);
-            if (sing > 215) eff *= 1.25 * Math.pow(1.2, sing - 215);
-            if (sing > 230) eff *= 2;
-            if (sing > 269) eff *= Math.pow(3, sing - 268);
+            if (sing > 10)
+                eff *= 1.5 * Math.min(4, 0.125 * sing - 0.25);
+            if (sing > 25)
+                eff *= 2.5 * Math.min(6, 0.06 * sing - 0.5);
+            if (sing > 36)
+                eff *= 4 * Math.min(5, sing / 18 - 1) * Math.pow(1.1, Math.min(sing - 36, 64));
+            if (sing > 50)
+                eff *= 5 * Math.min(8, 0.04 * sing - 1) * Math.pow(1.1, Math.min(sing - 50, 50));
+            if (sing > 100)
+                eff *= 0.08 * sing * Math.pow(1.1, sing - 100);
+            if (sing > 150)
+                eff *= 2 * Math.pow(1.05, sing - 150);
+            if (sing > 200)
+                eff *= 1.5 * Math.pow(1.275, sing - 200);
+            if (sing > 215)
+                eff *= 1.25 * Math.pow(1.2, sing - 215);
+            if (sing > 230)
+                eff *= 2;
+            if (sing > 269)
+                eff *= Math.pow(3, sing - 268);
             return eff;
         };
 
         const effSing = effectiveSing();
         if (stat === "mOff") {
             let result = Math.pow(1.02, sing) * (1 + Math.sqrt(effSing) / 4);
-            result *= sing < 150
-                ? 3 * Math.sqrt(effSing + 1)
-                : Math.pow(effSing, 2 / 3) / 400;
+            result *= sing < 150 ? 3 * Math.sqrt(effSing + 1) : Math.pow(effSing, 2 / 3) / 400;
             return result;
         } else if (stat === "cube") {
             let result = 2 * Math.pow(1.03, Math.max(0, sing - 100));
@@ -180,7 +208,9 @@ class Upgrade {
                 result = 1 + (Math.pow(effSing, 0.75) * result) / 1000;
             return result;
         }
+
         return 1;
+
     }
 
     static ambrosiaRuneOOMBonusCost(): number[] {
@@ -197,7 +227,9 @@ class Upgrade {
     }
 
     static chronometerEffect(level = 0, mind = 1): number {
-        if (stats.chronometer <= 0) return 1;
+
+        if (stats.chronometer <= 0)
+            return 1;
 
         let aSpeed = stats.aSpeed;
         aSpeed = Math.pow(aSpeed, 1 / (1 + stats.spread * (aSpeed >= 1 ? 1 : -1)));
@@ -205,7 +237,10 @@ class Upgrade {
         const exponent = mind * aSpeed >= 1 ? 1 + stats.spread : 1 - stats.spread;
         const oldLevel = Math.floor(stats.chronometer / 40);
         const newLevel = Math.floor((stats.chronometer + level) / 40);
-        return Math.pow(1.006, level * exponent) * Math.pow(aSpeed, oldLevel - newLevel);
+        const effect   = Math.pow(1.006, level * exponent) * Math.pow(aSpeed, 0.001 * (newLevel - oldLevel));
+
+        return effect;
+
     }
 
     static ambGeneration(level = 0): number {
@@ -220,21 +255,18 @@ class Upgrade {
     }
 
     static luckConversion(level = 0): number {
-        let conversion = stats.shopRLuck.reduce(
-            (result, value) => result + Math.floor(value / 20) * 0.01,
-            stats.luckConversion
-        );
+        let conversion = stats.shopRLuck.reduce((result, value) => result + Math.floor(value / 20) * 0.01, stats.luckConversion);
         const levels = stats.shopRLuck.map((value) => value > 0 ? value + level : 0);
         levels[2] += stats.shopRLuck[2] > 0 ? level : 0;
         conversion = levels.reduce((result, value) => result - Math.floor(value / 20) * 0.01, conversion);
-        return Math.max(conversion, 1e-6);
+        return Math.max(conversion, 1e-6); // Sheet only have 'return conversion'
     }
 
     static rLuck(level = 0, loadout: Loadout): number {
         let rLuck = stats.baseRLuck + Math.floor((loadout.luck - 100) / Upgrade.luckConversion(level));
         rLuck += stats.shopRLuck[0] > 0 ? level * 0.05   : 0;
         rLuck += stats.shopRLuck[1] > 0 ? level * 0.075  : 0;
-        rLuck += stats.shopRLuck[2] > 0 ? level * 0.2    : 0;
+        rLuck += stats.shopRLuck[2] > 0 ? level * 0.2    : 0; // Each bonus level applies twice
         if (stats.jack)
             rLuck += 0.05 * (1 + 0.01 * stats.voucher);
         return rLuck;
@@ -251,11 +283,13 @@ class Upgrade {
         result      *= 1 + jack * 0.1 * level / (1 + jack * stats.shopQuark);
         return result;
     }
+
 }
 
-// ---------------------------------------------------------------------------
+
+// ===========================================================================
 // upgrades object (mirrors sheet_script `upgrades` const)
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
 // Forward-declare so Upgrade instances can reference it
 const upgrades: Record<string, Upgrade> = {};
@@ -275,7 +309,9 @@ Object.assign(upgrades, {
             quark: (input, level) => input * (1 + 0.01 * level),
         },
         row: 1,
-        prerequisites: { ambrosiaTutorial: 10 },
+        prerequisites: {
+            ambrosiaTutorial: 10
+        },
     }),
     ambrosiaCubes1: new Upgrade({
         maxLevel: 100,
@@ -285,7 +321,9 @@ Object.assign(upgrades, {
             oct:  (input, level) => input * (1 + 0.05 * level) * Math.pow(1.1, Math.floor(level / 5)),
         },
         row: 1,
-        prerequisites: { ambrosiaTutorial: 10 },
+        prerequisites: {
+            ambrosiaTutorial: 10
+        },
     }),
     ambrosiaLuck1: new Upgrade({
         maxLevel: 100,
@@ -294,7 +332,9 @@ Object.assign(upgrades, {
             luck: (input, level) => input + 2 * level + 12 * Math.floor(level / 10),
         },
         row: 1,
-        prerequisites: { ambrosiaTutorial: 10 },
+        prerequisites: {
+            ambrosiaTutorial: 10
+        },
     }),
     ambrosiaQuarkCube1: new Upgrade({
         maxLevel: 25,
@@ -305,7 +345,10 @@ Object.assign(upgrades, {
         },
         row: 2,
         blueberryCost: 1,
-        prerequisites: { ambrosiaCubes1: 30, ambrosiaQuarks1: 20 },
+        prerequisites: {
+            ambrosiaCubes1: 30,
+            ambrosiaQuarks1: 20
+        },
     }),
     ambrosiaLuckCube1: new Upgrade({
         maxLevel: 25,
@@ -316,7 +359,10 @@ Object.assign(upgrades, {
         },
         row: 2,
         blueberryCost: 1,
-        prerequisites: { ambrosiaCubes1: 30, ambrosiaLuck1: 20 },
+        prerequisites: {
+            ambrosiaCubes1: 30,
+            ambrosiaLuck1: 20
+        },
     }),
     ambrosiaCubeQuark1: new Upgrade({
         maxLevel: 25,
@@ -326,7 +372,10 @@ Object.assign(upgrades, {
         },
         row: 2,
         blueberryCost: 1,
-        prerequisites: { ambrosiaQuarks1: 30, ambrosiaCubes1: 20 },
+        prerequisites: {
+            ambrosiaQuarks1: 30,
+            ambrosiaCubes1: 20
+        },
     }),
     ambrosiaLuckQuark1: new Upgrade({
         maxLevel: 25,
@@ -336,7 +385,10 @@ Object.assign(upgrades, {
         },
         row: 2,
         blueberryCost: 1,
-        prerequisites: { ambrosiaQuarks1: 30, ambrosiaLuck1: 20 },
+        prerequisites: {
+            ambrosiaQuarks1: 30,
+            ambrosiaLuck1: 20
+        },
     }),
     ambrosiaCubeLuck1: new Upgrade({
         maxLevel: 25,
@@ -346,7 +398,10 @@ Object.assign(upgrades, {
         },
         row: 2,
         blueberryCost: 1,
-        prerequisites: { ambrosiaLuck1: 30, ambrosiaCubes1: 20 },
+        prerequisites: {
+            ambrosiaLuck1: 30,
+            ambrosiaCubes1: 20
+        },
     }),
     ambrosiaQuarkLuck1: new Upgrade({
         maxLevel: 25,
@@ -356,7 +411,10 @@ Object.assign(upgrades, {
         },
         row: 2,
         blueberryCost: 1,
-        prerequisites: { ambrosiaLuck1: 30, ambrosiaQuarks1: 20 },
+        prerequisites: {
+            ambrosiaLuck1: 30,
+            ambrosiaQuarks1: 20
+        },
     }),
     ambrosiaQuarks2: new Upgrade({
         maxLevel: 100,
@@ -366,7 +424,9 @@ Object.assign(upgrades, {
         },
         row: 3,
         blueberryCost: 1,
-        prerequisites: { ambrosiaQuarks1: 40 },
+        prerequisites: {
+            ambrosiaQuarks1: 40
+        },
     }),
     ambrosiaCubes2: new Upgrade({
         maxLevel: 100,
@@ -377,7 +437,9 @@ Object.assign(upgrades, {
         },
         row: 3,
         blueberryCost: 1,
-        prerequisites: { ambrosiaCubes1: 40 },
+        prerequisites: {
+            ambrosiaCubes1: 40
+        },
     }),
     ambrosiaLuck2: new Upgrade({
         maxLevel: 100,
@@ -387,7 +449,9 @@ Object.assign(upgrades, {
         },
         row: 3,
         blueberryCost: 1,
-        prerequisites: { ambrosiaLuck1: 40 },
+        prerequisites: {
+            ambrosiaLuck1: 40
+        },
     }),
     ambrosiaQuarks3: new Upgrade({
         maxLevel: 10,
@@ -397,7 +461,10 @@ Object.assign(upgrades, {
         },
         row: 4,
         blueberryCost: 3,
-        prerequisites: { ambrosiaQuarks1: 100, ambrosiaQuarks2: 50 },
+        prerequisites: {
+            ambrosiaQuarks1: 100,
+            ambrosiaQuarks2: 50
+        },
     }),
     ambrosiaCubes3: new Upgrade({
         maxLevel: 100,
@@ -408,7 +475,10 @@ Object.assign(upgrades, {
         },
         row: 4,
         blueberryCost: 3,
-        prerequisites: { ambrosiaCubes1: 100, ambrosiaCubes2: 50 },
+        prerequisites: {
+            ambrosiaCubes1: 100,
+            ambrosiaCubes2: 50
+        },
     }),
     ambrosiaLuck3: new Upgrade({
         maxLevel: 100,
@@ -418,11 +488,14 @@ Object.assign(upgrades, {
         },
         row: 4,
         blueberryCost: 3,
-        prerequisites: { ambrosiaLuck1: 90, ambrosiaLuck2: 50 },
+        prerequisites: {
+            ambrosiaLuck1: 90,
+            ambrosiaLuck2: 50
+        },
     }),
     ambrosiaLuck4: new Upgrade({
         maxLevel: 50,
-        cost: (level) => (250000 + 10000 * (level - 1)) * level,
+        cost: (level) => (250000 + 20000 * (level - 1)) * level,
         effects: {
             mLuck: (input, level) => input + 0.0001 * stats.lifetimeAmbExp * level,
         },
@@ -454,7 +527,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaHyperflux: new Upgrade({
         maxLevel: 7,
-        cost: (level) => ([0, 33333, 99999, 199998, 333330, 499995, 999990, 22499975])[level] ?? 0,
+        cost: (level) => ([0, 33333, 99999, 199998, 333330, 499995, 999990, 2499975])[level] ?? 0,
         effects: {
             cube: (input, level, _loadout, p4x4 = 50) => input * Math.pow(1 + 0.01 * level, p4x4),
         },
@@ -486,34 +559,36 @@ Object.assign(upgrades, {
         },
         row: 3,
         blueberryCost: 2,
-        prerequisites: { ambrosiaBaseOffering1: 30, ambrosiaBaseObtainium1: 10 },
+        prerequisites: {
+            ambrosiaBaseOffering1: 30,
+            ambrosiaBaseObtainium1: 10
+        },
     }),
     ambrosiaBaseObtainium2: new Upgrade({
         maxLevel: 30,
-        cost: (level) => 30 * Math.pow(level, 3),
+        cost: (level) => 160 * Math.pow(level, 3),
         effects: {
             obt: (input, level) => input + level,
         },
         row: 3,
         blueberryCost: 2,
-        prerequisites: { ambrosiaBaseObtainium1: 15, ambrosiaBaseOffering1: 20 },
+        prerequisites: {
+            ambrosiaBaseObtainium1: 15,
+            ambrosiaBaseOffering1: 20
+        },
     }),
     ambrosiaSingReduction1: new Upgrade({
         maxLevel: 2,
         cost: (level) => 1e5 * (Math.pow(99, level) - 1) / 98,
         effects: {
-            cube: (input, level) => stats.exalt > 0 || stats.postAoAG
-                ? input
-                : input * Upgrade.singDebuff(stats.sing, "cube") / Upgrade.singDebuff(stats.sing - level, "cube"),
-            mOff: (input, level) => stats.exalt > 0 || stats.postAoAG
-                ? input
-                : input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff"),
-            mObt: (input, level) => stats.exalt > 0 || stats.postAoAG
-                ? input
-                : input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff"),
+            cube: (input, level) => stats.exalt > 0 || stats.postAoAG ? input : input * Upgrade.singDebuff(stats.sing, "cube") / Upgrade.singDebuff(stats.sing - level, "cube"),
+            mOff: (input, level) => stats.exalt > 0 || stats.postAoAG ? input : input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff"),
+            mObt: (input, level) => stats.exalt > 0 || stats.postAoAG ? input : input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff"),
         },
         blueberryCost: 2,
-        prerequisites: { ambrosiaHyperflux: 4 },
+        prerequisites: {
+            ambrosiaHyperflux: 4
+        },
     }),
     ambrosiaInfiniteShopUpgrades1: new Upgrade({
         maxLevel: 20,
@@ -526,7 +601,11 @@ Object.assign(upgrades, {
         },
         row: 3,
         blueberryCost: 1,
-        prerequisites: { ambrosiaCubes1: 70, ambrosiaBaseOffering1: 20, ambrosiaBaseObtainium1: 10 },
+        prerequisites: {
+            ambrosiaCubes1: 70,
+            ambrosiaBaseOffering1: 20,
+            ambrosiaBaseObtainium1: 10
+        },
     }),
     ambrosiaInfiniteShopUpgrades2: new Upgrade({
         maxLevel: 20,
@@ -539,21 +618,20 @@ Object.assign(upgrades, {
         },
         row: 4,
         blueberryCost: 2,
-        prerequisites: { ambrosiaInfiniteShopUpgrades1: 20, ambrosiaCubes2: 50, ambrosiaBaseOffering2: 20, ambrosiaBaseObtainium2: 10 },
+        prerequisites: {
+            ambrosiaInfiniteShopUpgrades1: 20,
+            ambrosiaCubes2: 50,
+            ambrosiaBaseOffering2: 20,
+            ambrosiaBaseObtainium2: 10
+        },
     }),
     ambrosiaSingReduction2: new Upgrade({
         maxLevel: 2,
         cost: (level) => 1.25e7 * (Math.pow(3, level) - 1) / 2,
         effects: {
-            cube: (input, level) => stats.exalt > 0 && !stats.postAoAG
-                ? input * Upgrade.singDebuff(stats.sing, "cube") / Upgrade.singDebuff(stats.sing - level, "cube")
-                : input,
-            mOff: (input, level) => stats.exalt > 0 && !stats.postAoAG
-                ? input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff")
-                : input,
-            mObt: (input, level) => stats.exalt > 0 && !stats.postAoAG
-                ? input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff")
-                : input,
+            cube: (input, level) => stats.exalt > 0 && !stats.postAoAG ? input * Upgrade.singDebuff(stats.sing, "cube") / Upgrade.singDebuff(stats.sing - level, "cube") : input,
+            mOff: (input, level) => stats.exalt > 0 && !stats.postAoAG ? input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff") : input,
+            mObt: (input, level) => stats.exalt > 0 && !stats.postAoAG ? input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff") : input,
         },
         blueberryCost: 4,
         ignoresExalt: true,
@@ -612,7 +690,9 @@ Object.assign(upgrades, {
         },
         row: 3,
         blueberryCost: 2,
-        prerequisites: { ambrosiaFreeLuckUpgrades: 10 },
+        prerequisites: {
+            ambrosiaFreeLuckUpgrades: 10
+        },
     }),
     ambrosiaFreeQuarkUpgrades: new Upgrade({
         maxLevel: 10,
@@ -633,11 +713,13 @@ const redUpgrades: Record<string, Upgrade> = {
     regularLuck2: new Upgrade({ maxLevel: 250  }),
 };
 
-// ---------------------------------------------------------------------------
+
+// ===========================================================================
 // Loadout class
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
 class Loadout {
+
     upgradeLevels: Record<string, number>;
     private costCache:  number | null;
     private statCache:  Record<string, number>;
@@ -649,15 +731,17 @@ class Loadout {
         } else if (loadout !== undefined) {
             Object.assign(this.upgradeLevels, loadout);
         }
-        this.upgradeLevels.ambrosiaPatreon = 1;
+        this.upgradeLevels.ambrosiaPatreon = 1; // Always buy 1 level of ambrosiaPatreon
         this.costCache = null;
         this.statCache = {};
     }
 
+    // Returns cost of a specific upgrade in the loadout
     getCost(upgrade: string): number {
         return upgrades[upgrade].cost(this.upgradeLevels[upgrade] ?? 0);
     }
 
+    // Returns total cost of the entire loadout
     get cost(): number {
         if (this.costCache === null) {
             this.costCache = 0;
@@ -667,6 +751,7 @@ class Loadout {
         return this.costCache;
     }
 
+    // Returns total blueberry cost of the entire loadout
     get blueberryCost(): number {
         let result = 0;
         for (const upgrade in this.upgradeLevels)
@@ -675,12 +760,14 @@ class Loadout {
         return result;
     }
 
+    // Returns effective level of an upgrade that accounts for bonus levels
     effectiveLevel(upgrade: string): number {
         let level = this.upgradeLevels[upgrade] ?? 0;
         level += stats.bonus[upgrades[upgrade]?.row ?? 0] ?? 0;
         return level;
     }
 
+    // Returns effect of a specific upgrade in the loadout
     getEffect(input: number, upgrade: string, effect: keyof UpgradeEffectMap): number {
         const upgradeData = upgrades[upgrade];
         if (!upgradeData) return input;
@@ -696,6 +783,7 @@ class Loadout {
         return this.getStat("luck");
     }
 
+    // Returns the total value of a given stat for the loadout
     getStat(stat: string, override = false): number {
         if (this.statCache[stat] == null || override) {
             this.statCache[stat] = stat === "mLuck" ? stats.baseMLuck : 1;
@@ -746,6 +834,7 @@ class Loadout {
         return this.statCache[stat];
     }
 
+    // Recursively sets levels of all upgrades to produce a valid loadout
     satisfyPrerequisites(): void {
         let repeat = true;
         while (repeat) {
@@ -763,22 +852,56 @@ class Loadout {
     }
 
     fixBlueberryUpgrades(): void {
-        if (this.blueberryCost <= stats.blueberries) return;
-        this.upgradeLevels.ambrosiaLuck4 = 0;
-        if (this.blueberryCost - stats.blueberries > 1) {
+
+        if (this.blueberryCost <= stats.blueberries)
+            return;
+
+        // Mirror the GS switch/case (with intentional fallthrough) to pre-remove
+        // the shop groups first for specific over-budget amounts, before touching luck4.
+        // eslint-disable-next-line no-fallthrough
+        switch (this.blueberryCost - stats.blueberries) {
+            case 9:
+            case 10:
+                this.upgradeLevels.ambrosiaInfiniteShopUpgrades1 = 0;
+                this.upgradeLevels.ambrosiaBaseObtainium1        = 0;
+                this.upgradeLevels.ambrosiaBaseOffering1         = 0;
+            // falls through
+            case 6:
+            case 7:
+                this.upgradeLevels.ambrosiaInfiniteShopUpgrades2 = 0;
+                this.upgradeLevels.ambrosiaBaseObtainium2        = 0;
+                this.upgradeLevels.ambrosiaBaseOffering2         = 0;
+        }
+
+        if (this.blueberryCost - stats.blueberries === 1)
+            this.upgradeLevels.ambrosiaFreeLuckUpgrades = 0;
+
+        // Remove the weakest/most expensive upgrades first
+        if (this.blueberryCost > stats.blueberries) { // This frees 6 blueberries
+            this.upgradeLevels.ambrosiaLuck4 = 0; // This frees 5 blueberries
+            if (this.blueberryCost - stats.blueberries === 1)
+                this.upgradeLevels.ambrosiaFreeLuckUpgrades = 0;
+        }
+
+        if (this.blueberryCost > stats.blueberries) { // This frees 6 blueberries
             this.upgradeLevels.ambrosiaInfiniteShopUpgrades2 = 0;
             this.upgradeLevels.ambrosiaBaseObtainium2        = 0;
             this.upgradeLevels.ambrosiaBaseOffering2         = 0;
+            if (this.blueberryCost - stats.blueberries === 1)
+                this.upgradeLevels.ambrosiaFreeLuckUpgrades = 0;
         }
-        if (this.blueberryCost - stats.blueberries > 1) {
+
+        if (this.blueberryCost > stats.blueberries) { // This frees 3 blueberries
             this.upgradeLevels.ambrosiaInfiniteShopUpgrades1 = 0;
             this.upgradeLevels.ambrosiaBaseObtainium1        = 0;
             this.upgradeLevels.ambrosiaBaseOffering1         = 0;
+            if (this.blueberryCost > stats.blueberries)
+                this.upgradeLevels.ambrosiaFreeLuckUpgrades = 0;
         }
-        if (this.blueberryCost > stats.blueberries)
-            this.upgradeLevels.ambrosiaFreeLuckUpgrades = 0;
+
         this.costCache  = null;
         this.statCache  = {};
+
     }
 
     get format(): string {
@@ -789,7 +912,9 @@ class Loadout {
         return JSON.stringify(upgradeLevels);
     }
 
-    generateOutput(stat: string, maxLoadout: Loadout, p4x4 = 0): any[] {
+    generateOutput(stat: string, maxLoadout: Loadout, p4x4 = 0): HeaterResultRow {
+
+        this.costCache = null;
         if (this.cost > stats.amb || stat === "")
             return ["Unaffordable", null, null, "N / A", "N / A", "N / A", false];
 
@@ -812,20 +937,25 @@ class Loadout {
             p4x4 > 50 ? "Never" : p4x4,
             this.getStat(stat) >= maxLoadout.getStat(stat),
         ];
+
     }
 
+    // Combines upgrades from both loadouts
     static union(loadout1: Loadout, loadout2: Loadout): Loadout {
         const result = new Loadout(loadout1);
         for (const upgrade in loadout2.upgradeLevels)
             result.upgradeLevels[upgrade] = Math.max(result.upgradeLevels[upgrade] ?? 0, loadout2.upgradeLevels[upgrade]);
         return result;
     }
+
 }
 
-// ---------------------------------------------------------------------------
-// Table helpers (mirrors sheet_script trimTable/generateTable/mergeTables/findOpt)
-// ---------------------------------------------------------------------------
 
+// ===========================================================================
+// Table helpers (mirrors sheet_script trimTable/generateTable/mergeTables/findOpt)
+// ===========================================================================
+
+// Removes suboptimal loadouts from the table
 function trimTable(table: Loadout[], stat: string): Loadout[] {
     table.sort((a, b) => a.cost === b.cost ? b.getStat(stat) - a.getStat(stat) : a.cost - b.cost);
     const result: Loadout[] = [table[0]];
@@ -839,38 +969,46 @@ function trimTable(table: Loadout[], stat: string): Loadout[] {
     return result;
 }
 
+// Generates a table of locally optimal loadouts for selected upgrades
 function generateTable(selectedUpgrades: string[], stat: string, minLevels: Record<string, number> = {}): Loadout[] {
+
     const table: Loadout[] = [];
 
     const processUpgrade = (upgradeIndex: number, parentLoadout: Loadout): void => {
-        if (upgradeIndex >= selectedUpgrades.length) return;
+
+        if (upgradeIndex >= selectedUpgrades.length)
+            return;
         const upgradeName = selectedUpgrades[upgradeIndex];
         const upgrade = upgrades[upgradeName];
 
         if ((minLevels[upgradeName] ?? 0) <= 0)
-            processUpgrade(upgradeIndex + 1, parentLoadout);
+            processUpgrade(upgradeIndex + 1, parentLoadout); // Process the next upgrade without having any levels in the current upgrade
 
         const preLoadout = new Loadout(parentLoadout);
         for (const prerequisite in upgrade.prerequisites) {
-            if (
-                selectedUpgrades.includes(prerequisite) &&
-                (preLoadout.upgradeLevels[prerequisite] ?? 0) < (upgrade.prerequisites[prerequisite] ?? 0)
-            ) return;
+            // Avoid double calculations
+            if (selectedUpgrades.includes(prerequisite) && (preLoadout.upgradeLevels[prerequisite] ?? 0) < (upgrade.prerequisites[prerequisite] ?? 0))
+                return;
         }
         preLoadout.upgradeLevels[upgradeName] = 1;
         preLoadout.satisfyPrerequisites();
-        if (preLoadout.blueberryCost > stats.blueberries) return;
+        if (preLoadout.blueberryCost > stats.blueberries)
+            return;
 
         for (let level = minLevels[upgradeName] ?? 1; level <= upgrade.maxLevel; level++) {
+
             const cost = preLoadout.cost + upgrade.cost(level);
-            if (stats.amb <= cost) return;
+            if (stats.amb <= cost)
+                return; // No point in adding unaffordable loadouts to the table
 
             const loadout = new Loadout(preLoadout);
             loadout.upgradeLevels[upgradeName] = level;
             table.push(loadout);
 
             processUpgrade(upgradeIndex + 1, loadout);
+
         }
+
     };
 
     const baseUpgrades: Record<string, number> = {};
@@ -880,14 +1018,17 @@ function generateTable(selectedUpgrades: string[], stat: string, minLevels: Reco
     table.push(emptyLoadout);
     processUpgrade(0, emptyLoadout);
     return trimTable(table, stat);
+
 }
 
+// Merges two tables with locally optimal loadouts
 function mergeTables(table1: Loadout[], table2: Loadout[], stat: string, minLevels: Record<string, number> = {}): Loadout[] {
     const result: Loadout[] = [];
     for (const item1 of table1) {
         for (const item2 of table2) {
             const union = Loadout.union(item1, item2);
-            if (2 * union.cost - item1.cost - item2.cost > stats.amb) break;
+            if (2 * union.cost - item1.cost - item2.cost > stats.amb)
+                break; // Every next loadout will be more expensive
             let skip = false;
             for (const upgrade in minLevels) {
                 if ((union.upgradeLevels[upgrade] ?? 0) < minLevels[upgrade]) {
@@ -896,30 +1037,36 @@ function mergeTables(table1: Loadout[], table2: Loadout[], stat: string, minLeve
                 }
             }
             if (!skip && union.cost <= stats.amb && union.blueberryCost <= stats.blueberries)
-                result.push(union);
+                result.push(union); // No point in adding unaffordable loadouts to the table
         }
     }
-    if (result.length <= 0) result.push(new Loadout());
+    if (result.length <= 0)
+        result.push(new Loadout());
     return trimTable(result, stat);
 }
 
+// Finds the globally optimal loadout among affordable ones
 function findOpt(table1: Loadout[], table2: Loadout[], stat: string, budget = stats.amb): Loadout {
+
     let power = 0;
     let j = 0;
     const upperBounds: Array<{ budget: number; loadout: Loadout } | undefined> = [];
-
+    // An optimization for large tables
     if (stat !== "allAmb" && table1.length > 100 && table2.length > 100) {
+        // Only consider 100 points in each table
         for (let i = 1; i <= table1.length; i += (table1.length - 1) / 100) {
             for (let next = j; Math.round(next) < table2.length; next += (table2.length - 1) / 100) {
-                const loadout1 = table1[table1.length - Math.round(i)];
+                const loadout1 = table1.at(-Math.round(i))!;
                 const loadout2 = table2[Math.round(next)];
                 const union = Loadout.union(loadout1, loadout2);
                 if (2 * union.cost - loadout1.cost - loadout2.cost > budget) {
+                    // This unaffordable loadout serves as a local upper bound
                     upperBounds.push({ budget: loadout1.cost, loadout: loadout2 });
-                    break;
+                    break; // Every next loadout will be more expensive
                 }
-                if (union.cost > budget || union.blueberryCost > stats.blueberries) continue;
-                power = Math.max(power, union.getStat(stat));
+                if (union.cost > budget || union.blueberryCost > stats.blueberries)
+                    continue; // Can't afford this loadout, try the next one
+                power = Math.max(power, union.getStat(stat)); // The best approximate solution
                 j = next;
             }
         }
@@ -928,42 +1075,47 @@ function findOpt(table1: Loadout[], table2: Loadout[], stat: string, budget = st
     let opt = table1[0];
     j = 0;
     for (let i = 1; i <= table1.length; i++) {
-        const ref = table1[table1.length - i];
-        let upperBound: Loadout | undefined;
-        for (let k = upperBounds.length - 1; k >= 0; k--) {
-            const entry = upperBounds[k];
-            if (entry !== undefined && entry.budget >= ref.cost) {
-                upperBound = entry.loadout;
-                break;
-            }
-        }
+        const ref = table1.at(-i)!;
+        // Find appropriate loadout2 from previously computed upper bounds
+        const upperBound = upperBounds.findLast(entry => entry !== undefined && entry.budget >= ref.cost)?.loadout;
         if (upperBound !== undefined) {
             const boundUnion = Loadout.union(ref, upperBound);
-            if (boundUnion.getStat(stat) < power) continue;
+            if (boundUnion.getStat(stat) < power)
+                continue; // Every loadout generated with table.at(-i) will be suboptimal
         }
         let union = Loadout.union(ref, table2[j]);
         union.fixBlueberryUpgrades();
-        if (union.cost > budget) continue;
+        if (union.cost > budget)
+            continue; // Can't afford this loadout, try a cheaper one
         for (let next = j + 1; next < table2.length; next++) {
             const nextUnion = Loadout.union(ref, table2[next]);
-            union.fixBlueberryUpgrades();
-            if (2 * nextUnion.cost - ref.cost - table2[next].cost > budget) break;
-            if (nextUnion.getStat(stat) <= union.getStat(stat)) continue;
-            if (nextUnion.cost > budget) continue;
+            nextUnion.fixBlueberryUpgrades();
+            // Function 'union(i, next).cost' might not be monotone for 'next' because of overlapping upgrades
+            // Therefore we compare only total cost of upgrades present in only one of two loadouts at once
+            if (2 * nextUnion.cost - ref.cost - table2[next].cost > budget)
+                break; // Every next loadout will be more expensive
+            if (nextUnion.getStat(stat) <= union.getStat(stat))
+                continue;
+            if (nextUnion.cost > budget)
+                continue; // Can't afford this loadout, try the next one
             union = nextUnion;
             j = next;
         }
         const statDiff = union.getStat(stat) - opt.getStat(stat);
+        // If one loadout is stronger than the other, choose it
+        // If both are equally powerful, choose the cheaper one
         if (statDiff > 0 || (statDiff === 0 && union.cost < opt.cost))
             opt = union;
     }
 
     return opt;
+
 }
 
-// ---------------------------------------------------------------------------
+
+// ===========================================================================
 // Input mapping: HeaterOptimizerInput → stats + options
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
 function fillStatsFromInput(input: HeaterOptimizerInput): void {
     const {
@@ -1007,12 +1159,12 @@ function fillStatsFromInput(input: HeaterOptimizerInput): void {
     // --- Economy
     stats.quarks  = quarksOwned;
     stats.qHept   = qHept;
-    stats.cubeExp = cubesExpTotal; // cubesExpTotal already includes +6, so it matches sheet: rangeToValue(sheetAmb, "F18") + 6
+    stats.cubeExp = cubesExpTotal + 6;
 
     // --- Singularity
     stats.sing     = currentSingularity - singularityReducers;
     stats.exalt    = exalt;
-    stats.postAoAG = postAoag > 0;
+    stats.postAoAG = postAoag;
 
     // --- Mind / ascension
     stats.mind   = transcription > 0 ? 0.55 + transcription / 150 : 0.5;
@@ -1109,11 +1261,12 @@ function fillOptionsFromInput(input: HeaterOptimizerInput): void {
     options.calculateGen       = a[7]  ?? false;
 }
 
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
 
-export class HSHeaterAPI {
+// ===========================================================================
+// Public API
+// ===========================================================================
+
+export class HSHeaterOptimizer {
 
     static createHeaterOptimizerResultFromInput(input: HeaterOptimizerInput): HeaterOptimizationResult {
 
@@ -1168,25 +1321,24 @@ export class HSHeaterAPI {
             const tableRAmb   = mergeTables(tableAmb, tableRLuck2, "rAmb");
             tableCache.tableAllAmb = mergeTables(tableCache.tableLuckAdd, tableRAmb, "rAmb");
 
+            const tableBrickOfLead = generateTable(["ambrosiaBrickOfLead"], "mLuck");
+            loadoutAllAmb = findOpt(tableCache.tableAllAmb, tableBrickOfLead, "allAmb");
+            let optLoadout = new Loadout(maxLoadout);
+            optLoadout.upgradeLevels.ambrosiaBrickOfLead = 0;
+            optLoadoutAllAmb = findOpt([optLoadout], tableBrickOfLead, "allAmb");
+
             if (options.calculateAmb) {
-                const tableBrickOfLead = generateTable(["ambrosiaBrickOfLead"], "mLuck");
-                loadoutAllAmb = findOpt(tableCache.tableAllAmb, tableBrickOfLead, "allAmb");
-                let optLoadout = new Loadout(maxLoadout);
-                optLoadout.upgradeLevels.ambrosiaBrickOfLead = 0;
-                optLoadoutAllAmb = findOpt([optLoadout], tableBrickOfLead, "allAmb");
                 output.allAmb = [loadoutAllAmb.generateOutput("allAmb", optLoadoutAllAmb)];
             }
 
             // If the true max outperforms our best, disable ambOct (matches sheet behaviour)
             if (
                 options.calculateAmbOct &&
-                optLoadoutAllAmb !== undefined &&
-                loadoutAllAmb !== undefined &&
                 optLoadoutAllAmb.getStat("allAmb") > loadoutAllAmb.getStat("allAmb")
             ) {
                 options.calculateAmbOct = false;
                 if (input.heaterOptions[6]) {
-                    output.ambOct = [["Unaffordable", null, null, "N / A", "N / A", "N / A", false]];
+                    output.ambOct = [maxLoadout.generateOutput("", maxLoadout)];
                 }
             }
         }
@@ -1205,10 +1357,8 @@ export class HSHeaterAPI {
             tableCache.tableRune = generateTable(["ambrosiaTalismanBonusRuneLevel", "ambrosiaRuneOOMBonus"], "cube");
         }
 
-        if (
-            options.calculateQuarks || options.calculateCubes || options.calculateOct ||
-            options.calculateOff || options.calculateGen
-        ) {
+        if (options.calculateQuarks || options.calculateCubes || options.calculateOct || options.calculateOff || options.calculateGen) {
+            // Local optima for cubes match local optima for quarks and octeracts
             tableCache.tableVoucher = generateTable(["ambrosiaInfiniteShopUpgrades1", "ambrosiaInfiniteShopUpgrades2"], "cube");
         }
 
@@ -1226,10 +1376,7 @@ export class HSHeaterAPI {
         }
 
         // --- Shared cube tables (cubes / oct / ambOct / hyperflux / gen) ---
-        if (
-            options.calculateCubes || options.calculateOct || options.calculateAmbOct ||
-            options.calculateHyperflux || options.calculateGen
-        ) {
+        if (options.calculateCubes || options.calculateOct || options.calculateAmbOct || options.calculateHyperflux || options.calculateGen) {
             const minLevels: Record<string, number> = {};
             if (stats.amb >= 1e7) {
                 minLevels.ambrosiaCubes1 = 100;
@@ -1240,14 +1387,13 @@ export class HSHeaterAPI {
             const tableCube1     = generateTable(["ambrosiaCubes1", "ambrosiaCubes2", "ambrosiaCubes3"], "cube", minLevels);
             const tableQuarkCube = generateTable(["ambrosiaQuarkCube1"], "cube");
             const tableCube2     = mergeTables(tableCube1, tableQuarkCube, "cube", minLevels);
+            // Local optima for cubes match local optima for octeracts
             tableCache.tableCubeR = mergeTables(tableCube2, tableCache.tableRune, "cube", minLevels);
         }
 
-        if (
-            options.calculateCubes || options.calculateOct ||
-            options.calculateHyperflux || options.calculateGen
-        ) {
+        if (options.calculateCubes || options.calculateOct || options.calculateHyperflux || options.calculateGen) {
             const tableLuckCube1 = generateTable(["ambrosiaLuckCube1"], "cube");
+            // Local optima for cubes match local optima for octeracts
             tableCache.tableLuckCube = mergeTables(tableCache.tableLuck, tableLuckCube1, "cube");
         }
 
@@ -1273,6 +1419,7 @@ export class HSHeaterAPI {
 
         // --- Shared sing table (off / hyperflux) ---
         if (options.calculateOff || options.calculateHyperflux) {
+            // Local optima for cubes match local optima for offerings/obtainium
             tableCache.tableSing = generateTable(["ambrosiaSingReduction1", "ambrosiaSingReduction2"], "cube");
         }
 
@@ -1304,7 +1451,7 @@ export class HSHeaterAPI {
 
         // --- calculateGen ---
         if (options.calculateGen) {
-            const genOutput: any[][] = [];
+            const genOutput: HeaterResultRowMatrix = [];
             for (let level = 1; level <= 3; level++) {
                 const budget = stats.amb - upgrades.ambrosiaFreeGenerationUpgrades.cost(level);
                 if (budget < 0) {
@@ -1337,17 +1484,19 @@ export class HSHeaterAPI {
                 loadoutsH[h] = findOpt(tableCubeVX, tableCache.tableLuckCube, "cube", budget);
                 thresholds[h] = 0;
                 for (let p = h - 1; p >= 0; p--) {
-                    if (thresholds[p] > 50) continue;
+                    if (thresholds[p] > 50)
+                        continue;
                     thresholds[h] = loadoutsH[p]!.getStat("cube") / loadoutsH[h]!.getStat("cube");
                     thresholds[h] = Math.log2(thresholds[h]) / Math.log2((1 + 0.01 * h) / (1 + 0.01 * p));
                     thresholds[h] = Math.max(0, Math.ceil(thresholds[h]));
-                    if (thresholds[h] > Math.min(50, thresholds[p])) break;
+                    if (thresholds[h] > Math.min(50, thresholds[p]))
+                        break;
                     thresholds[p] = Infinity;
                 }
                 loadoutsH[h]!.upgradeLevels.ambrosiaHyperflux = h;
             }
 
-            const hyperOutput: any[][] = [];
+            const hyperOutput: HeaterResultRowMatrix = [];
             for (let i = 0; i < 8; i++) {
                 const maxLoadoutH = new Loadout(maxLoadout);
                 maxLoadoutH.upgradeLevels.ambrosiaHyperflux = i;
@@ -1355,16 +1504,18 @@ export class HSHeaterAPI {
                 if (loadoutsH[i] === undefined) {
                     hyperOutput.push(maxLoadout.generateOutput("", maxLoadout));
                 } else {
-                    // Compute effect without hyperflux to get the base-cube stat, then restore
-                    loadoutsH[i]!.upgradeLevels.ambrosiaHyperflux = 0;
-                    loadoutsH[i]!.getStat("cube", true);
-                    loadoutsH[i]!.upgradeLevels.ambrosiaHyperflux = i;
+                    // Calculating effect without hyperflux
+                    loadoutsH[i]!.upgradeLevels.ambrosiaHyperflux = 0; // Resetting hyperflux level to compute effect without it
+                    loadoutsH[i]!.getStat("cube", true); // Updating cache
+                    loadoutsH[i]!.upgradeLevels.ambrosiaHyperflux = i; // Restoring hyperflux level for correct output
                     hyperOutput.push(loadoutsH[i]!.generateOutput("cube", maxLoadoutH, thresholds[i]));
                 }
             }
             output.hyperflux = hyperOutput;
+
         }
 
         return output;
+
     }
 }

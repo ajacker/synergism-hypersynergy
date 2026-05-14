@@ -258,6 +258,8 @@ export class HSUIC {
     // Pseudo-private method, do not use
     static _modal(options: HSUICModalOptions): string {
         const comp_class = options.class ?? '';
+        const comp_header_class = options.headerClass ?? '';
+        const comp_body_class = options.bodyClass ?? '';
         const comp_html = options.htmlContent ?? '';
         const comp_data = options.data ?? [];
         const comp_title = options.title ?? '';
@@ -270,13 +272,13 @@ export class HSUIC {
         }`);
 
         return `<div class="hs-modal ${comp_class}" id="${id}"${propString} ${dataString}>
-                    <div class="hs-modal-head">
+                    <div class="hs-modal-head ${comp_header_class}">
                         <div class="hs-modal-head-left">
                         <div class="hs-modal-title">${comp_title}</div>
                         </div>
                         <div class="hs-modal-head-right" data-close="${options.id}">x</div>
                     </div>
-                    <div class="hs-modal-body">
+                    <div class="hs-modal-body ${comp_body_class}">
                         ${comp_html}
                     </div>
                     <div class="hs-modal-resizer"></div>

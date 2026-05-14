@@ -16,7 +16,7 @@ export interface HeaterOptimizerInput {
     currentSingularity: number;
     singularityReducers: number;
     exalt: number;
-    postAoag: number;
+    postAoag: boolean;
     transcription: number;
     ascSpeed: number;
     ascSpread: number;
@@ -28,7 +28,7 @@ export interface HeaterOptimizerInput {
     bonusRow5: number;
     runeSiExp: Decimal;
     runeSiRC: number;
-    runeSiBonusLevelsTotal: Decimal;
+    runeSiBonusLevelsTotal: number;
     runeIaExp: Decimal;
     runeIaBonusLevelsTotal: Decimal;
     runeIaBonusLevelsTalisman: Decimal;
@@ -37,8 +37,6 @@ export interface HeaterOptimizerInput {
     activeBells: number;
     jack: boolean;
     freeShopLevelsInfinity: number;
-    freeShopLevelsCube: number;
-    freeShopLevelsSpeed: number;
     freeShopLevelsQuark: number;
     chronometerLevel: number;
     shopAmbrosiaLuck1: number;
@@ -57,32 +55,68 @@ export interface HeaterOptimizerInput {
     shopImproveQuarkHept3: number;
     shopImproveQuarkHept4: number;
     shopImproveQuarkHept5: number;
-    heaterOptions: boolean[];
     ossifiedTactics: number;
     ossifiedTactics2: number;
     redberries: number;
     viscount: boolean;
+    heaterOptions: boolean[];
 }
+
+export type HeaterResultAffordableRow = [
+    loadoutJson: string,
+    sheetSpacerA: null,
+    sheetSpacerB: null,
+    cost: number,
+    effect: string,
+    p4x4Eq: number | "Never",
+    isMaxed: boolean,
+];
+
+export type HeaterResultUnaffordableRow = [
+    loadoutLabel: "Unaffordable",
+    sheetSpacerA: null,
+    sheetSpacerB: null,
+    cost:   "N / A",
+    effect: "N / A",
+    p4x4Eq: "N / A",
+    isMaxed: false,
+];
+
+export type HeaterResultRow = HeaterResultAffordableRow | HeaterResultUnaffordableRow;
+export type HeaterResultRowMatrix = HeaterResultRow[];
+
+export type HeaterResultArrayKey =
+    | 'luck'
+    | 'rLuck'
+    | 'allAmb'
+    | 'quarks'
+    | 'cubes'
+    | 'oct'
+    | 'obt'
+    | 'off'
+    | 'hyperflux'
+    | 'ambOct'
+    | 'gen';
 
 export interface HeaterOptimizationResult {
     input: HeaterOptimizerInput;
     // calculateAmb
-    luck?: any[][];    // Q4  — best luck loadout
-    rLuck?: any[][];   // Q5  — best red luck loadout
-    allAmb?: any[][];  // Q6  — best all-ambrosia loadout
+    luck?: HeaterResultRowMatrix;    // Q4  — best luck loadout
+    rLuck?: HeaterResultRowMatrix;   // Q5  — best red luck loadout
+    allAmb?: HeaterResultRowMatrix;  // Q6  — best all-ambrosia loadout
     // calculateQuarks
-    quarks?: any[][];  // Q7  — best quarks loadout
+    quarks?: HeaterResultRowMatrix;  // Q7  — best quarks loadout
     // calculateCubes
-    cubes?: any[][];   // Q8  — best cubes loadout
+    cubes?: HeaterResultRowMatrix;   // Q8  — best cubes loadout
     // calculateOct
-    oct?: any[][];     // Q9  — best octeract loadout
+    oct?: HeaterResultRowMatrix;     // Q9  — best octeract loadout
     // calculateOff
-    obt?: any[][];     // Q10 — best obtainium loadout
-    off?: any[][];     // Q11 — best offering loadout
+    obt?: HeaterResultRowMatrix;     // Q10 — best obtainium loadout
+    off?: HeaterResultRowMatrix;     // Q11 — best offering loadout
     // calculateHyperflux (up to 8 rows: hyperflux level 0–7)
-    hyperflux?: any[][];
+    hyperflux?: HeaterResultRowMatrix;
     // calculateAmbOct
-    ambOct?: any[][];  // Q25 — best amb+oct loadout
+    ambOct?: HeaterResultRowMatrix;  // Q25 — best amb+oct loadout
     // calculateGen (3 rows: gen level 1–3)
-    gen?: any[][];
+    gen?: HeaterResultRowMatrix;
 }
