@@ -7,6 +7,14 @@ import { HSSetting } from "../hs-core/settings/hs-setting";
 import { HSSettings } from "../hs-core/settings/hs-settings";
 import { HSGlobal } from "../hs-core/hs-global";
 import { HSAmbrosiaHelper } from "./hs-ambrosiaHelper";
+import { resolveHeaterIconFromSemanticId } from "./hs-heater/hs-heater-ui-result-renderer";
+import { HSQuickbarIconPickerController } from "./hs-qolQuickbarIconPicker";
+
+export interface HeaterSlotIconApplyResult {
+    setCount: number;
+    clearedCount: number;
+    missingCount: number;
+}
 
 export class HSAmbrosiaQuickbar {
     readonly context = 'HSAmbrosiaQuickbar';
@@ -18,10 +26,36 @@ export class HSAmbrosiaQuickbar {
     // Icon picking (mirrors HSQOLCorruptionQuickbar)
     readonly #AMBROSIA_ICON_STORAGE_KEY = 'hs-ambrosia-quickbar-icons';
     #ambrosiaSlotIcons: Map<string, string> = new Map();
-    #isPickingIcon = false;
-    #pickTargetSlotId: string | null = null;
-    #pickDocClickListener: ((event: MouseEvent) => void) | null = null;
-    #wasGdsEnabled: boolean | null = null;
+    #iconPicker = new HSQuickbarIconPickerController<string>({
+        shouldIgnoreClickTarget: (target: Element) => {
+            const groupWrapper = HSQuickbarManager.getInstance().getSection("ambrosia");
+            const quickbar = groupWrapper?.querySelector(`#${HSGlobal.HSAmbrosia.quickBarId}`) as HTMLElement | null;
+            return !!(quickbar && quickbar.contains(target));
+        },
+        setSlotPickModeVisual: (slotId: string, active: boolean) => {
+            const groupWrapper = HSQuickbarManager.getInstance().getSection("ambrosia");
+            const quickbar = groupWrapper?.querySelector(`#${HSGlobal.HSAmbrosia.quickBarId}`) as HTMLElement | null;
+            if (!quickbar) return;
+
+            quickbar.querySelectorAll(".blueberryLoadoutSlot").forEach((btn) => {
+                const b = btn as HTMLElement;
+                const originalId = b.dataset.originalId;
+                b.classList.toggle("hs-quickbar-slot-pickmode", !!active && originalId === slotId);
+            });
+        },
+        clearAllSlotPickModeVisuals: () => {
+            const groupWrapper = HSQuickbarManager.getInstance().getSection("ambrosia");
+            const quickbar = groupWrapper?.querySelector(`#${HSGlobal.HSAmbrosia.quickBarId}`) as HTMLElement | null;
+            if (!quickbar) return;
+
+            quickbar.querySelectorAll(".blueberryLoadoutSlot").forEach((btn) => {
+                (btn as HTMLElement).classList.remove("hs-quickbar-slot-pickmode");
+            });
+        },
+        assignIconToSlot: (slotId: string, iconUrl: string) => {
+            this.#setIconForSlot(slotId, iconUrl);
+        },
+    });
 
     constructor(host: HSAmbrosia) {
         this.host = host;
@@ -202,7 +236,7 @@ export class HSAmbrosiaQuickbar {
                 if (mouseEvent.altKey) {
                     mouseEvent.preventDefault();
                     mouseEvent.stopPropagation();
-                    this.#startPickupMode(buttonId);
+                    this.#iconPicker.start(buttonId);
                     return;
                 }
                 await this.onQuickBarClick(e, buttonId);
@@ -324,7 +358,7 @@ export class HSAmbrosiaQuickbar {
     }
 
     async destroy() {
-        this.#endPickupMode();
+        this.#iconPicker.dispose();
         this.cleanupQuickbarClickHandlers();
         HSQuickbarManager.getInstance().removeSection("ambrosia");
         HSUI.removeInjectedStyle(this.host.getQuickbarCSSId());
@@ -380,107 +414,66 @@ export class HSAmbrosiaQuickbar {
         void this.refreshQuickbarIcons();
     }
 
-    // ======================================================
-    // ------------------- Icon pickup ---------------------
-    // ======================================================
+    public async applySlotIconsBulk(iconBySlotId: Record<string, string | null | undefined>): Promise<void> {
+        let changed = false;
 
-    #startPickupMode(slotId: string): void {
-        if (this.#isPickingIcon) { HSLogger.debug(() => 'Icon pickup mode already active; request ignored.', this.context); return; }
+        for (const [slotId, iconUrl] of Object.entries(iconBySlotId)) {
+            if (!slotId) continue;
 
-        this.#wasGdsEnabled = HSSettings.getSetting('useGameData')?.isEnabled() ?? null;
-        if (this.#wasGdsEnabled) {
-            HSSettings.getSetting('useGameData')?.disable();
-        }
-
-        this.#isPickingIcon = true;
-        this.#pickTargetSlotId = slotId;
-
-        const groupWrapper = HSQuickbarManager.getInstance().getSection("ambrosia");
-        const quickbar = groupWrapper?.querySelector(`#${HSGlobal.HSAmbrosia.quickBarId}`) as HTMLElement | null;
-        if (quickbar) {
-            quickbar.querySelectorAll(".blueberryLoadoutSlot").forEach((btn) => {
-                const b = btn as HTMLElement;
-                const originalId = b.dataset.originalId;
-                if (originalId === slotId) {
-                    b.classList.add("hs-quickbar-slot-pickmode");
-                } else {
-                    b.classList.remove("hs-quickbar-slot-pickmode");
+            const normalizedUrl = typeof iconUrl === 'string' ? iconUrl.trim() : '';
+            if (normalizedUrl) {
+                if (this.#ambrosiaSlotIcons.get(slotId) !== normalizedUrl) {
+                    this.#ambrosiaSlotIcons.set(slotId, normalizedUrl);
+                    changed = true;
                 }
-            });
+            } else if (this.#ambrosiaSlotIcons.has(slotId)) {
+                this.#ambrosiaSlotIcons.delete(slotId);
+                changed = true;
+            }
         }
 
-        HSUI.Notify('Icon picker active: click an in-game icon/image to assign to this slot. Any click ends mode.', { position: 'topRight', notificationType: 'default' });
+        if (changed) {
+            this.#saveAmbrosiaIcons();
+        }
 
-        this.#pickDocClickListener = (event: MouseEvent) => {
-            const target = event.target instanceof Element ? event.target : null;
-            if (!target || (quickbar && quickbar.contains(target))) { this.#endPickupMode(); return; }
-            if (this.#pickTargetSlotId === null) { this.#endPickupMode(); return; }
+        await this.refreshQuickbarIcons();
+    }
 
-            const iconUrl = this.#findIconUrlFromEventTarget(target);
-            if (!iconUrl) {
-                HSUI.Notify('No usable icon found on the clicked element.', { notificationType: 'warning' });
-                this.#endPickupMode();
-                return;
+    public async applyHeaterSlotIconSemanticsBulk(iconSemanticBySlotId: Record<string, string | null | undefined>): Promise<HeaterSlotIconApplyResult> {
+        const iconBySlotId: Record<string, string | null> = {};
+        let setCount = 0;
+        let clearedCount = 0;
+        let missingCount = 0;
+
+        for (const [slotId, semanticId] of Object.entries(iconSemanticBySlotId)) {
+            if (!slotId) continue;
+
+            const normalizedSemanticId = typeof semanticId === "string" ? semanticId.trim() : "";
+            if (!normalizedSemanticId || normalizedSemanticId === "none") {
+                iconBySlotId[slotId] = null;
+                clearedCount++;
+                continue;
             }
 
-            event.preventDefault();
-            event.stopPropagation();
+            const resolvedUrl = resolveHeaterIconFromSemanticId(normalizedSemanticId);
+            if (resolvedUrl) {
+                iconBySlotId[slotId] = resolvedUrl;
+                setCount++;
+            } else {
+                iconBySlotId[slotId] = null;
+                clearedCount++;
+                missingCount++;
+                HSLogger.warn(`Unknown heater icon semantic ID: ${normalizedSemanticId}`, this.context);
+            }
+        }
 
-            this.#setIconForSlot(this.#pickTargetSlotId, iconUrl);
-            HSUI.Notify('Ambrosia slot icon set successfully', { notificationType: 'success' });
-            this.#endPickupMode();
+        await this.applySlotIconsBulk(iconBySlotId);
+
+        return {
+            setCount,
+            clearedCount,
+            missingCount,
         };
-
-        document.addEventListener('click', this.#pickDocClickListener, true);
-    }
-
-    #endPickupMode(): void {
-        this.#isPickingIcon = false;
-        this.#pickTargetSlotId = null;
-        if (this.#pickDocClickListener) {
-            document.removeEventListener('click', this.#pickDocClickListener, true);
-            this.#pickDocClickListener = null;
-        }
-        const groupWrapper = HSQuickbarManager.getInstance().getSection("ambrosia");
-        const quickbar = groupWrapper?.querySelector(`#${HSGlobal.HSAmbrosia.quickBarId}`) as HTMLElement | null;
-        if (quickbar) {
-            quickbar.querySelectorAll(".blueberryLoadoutSlot").forEach((btn) => {
-                (btn as HTMLElement).classList.remove("hs-quickbar-slot-pickmode");
-            });
-        }
-        if (this.#wasGdsEnabled !== null) {
-            const gdsSetting = HSSettings.getSetting('useGameData');
-            if (gdsSetting) {
-                if (this.#wasGdsEnabled && !gdsSetting.isEnabled()) gdsSetting.enable();
-                if (!this.#wasGdsEnabled && gdsSetting.isEnabled()) gdsSetting.disable();
-            }
-            this.#wasGdsEnabled = null;
-        }
-    }
-
-    #findIconUrlFromEventTarget(target: EventTarget | null): string | null {
-        let element = target instanceof Element ? target : null;
-        let depth = 0;
-        while (element && element !== document.documentElement && depth < 8) {
-            const url = this.#getIconUrlFromElement(element);
-            if (url) return url;
-            element = element.parentElement;
-            depth += 1;
-        }
-        return null;
-    }
-
-    #getIconUrlFromElement(element: Element): string | null {
-        if (element instanceof HTMLImageElement && element.src) {
-            return element.src;
-        }
-        const style = window.getComputedStyle(element);
-        const bg = style.backgroundImage;
-        if (bg && bg !== 'none') {
-            const match = /^url\(["']?(.*?)["']?\)$/.exec(bg);
-            if (match && match[1]) return match[1];
-        }
-        return null;
     }
 
     private async ensureAmbrosiaSection(): Promise<HTMLElement | null> {

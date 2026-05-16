@@ -652,7 +652,7 @@ export class AmbrosiaHelper {
             effects: (n: number) => ({
                 freeGenerationUpgrades: n,
             }),
-            extraLevelCalc: () => 0,
+            extraLevelCalc: () => 0, // INTENDED (no bonus levels applied)
         },
 
         ambrosiaFreeRedLuckUpgrades: {
@@ -1013,6 +1013,8 @@ export class AmbrosiaHelper {
             data.shopUpgrades.shopAmbrosiaAccelerator,
             data.singularityChallenges.noAmbrosiaUpgrades.completions,
             data.ambrosiaUpgrades.ambrosiaBrickOfLead.ambrosiaInvested,
+            data.singularityChallenges.noAmbrosiaUpgrades.enabled ? 1 : 0,
+            data.singularityChallenges.sadisticPrequel.enabled ? 1 : 0,
         ];
 
         const cached = this.#ctx.checkCalculationCache(cacheName, calculationVars);

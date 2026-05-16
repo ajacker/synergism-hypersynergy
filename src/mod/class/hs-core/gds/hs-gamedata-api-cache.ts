@@ -25,14 +25,12 @@ export const checkCalculationCache = <T = number>(
 
         return undefined;
     }
-
     if (cached.cachedBy.length !== checkCacheAgainst.length) {
         if (HSGlobal.Debug.calculationCacheDebugMode)
             console.warn(`Cache missed (reason: cache length mismatch) for ${cacheName} with value ${cached.value}`);
 
         return undefined;
     }
-
     for (let i = 0; i < cached.cachedBy.length; i++) {
         if (cached.cachedBy[i] !== checkCacheAgainst[i]) {
             if (HSGlobal.Debug.calculationCacheDebugMode) {
@@ -60,7 +58,6 @@ export const updateCalculationCache = (
 
         return;
     }
-
     cache[cacheName] = newCachedValue;
 }
 
@@ -84,6 +81,16 @@ export const createQuarkShopCalculationCacheEntries = (): Record<string, CachedV
         'shopAmbrosiaLuckMultiplier4',
         'shopOcteractAmbrosiaLuck',
         'shopAmbrosiaUltra',
+        'shopAmbrosiaAccelerator',
+        'shopCashGrabUltra',
+        'shopEXUltra',
+        'shopChronometerS',
+        'shopImprovedDaily',
+        'shopImprovedDaily2',
+        'shopImprovedDaily3',
+        'shopImprovedDaily4',
+        'shopSingularitySpeedup',
+        'shopSingularityPotency',
         'shopHorseShoe',
         'shopSingularityPenaltyDebuff',
     ];
@@ -93,25 +100,21 @@ export const createQuarkShopCalculationCacheEntries = (): Record<string, CachedV
             upgradeKeys.add(key);
         }
     }
-
     for (const extraKey of extraQuarkShopUpgradeKeys) {
         upgradeKeys.add(extraKey);
     }
-
     for (const upgradeKey of upgradeKeys) {
         addCacheEntry(`QUARKSHOP_SHOP_LEVEL_${upgradeKey}`);
         addCacheEntry(`QUARKSHOP_SHOP_LEVEL_${upgradeKey}_FREE`);
         addCacheEntry(`QUARKSHOP_BONUS_LEVELS_${upgradeKey}`);
         addCacheEntry(`QUARKSHOP_BONUS_LEVELS_${upgradeKey}_FREE`);
     }
-
     for (const group of Object.values(ShopUpgradeGroups).filter((value): value is ShopUpgradeGroups => typeof value === 'number')) {
         addCacheEntry(`QUARKSHOP_TYPE_BONUS_${group}`);
         addCacheEntry(`QUARKSHOP_TYPE_BONUS_${group}_FREE`);
     }
 
     addCacheEntry('QUARKSHOP_FREE_QUARK_BONUS_LEVELS');
-
     return entries;
 };
 
@@ -128,7 +131,6 @@ export const createAchievementRewardCalculationCacheEntries = (): Record<string,
             addCacheEntry(`ACH_REWARD_${suffix}_${rewardType}`);
         }
     }
-
     return entries;
 };
 
@@ -142,7 +144,6 @@ export const createEventBuffCalculationCacheEntries = (): Record<string, CachedV
     for (const buffType of eventBuffTypes) {
         addCacheEntry(`EVENTBUFF_${HSUtils.eventBuffNumToName(buffType)}`);
     }
-
     return entries;
 };
 
@@ -160,7 +161,6 @@ export const createAmbrosiaCalculationCacheEntries = (ambrosiaHelper: AmbrosiaHe
     for (const upgradeName of Object.keys(ambrosiaHelper.redAmbrosiaUpgradeCalculationCollection)) {
         addCacheEntry(`REDAMB_${upgradeName}`);
     }
-
     return entries;
 };
 
@@ -177,8 +177,6 @@ export const createCoreCalculationCacheEntries = (): Record<string, CachedValue>
         'AmbrosiaGenerationOcteractUpgrade',
         'AmbrosiaGenerationSpeedRaw',
         'AmbrosiaGenerationSpeedRaw_TRUE_BASE',
-        'SingularityMilestoneBlueberries',
-        'DilatedFiveLeafBonus',
         'AmbrosiaLuckShopUpgrade',
         'AmbrosiaLuckShopUpgrade_TRUE_BASE',
         'AmbrosiaLuckSingularityUpgrade',
@@ -187,35 +185,37 @@ export const createCoreCalculationCacheEntries = (): Record<string, CachedValue>
         'PanthemaAmbrosiaLuck_TRUE_BASE',
         'PanthemaRedLuck',
         'PanthemaRedLuck_TRUE_BASE',
+        'SingularityReductions',
+        'SingularityReductions_TRUE_BASE',
+        'LuckConversion',
+        'LuckConversion_TRUE_BASE',
+        'AllShopTablets',
         'AllTalismanRuneBonusStatsSum',
-        'CubesExpTotal',
-        'FreeAntUpgradeLevels',
-        'GetRuneEffectiveLevel',
+        'calculateAscensionScore',
         'CampaignAmbrosiaSpeedBonus',
         'CampaignRune6Bonus',
         'CampaignLuckBonus',
-        'SumOfExaltCompletions',
+        'Challenge15Reward',
+        'CubesExpTotal',
+        'DilatedFiveLeafBonus',
+        'EffectiveSingularities',
+        'FreeAntUpgradeLevels',
+        'GetRuneEffectiveLevel',
+        'HepteractEffective',
         'NumberOfThresholds',
-        'ToNextThreshold',
         'RequiredBlueberryTime',
         'RequiredRedAmbrosiaTime',
         'RawAscensionSpeedMult',
-        'HepteractEffective',
-        'AllShopTablets',
-        'SingularityDebuff',
-        'Challenge15Reward',
-        'calculateAscensionScore',
-        'SingularityReductions',
-        'EffectiveSingularities',
         'RedAmbrosiaLuck',
-        'LuckConversion',
-        'LuckConversion_TRUE_BASE',
+        'SingularityDebuff',
+        'SingularityMilestoneBlueberries',
+        'SumOfExaltCompletions',
+        'ToNextThreshold',
     ];
 
     for (const key of coreKeys) {
         addCacheEntry(key);
     }
-
     return entries;
 };
 

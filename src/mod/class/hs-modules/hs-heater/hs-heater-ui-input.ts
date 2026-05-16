@@ -117,7 +117,7 @@ export class HSHeaterInputUI {
         ossifiedTactics: (hsData) => hsData.redAmbrosiaUpgrades.regularLuck,
         ossifiedTactics2: (hsData) => hsData.redAmbrosiaUpgrades.regularLuck2,
         redberries: (hsData) => hsData.redAmbrosiaUpgrades.blueberries,
-        viscount: (hsData) => hsData.redAmbrosiaUpgrades.viscount ? true : false,
+        viscount: (hsData) => Boolean(hsData.redAmbrosiaUpgrades.viscount),
     };
 
     static readonly heaterOptionLabels = [
@@ -130,6 +130,8 @@ export class HSHeaterInputUI {
         "Max Amb",                        // a[6]: calculateAmbOct
         "Amb Generation + Oct",           // a[7]: calculateGen
     ];
+
+    private static readonly lockHandlersAttachedModals = new WeakSet<HTMLElement>();
 
 
     // ================================================================
@@ -144,7 +146,10 @@ export class HSHeaterInputUI {
     }
 
     static buildOptimizerInputBaseFromExportData(exportData: any): HeaterInputBase {
-        const hsData = exportData.hs_data;
+        const hsData = exportData?.hs_data;
+        if (!hsData || typeof hsData !== 'object') {
+            return this.mapFields((field) => this.parseFieldValueFromInputElement(field.type, null) as HeaterInputValue);
+        }
         return this.mapFields((field) => this.extractFieldValueFromExportData(field, hsData));
     }
 
@@ -167,14 +172,14 @@ export class HSHeaterInputUI {
             const checked = active[index] ? 'checked' : '';
             return `
                 <label class="hs-heater-active-label">
-                    <input type="checkbox" id="${fieldId}" ${checked} />
+                    <input type="checkbox" id="${fieldId}" class="hs-heater-active-checkbox" ${checked} />
                     ${label}
                 </label>
             `;
         });
 
         return `
-           <label class="hs-heater-active-label">Active Branches:</label>
+           <label class="hs-heater-inputs-title">Active Branches:</label>
            <div class="hs-heater-active-grid">
                 ${checkboxRows.join('')}
             </div>
@@ -235,6 +240,8 @@ export class HSHeaterInputUI {
     }
 
     static attachInputLockHandlers(modal: HTMLElement): void {
+        if (this.lockHandlersAttachedModals.has(modal)) return;
+
         this.inputDefinitions.forEach((field) => {
             const element = this.getFieldElement(modal, field);
             if (!element) return;
@@ -243,6 +250,7 @@ export class HSHeaterInputUI {
                 this.setFieldLockState(modal, field.key, true);
             });
         });
+        this.lockHandlersAttachedModals.add(modal);
     }
 
 
@@ -254,11 +262,9 @@ export class HSHeaterInputUI {
         if (typeof value === 'number' && Number.isFinite(value)) {
             return fieldType === 'percent' ? String(value * 100) : String(value);
         }
-
         if (value instanceof Decimal) {
             return value.toString();
         }
-
         return '';
     }
 
@@ -270,7 +276,6 @@ export class HSHeaterInputUI {
         if (field.type === 'select') {
             return modal.querySelector<HTMLSelectElement>(selector);
         }
-
         return modal.querySelector<HTMLInputElement>(selector);
     }
 
@@ -282,7 +287,6 @@ export class HSHeaterInputUI {
         if (fieldType === 'boolean') {
             return element instanceof HTMLInputElement ? element.checked : false;
         }
-
         if (!element) {
             return fieldType === 'text' ? new Decimal(fallback) : fallback;
         }
@@ -308,7 +312,6 @@ export class HSHeaterInputUI {
         if (extractor) {
             return extractor(hsData);
         }
-
         return hsData[field.key] as HeaterInputValue;
     }
 
@@ -326,7 +329,6 @@ export class HSHeaterInputUI {
         if (field.type === "boolean") {
             return HSUIC.Input({ id: fieldId, type: HSInputType.CHECK, props: value ? { checked: 'true' } : undefined });
         }
-
         if (field.type === 'select') {
             return `<select id="${fieldId}" class="hs-heater-select-input">${
                 this.buildSelectOptionHtml(
@@ -335,9 +337,8 @@ export class HSHeaterInputUI {
                 )
             }</select>`;
         }
-
         if (field.type === 'percent') {
-            return `<div class="hs-heater-percent-input-wrap">${HSUIC.Input({ id: fieldId, type: HSInputType.NUMBER, props: { value: displayedValue, step: 'any', min: '0' }, styles: { width: '100%' } })}<span>%</span></div>`;
+            return `<div class="hs-heater-percent-input-wrap">${HSUIC.Input({ id: fieldId, type: HSInputType.NUMBER, props: { value: displayedValue, step: 'any', min: '0' } })}<span>%</span></div>`;
         }
 
         return HSUIC.Input({
@@ -345,8 +346,7 @@ export class HSHeaterInputUI {
             type: field.type === 'text' ? HSInputType.TEXT : HSInputType.NUMBER,
             props: field.type === 'text'
                 ? { value: displayedValue }
-                : { value: displayedValue, step: 'any', min: '0' },
-            styles: { width: '100%' }
+                : { value: displayedValue, step: 'any', min: '0' }
         });
     }
 

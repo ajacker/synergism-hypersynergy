@@ -358,6 +358,8 @@ const SHOP_UPGRADE_GROUP_CONFIG: Record<ShopUpgradeGroups, ShopUpgradeGroupConfi
                 data?.singularityChallenges.noQuarkUpgrades.completions ?? 0,
                 data?.ambrosiaUpgrades.ambrosiaFreeQuarkUpgrades.ambrosiaInvested ?? 0,
                 data?.redAmbrosiaUpgrades.freeLevelsRow5 ?? 0,
+                data?.singularityChallenges.noAmbrosiaUpgrades.enabled ? 1 : 0,
+                data?.singularityChallenges.sadisticPrequel.enabled ? 1 : 0,
             ];
         },
         getBonusLevels: (env) => env.getSingularityChallengeEffect('noQuarkUpgrades', 'freeQuarkLevel')
@@ -369,6 +371,8 @@ const SHOP_UPGRADE_GROUP_CONFIG: Record<ShopUpgradeGroups, ShopUpgradeGroupConfi
             return [
                 data?.ambrosiaUpgrades.ambrosiaFreeLuckUpgrades.ambrosiaInvested ?? 0,
                 data?.redAmbrosiaUpgrades.freeLevelsRow2 ?? 0,
+                data?.singularityChallenges.noAmbrosiaUpgrades.enabled ? 1 : 0,
+                data?.singularityChallenges.sadisticPrequel.enabled ? 1 : 0,
             ];
         },
         getBonusLevels: (env) => env.getAmbrosiaUpgradeEffects('ambrosiaFreeLuckUpgrades').freeLuckUpgrades,
@@ -379,6 +383,8 @@ const SHOP_UPGRADE_GROUP_CONFIG: Record<ShopUpgradeGroups, ShopUpgradeGroupConfi
             return [
                 data?.ambrosiaUpgrades.ambrosiaFreeRedLuckUpgrades.ambrosiaInvested ?? 0,
                 data?.redAmbrosiaUpgrades.freeLevelsRow4 ?? 0,
+                data?.singularityChallenges.noAmbrosiaUpgrades.enabled ? 1 : 0,
+                data?.singularityChallenges.sadisticPrequel.enabled ? 1 : 0,
             ];
         },
         getBonusLevels: (env) => env.getAmbrosiaUpgradeEffects('ambrosiaFreeRedLuckUpgrades').freeRedLuckUpgrades,
@@ -388,7 +394,8 @@ const SHOP_UPGRADE_GROUP_CONFIG: Record<ShopUpgradeGroups, ShopUpgradeGroupConfi
             const data = env.getGameData();
             return [
                 data?.ambrosiaUpgrades.ambrosiaFreeGenerationUpgrades.ambrosiaInvested ?? 0,
-                data?.redAmbrosiaUpgrades.freeLevelsRow3 ?? 0,
+                data?.singularityChallenges.noAmbrosiaUpgrades.enabled ? 1 : 0,
+                data?.singularityChallenges.sadisticPrequel.enabled ? 1 : 0,
             ];
         },
         getBonusLevels: (env) => env.getAmbrosiaUpgradeEffects('ambrosiaFreeGenerationUpgrades').freeGenerationUpgrades,
@@ -484,6 +491,7 @@ const getRawFreeShopInfinityDependencies = (env: ShopUpgradeHelperContext): numb
         data.shopUpgrades.shopInfiniteShopUpgrades,
         data.redAmbrosiaUpgrades.infiniteShopUpgrades,
         data.singularityChallenges.noAmbrosiaUpgrades.enabled ? 1 : 0,
+        data.singularityChallenges.sadisticPrequel.enabled ? 1 : 0,
         ...Object.values(data.singularityChallenges).map((challenge) => challenge.completions),
         data.redAmbrosiaUpgrades.freeLevelsRow4,
         data.redAmbrosiaUpgrades.freeLevelsRow5,

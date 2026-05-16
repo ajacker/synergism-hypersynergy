@@ -1467,6 +1467,8 @@ export class HSHeaterOptimizer {
 
         // --- calculateHyperflux ---
         if (options.calculateHyperflux) {
+            const oldPostAoAG = stats.postAoAG;
+            stats.postAoAG = false;
             const tableVoucher = generateTable(["ambrosiaInfiniteShopUpgrades1", "ambrosiaInfiniteShopUpgrades2"], "cube");
             const tableCubeV   = mergeTables(tableCache.tableCubeR, tableVoucher, "cube");
             const tableSing    = generateTable(["ambrosiaSingReduction1", "ambrosiaSingReduction2"], "cube");
@@ -1500,7 +1502,7 @@ export class HSHeaterOptimizer {
             for (let i = 0; i < 8; i++) {
                 const maxLoadoutH = new Loadout(maxLoadout);
                 maxLoadoutH.upgradeLevels.ambrosiaHyperflux = i;
-                if (i < 4) maxLoadoutH.upgradeLevels.ambrosiaSingReduction1 = 0;
+                if (i < (upgrades.ambrosiaSingReduction1.prerequisites.ambrosiaHyperflux ?? 4)) maxLoadoutH.upgradeLevels.ambrosiaSingReduction1 = 0;
                 if (loadoutsH[i] === undefined) {
                     hyperOutput.push(maxLoadout.generateOutput("", maxLoadout));
                 } else {
@@ -1512,10 +1514,8 @@ export class HSHeaterOptimizer {
                 }
             }
             output.hyperflux = hyperOutput;
-
+            stats.postAoAG = oldPostAoAG;
         }
-
         return output;
-
     }
 }

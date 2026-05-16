@@ -17,7 +17,8 @@ export const SHOP_UPGRADE_TYPE_KEYS: Record<ShopUpgradeGroups, string[]> = {
     'offeringEX3',
     'offeringAuto',
     'cashGrab',
-    'cashGrab2'
+    'cashGrab2',
+    'shopPanthema'
   ],
   [ShopUpgradeGroups.Obtainium]: [
     'obtainiumEX',
@@ -25,7 +26,8 @@ export const SHOP_UPGRADE_TYPE_KEYS: Record<ShopUpgradeGroups, string[]> = {
     'obtainiumEX3',
     'obtainiumAuto',
     'cashGrab',
-    'cashGrab2'
+    'cashGrab2',
+    'shopPanthema'
   ],
   [ShopUpgradeGroups.Cubes]: [
     'seasonPass',
@@ -35,17 +37,14 @@ export const SHOP_UPGRADE_TYPE_KEYS: Record<ShopUpgradeGroups, string[]> = {
     'seasonPassZ',
     'seasonPassLost',
     'seasonPassInfinity',
-    'cubeToQuark',
-    'tesseractToQuark',
-    'hypercubeToQuark',
-    'cubeToQuarkAll'
+    'shopPanthema'
   ],
   [ShopUpgradeGroups.Speed]: [
     'chronometer',
     'chronometer2',
     'chronometer3',
     'chronometerZ',
-    'shopChronometerS',
+    'shopPanthema',
     'chronometerInfinity',
   ],
   [ShopUpgradeGroups.Quark]: [
@@ -58,44 +57,35 @@ export const SHOP_UPGRADE_TYPE_KEYS: Record<ShopUpgradeGroups, string[]> = {
     'improveQuarkHept3',
     'improveQuarkHept4',
     'improveQuarkHept5',
-    'shopImprovedDaily',
-    'shopImprovedDaily2',
-    'shopImprovedDaily3',
-    'shopImprovedDaily4',
-    'seasonPass',
-    'seasonPass2',
-    'seasonPass3',
-    'seasonPassY',
-    'seasonPassZ',
-    'seasonPassLost',
-    'seasonPassInfinity',
     'shopPanthema'
   ],
   [ShopUpgradeGroups.AmbrosiaLuck]: [
     'shopAmbrosiaLuck1',
     'shopAmbrosiaLuck2',
     'shopAmbrosiaLuck3',
-    'shopAmbrosiaLuck4'
+    'shopAmbrosiaLuck4',
+    'shopPanthema'
   ],
   [ShopUpgradeGroups.RedAmbrosiaLuck]: [
     'shopRedLuck1',
     'shopRedLuck2',
-    'shopRedLuck3'
+    'shopRedLuck3',
+    'shopPanthema'
   ],
   [ShopUpgradeGroups.AmbrosiaGeneration]: [
     'shopAmbrosiaGeneration1',
     'shopAmbrosiaGeneration2',
     'shopAmbrosiaGeneration3',
     'shopAmbrosiaGeneration4',
-    'shopAmbrosiaAccelerator'
+    'shopPanthema'
   ],
   [ShopUpgradeGroups.InfinityUpgrades]: [
-    'shopInfiniteShopUpgrades',
     'offeringEX3',
     'obtainiumEX3',
     'improveQuarkHept5',
     'chronometerInfinity',
-    'seasonPassInfinity'
+    'seasonPassInfinity',
+    'shopPanthema'
   ],
   [ShopUpgradeGroups.Utility]: [
     'shopTalisman',
@@ -110,18 +100,14 @@ export const SHOP_UPGRADE_TYPE_KEYS: Record<ShopUpgradeGroups, string[]> = {
     'calculator7',
     'autoWarp',
     'extraWarp',
-    'constantEX',
-    'powderEX',
     'powderAuto',
-    'shopCashGrabUltra',
-    'shopEXUltra',
-    'shopSingularitySpeedup',
-    'shopSingularityPotency',
-    'shopPanthema',
-    'shopImprovedDaily',
-    'shopImprovedDaily2',
-    'shopImprovedDaily3',
-    'shopImprovedDaily4'
+    'offeringAuto',
+    'obtainiumAuto',
+    'improveQuarkHept',
+    'improveQuarkHept2',
+    'improveQuarkHept3',
+    'improveQuarkHept4',
+    'improveQuarkHept5'
   ]
 }
 

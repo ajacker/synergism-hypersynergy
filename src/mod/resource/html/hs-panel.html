@@ -1,7 +1,10 @@
 <div id="hs-panel" class="hs-panel-closed">
     <div class="hs-panel-header">
         <div class="hs-panel-header-left" id="hs-panel-version">HyperSynergism</div>
-        <div class="hs-panel-header-right">X</div>
+        <div class="hs-panel-header-right">
+            <div class="hs-modal-btn hs-modal-minimize-btn" id="hs-panel-minimize-btn" title="Minimize">_</div>
+            <div class="hs-modal-btn" id="hs-panel-close-btn" title="Close">X</div>
+        </div>
     </div>
     <div class="hs-panel-tabs">
         <div class="hs-panel-tab hs-tab-selected" id="hs-panel-tab-1" data-tab="1">Log</div>
@@ -11,16 +14,16 @@
         <div class="hs-panel-tab" id="hs-panel-tab-4" data-tab="4">Debug</div>
     </div>
     <div class="hs-panel-body hs-panel-body-1 hs-panel-body-open-flex" id="hs-log-panel">
-        <div id="hs-ui-log"></div>
+        <div id="hs-ui-log" class="hs-scrollbar-themed"></div>
         <div id="hs-ui-log-controls">
             <button class="hs-panel-btn" id="hs-ui-log-clear">Clear Log</button>
             <button class="hs-panel-btn" id="hs-ui-log-copy">Copy Log</button>
         </div>
     </div>
-    <div class="hs-panel-body hs-panel-body-2" id="hs-tools-panel">Tools</div>
-    <div class="hs-panel-body hs-panel-body-3" id="hs-settings-panel">Setting</div>
-    <div class="hs-panel-body hs-panel-body-4" id="hs-debug-panel"></div>
-    <div class="hs-panel-body hs-panel-body-5" id="hs-info-panel">
+    <div class="hs-panel-body hs-panel-body-2 hs-scrollbar-themed" id="hs-tools-panel">Tools</div>
+    <div class="hs-panel-body hs-panel-body-3 hs-scrollbar-themed" id="hs-settings-panel">Setting</div>
+    <div class="hs-panel-body hs-panel-body-4 hs-scrollbar-themed" id="hs-debug-panel"></div>
+    <div class="hs-panel-body hs-panel-body-5 hs-scrollbar-themed" id="hs-info-panel">
         <h1 class="hs-panel-info-h1">Important information about the mod</h1>
 
         <h2 class="hs-panel-info-h2">18.4.2026 - Bugs</h2>

@@ -297,7 +297,7 @@ export async function openAutosingChallengesModal(
             </div>
             <div class="hs-challenges-add-btn" id="hs-challenge-add-btn">Add Action/Challenge</div>
 
-        <div class="hs-challenges-list-container">
+        <div class="hs-challenges-list-container hs-scrollbar-themed">
             <div id="hs-challenge-list-container">
                 ${renderChallengeList()}
             </div>

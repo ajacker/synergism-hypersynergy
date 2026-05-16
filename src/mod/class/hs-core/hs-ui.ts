@@ -36,6 +36,7 @@ export class HSUI extends HSModule {
     #uiPanel?: HTMLDivElement;
     #uiPanelTitle?: HTMLDivElement;
     #uiPanelCloseBtn?: HTMLDivElement;
+    #uiPanelMinimizeBtn?: HTMLDivElement;
     #uiPanelOpenBtn?: HTMLDivElement;
 
     #loggerElement?: HTMLElement;
@@ -157,7 +158,8 @@ export class HSUI extends HSModule {
         // Find the UI elements in DOM and store the refs
         this.#uiPanel = await HSElementHooker.HookElement('#hs-panel') as HTMLDivElement;
         this.#uiPanelTitle = await HSElementHooker.HookElement('#hs-panel-version') as HTMLDivElement;
-        this.#uiPanelCloseBtn = await HSElementHooker.HookElement('.hs-panel-header-right') as HTMLDivElement;
+        this.#uiPanelCloseBtn = await HSElementHooker.HookElement('#hs-panel-close-btn') as HTMLDivElement;
+        this.#uiPanelMinimizeBtn = await HSElementHooker.HookElement('#hs-panel-minimize-btn') as HTMLDivElement;
         this.#loggerElement = await HSElementHooker.HookElement('#hs-ui-log') as HTMLElement;
         this.#logClearBtn = await HSElementHooker.HookElement('#hs-ui-log-clear') as HTMLButtonElement;
         this.#logCopyBtn = await HSElementHooker.HookElement('#hs-ui-log-copy') as HTMLButtonElement;
@@ -170,16 +172,59 @@ export class HSUI extends HSModule {
     }
 
     #setupPanelInteractions(): void {
-        if (!this.#uiPanelCloseBtn) return;
+        if (!this.#uiPanel) return;
 
-        this.#uiPanelCloseBtn.addEventListener('click', async () => {
-            if (HSUI.#modPanelOpen && this.#uiPanel) {
-                await this.#uiPanel.transition({ opacity: 0 });
-                HSUI.#modPanelOpen = false;
-                HSUI.#logTabActive = false;
-                this.#uiPanel.classList.add('hs-panel-closed');
-            }
-        });
+        // Close button handler
+        if (this.#uiPanelCloseBtn) {
+            this.#uiPanelCloseBtn.addEventListener('click', async () => {
+                if (HSUI.#modPanelOpen) {
+                    await this.#uiPanel!.transition({ opacity: 0 });
+                    HSUI.#modPanelOpen = false;
+                    HSUI.#logTabActive = false;
+                    this.#uiPanel!.classList.add('hs-panel-closed');
+                }
+            });
+        }
+
+        // Minimize button handler
+        if (this.#uiPanelMinimizeBtn) {
+            this.#uiPanelMinimizeBtn.addEventListener('click', () => {
+                const panelBodies = this.#uiPanel!.querySelectorAll('.hs-panel-body') as NodeListOf<HTMLElement>;
+                const isMinimized = Array.from(panelBodies).some(body => body.style.display === 'none');
+                
+                if (isMinimized) {
+                    // Restore: show all panel bodies
+                    panelBodies.forEach(body => body.style.display = '');
+
+                    const savedWidth = this.#uiPanel!.getAttribute('data-saved-width');
+                    const savedHeight = this.#uiPanel!.getAttribute('data-saved-height');
+                    if (savedWidth) this.#uiPanel!.style.width = savedWidth;
+                    if (savedHeight) this.#uiPanel!.style.height = savedHeight;
+                    this.#uiPanel!.removeAttribute('data-saved-width');
+                    this.#uiPanel!.removeAttribute('data-saved-height');
+
+                    this.#uiPanel!.classList.remove('hs-minimized');
+                    this.#uiPanelMinimizeBtn!.textContent = '_';
+                } else {
+                    // Clamp left border to page before minimizing
+                    const panelRect = this.#uiPanel!.getBoundingClientRect();
+                    if (panelRect.left < 0) {
+                        this.#uiPanel!.style.left = '0px';
+                    }
+                    // Minimize: hide all panel bodies
+                    panelBodies.forEach(body => body.style.display = 'none');
+
+                    const computedPanelStyle = window.getComputedStyle(this.#uiPanel!);
+                    this.#uiPanel!.setAttribute('data-saved-width', computedPanelStyle.width);
+                    this.#uiPanel!.setAttribute('data-saved-height', computedPanelStyle.height);
+                    this.#uiPanel!.style.width = 'auto';
+                    this.#uiPanel!.style.height = 'auto';
+
+                    this.#uiPanel!.classList.add('hs-minimized');
+                    this.#uiPanelMinimizeBtn!.textContent = '+';
+                }
+            });
+        }
 
         if (this.#logClearBtn) {
             this.#logClearBtn.addEventListener('click', () => HSLogger.clear());
@@ -740,11 +785,52 @@ export class HSUI extends HSModule {
         }
 
         modal.addEventListener('click', async (e) => {
-            const closeTarget = (e.target as HTMLElement)?.closest('[data-close]') as HTMLElement | null;
-            const dClose = closeTarget?.dataset.close;
-
-            if (dClose) {
-                await this.CloseModal(dClose);
+            const target = e.target as HTMLElement | null;
+            
+            // Handle close button
+            const closeTarget = target?.closest('[data-close]') as HTMLElement | null;
+            if (closeTarget?.dataset.close) {
+                await this.CloseModal(closeTarget.dataset.close);
+            }
+            
+            // Handle minimize button
+            const minimizeTarget = target?.closest('[data-minimize]') as HTMLElement | null;
+            if (minimizeTarget?.dataset.minimize) {
+                const modalBody = modal.querySelector('.hs-modal-body') as HTMLElement | null;
+                if (modalBody) {
+                    const isMinimized = modalBody.style.display === 'none';
+                    
+                    if (isMinimized) {
+                        // Restore: show body/resizer and restore saved dimensions
+                        modalBody.style.display = '';
+                        
+                        const resizer = modal.querySelector('.hs-modal-resizer') as HTMLElement | null;
+                        if (resizer) {
+                            resizer.style.display = '';
+                        }
+                        
+                        // Restore modal dimensions
+                        modal.style.width = '';
+                        modal.style.height = '';
+                    } else {
+                        // Clamp left border to page before minimizing
+                        const modalRect = modal.getBoundingClientRect();
+                        if (modalRect.left < 0) {
+                            modal.style.left = '0px';
+                        }
+                        // Minimize: hide body/resizer and save/reset dimensions
+                        modalBody.style.display = 'none';
+                        
+                        const resizer = modal.querySelector('.hs-modal-resizer') as HTMLElement | null;
+                        if (resizer) {
+                            resizer.style.display = 'none';
+                        }
+                        
+                        // Reset to header-only size
+                        modal.style.width = 'auto';
+                        modal.style.height = 'auto';
+                    }
+                }
             }
         });
     }

@@ -800,6 +800,11 @@ export class HSAmbrosia extends HSModule
         if (autoConfirmSetting) {
             autoConfirmSetting.disable();
         }
+        const afkSwapperSetting = HSSettings.getSetting('ambrosiaIdleSwap' as keyof HSSettingsDefinition);
+        let restoreAfkSwapper = afkSwapperSetting && afkSwapperSetting.isEnabled();
+        if (afkSwapperSetting) {
+            afkSwapperSetting.disable();
+        }
         let previouslyActiveSlot: HTMLButtonElement | null = null;
         let text: string | undefined;
         let importedCount = 0;
@@ -845,7 +850,6 @@ export class HSAmbrosia extends HSModule
             }
 
             // If the current mode is LOAD, we need to switch to SAVE mode
-            // TODO: exposedPlayer.blueberryLoadoutMode = 'saveTree' / 'loadTree' (meh....)
             // TODO: update HSAmbrosiaHelper.ensureLoadoutModeIsLoad to handle either save or load with a parameter
             const currentMode = modeToggle.innerText;
             if (currentMode.includes('LOAD ')) {
@@ -1012,6 +1016,9 @@ export class HSAmbrosia extends HSModule
             await HSUtils.stopDialogWatcher();
             if (restoreAutoConfirm) {
                 autoConfirmSetting.enable();
+            }
+            if (restoreAfkSwapper) {
+                afkSwapperSetting.enable();
             }
             // Restore previously active loadout slot
             if (previouslyActiveSlot) {

@@ -2126,6 +2126,7 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
             data.octUpgrades.octeractInfiniteShopUpgrades.level,
             data.shopUpgrades.shopInfiniteShopUpgrades,
             data.redAmbrosiaUpgrades.infiniteShopUpgrades,
+            data.singularityChallenges.sadisticPrequel.enabled ? 1 : 0,
             ...(Object.values(data.singularityChallenges) as SingularityChallengeStatus[]).map((c) => c.completions),
             ...(data.singularityChallenges.noAmbrosiaUpgrades.enabled
                 ? []
@@ -2443,11 +2444,6 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
             const ambSpeedNonAmb =          (this.ambrosia.calculateAmbrosiaGenerationSpeed(true, true) as number);
             const blueberries =             (this.ambrosia.calculateBlueberryInventory() as number);
             const ambSpeedNonAmbBerries =   ambSpeedNonAmb * blueberries;
-
-            HSLogger.info(`BEGIN`, this.context);
-
-
-            HSLogger.info(`PLOP`, this.context);
 
             const heaterData = {
                 ...this.gameData,

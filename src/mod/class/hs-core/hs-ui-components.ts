@@ -276,9 +276,12 @@ export class HSUIC {
                         <div class="hs-modal-head-left">
                         <div class="hs-modal-title">${comp_title}</div>
                         </div>
-                        <div class="hs-modal-head-right" data-close="${options.id}">x</div>
+                        <div class="hs-modal-head-buttons">
+                            <div class="hs-modal-btn hs-modal-minimize-btn" data-minimize="${options.id}" title="Minimize">_</div>
+                            <div class="hs-modal-btn hs-modal-close-btn" data-close="${options.id}" title="Close">x</div>
+                        </div>
                     </div>
-                    <div class="hs-modal-body ${comp_body_class}">
+                    <div class="hs-modal-body hs-scrollbar-themed ${comp_body_class}">
                         ${comp_html}
                     </div>
                     <div class="hs-modal-resizer"></div>
