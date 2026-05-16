@@ -127,8 +127,8 @@ export class HSHeaterInputUI {
         "Octeracts",                      // a[3]: calculateOct
         "Obtainium + Offering",           // a[4]: calculateOff
         "Hyperflux (p4x4, pre-AoAG)",     // a[5]: calculateHyperflux
-        "Max Amb",                        // a[6]: calculateAmbOct
         "Amb Generation + Oct",           // a[7]: calculateGen
+        "Max Amb + Oct",                  // a[6]: calculateAmbOct
     ];
 
     private static readonly lockHandlersAttachedModals = new WeakSet<HTMLElement>();

@@ -920,7 +920,7 @@ export class HSUI extends HSModule {
         );
 
         modal.style.left = `${finalCoords.x}px`;
-        modal.style.top = `${finalCoords.y}px`;
+        modal.style.top  = `${finalCoords.y}px`;
 
         await modal.transition({ opacity: 1 });
         this.#attachModalHandlers(modal, modalHead);

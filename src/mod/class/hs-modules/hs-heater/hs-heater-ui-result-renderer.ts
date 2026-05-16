@@ -339,7 +339,7 @@ function buildArrayResultSection(arrayRows: Array<{ key: ResultKey; rows: Heater
     const allRows = HEATER_RESULT_SECTIONS.map((sectionDef) => buildArraySectionRows(sectionDef, rowsByKey)).join("");
     return `
         <div class="hs-heater-results-wrapper">
-            <div class="hs-heater-results-header"></div>
+            <div class="hs-heater-results-topbar"></div>
             <table class="hs-heater-subtable hs-heater-results-table">
                 <tbody>${allRows}</tbody>
             </table>

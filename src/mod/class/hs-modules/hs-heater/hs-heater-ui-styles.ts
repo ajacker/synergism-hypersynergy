@@ -106,7 +106,7 @@ export class HSHeaterStyles {
                 overflow-x: auto;
             }
 
-            .hs-heater-results-header {
+            .hs-heater-results-topbar {
                 display: flex;
                 flex-direction: row;
                 align-items: center;
@@ -118,7 +118,7 @@ export class HSHeaterStyles {
                 margin-right: auto;
             }
 
-            .hs-heater-results-header > * {
+            .hs-heater-results-topbar > * {
                 align-self: center;
                 margin-top: 0;
                 margin-bottom: 0;
@@ -225,6 +225,8 @@ export class HSHeaterStyles {
 
             #hs-heater-inputs-body-left input[type="checkbox"] {
                 accent-color: #a22a2a;
+                height: 16px;
+                width: 16px;
             }
 
             .hs-heater-type-select {
@@ -320,6 +322,8 @@ export class HSHeaterStyles {
             .hs-heater-status-maxed { color: #00b14a; }
             .hs-heater-status-unmaxed { color: #b18585; }
 
+            .hs-heater-inputs-header { background-color: #472323; }
+            .hs-heater-results-header { background-color: #232647; }
             .redButton { background-color: #3f0101; }
             .redButton:hover { background-color: #b71919; }
             .blueButton { background-color: #05013f; }

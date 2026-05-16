@@ -11,7 +11,6 @@ import type {
     Sheet link: https://docs.google.com/spreadsheets/d/105yoI41lk8UJ2PThTkV0tWKNli5R0K1WuaSphKl13R0/edit?gid=1484254243#gid=1484254243
 */
 
-
 // ===========================================================================
 // Internal state types
 // ===========================================================================
@@ -72,6 +71,8 @@ interface Stats {
     bonus:           number[];
     runeExp:         number;
     runeCoefSI:      number;
+    bonusSI:         number;
+    baseSI:          number;
     expIA:           number;
     bonusIA:         number;
     talismanIA:      number;
@@ -121,7 +122,7 @@ let stats: Stats = {
     postAoAG: false, mind: 0.5, aSpeed: 1, spread: 0,
     baseObt: 1, baseOff: 1, blueberries: 3,
     bonus: [0, 0, 0, 0, 0],
-    runeExp: 0, runeCoefSI: 30,
+    runeExp: 0, runeCoefSI: 30, bonusSI: 0, baseSI: 1,
     expIA: 0, bonusIA: 0, talismanIA: 0, talismanP: 1,
     baseIACube: 1, baseIAQuark: 1,
     patreon: 0, jack: false, voucher: 0,
@@ -220,6 +221,14 @@ class Upgrade {
         return result;
     }
 
+    static runeLevelSI(runeCoefDelta = 0, talismanPDelta = 0) {
+      let level = (stats.runeExp - 12) * (stats.runeCoefSI + runeCoefDelta)
+      let talismanL = Math.max(0, stats.bonusSI - 10000) // Assuming free levels from tesseract upgrades and exp
+      let bonusL = Math.min(10000, stats.bonusSI)
+      level += bonusL + talismanL * talismanPDelta / stats.talismanP
+      return Math.floor(level)
+    }
+
     static runeLevelIA(runeCoefDelta = 0, talismanPDelta = 0): number {
         let level = (stats.expIA - 75) * (0.5 + runeCoefDelta);
         level += stats.bonusIA + stats.talismanIA * talismanPDelta / stats.talismanP;
@@ -256,7 +265,7 @@ class Upgrade {
 
     static luckConversion(level = 0): number {
         let conversion = stats.shopRLuck.reduce((result, value) => result + Math.floor(value / 20) * 0.01, stats.luckConversion);
-        const levels = stats.shopRLuck.map((value) => value > 0 ? value + level : 0);
+        const levels = stats.shopRLuck.map(value => value > 0 ? value + level : 0);
         levels[2] += stats.shopRLuck[2] > 0 ? level : 0;
         conversion = levels.reduce((result, value) => result - Math.floor(value / 20) * 0.01, conversion);
         return Math.max(conversion, 1e-6); // Sheet only have 'return conversion'
@@ -299,12 +308,11 @@ const _runeOOMCostArray = Upgrade.ambrosiaRuneOOMBonusCost();
 Object.assign(upgrades, {
     ambrosiaTutorial: new Upgrade({
         maxLevel: 10,
-        cost: (level) => level * level,
-        effects: {},
+        cost: level => level * level,
     }),
     ambrosiaQuarks1: new Upgrade({
         maxLevel: 100,
-        cost: (level) => Math.pow(level, 3),
+        cost: level => Math.pow(level, 3),
         effects: {
             quark: (input, level) => input * (1 + 0.01 * level),
         },
@@ -315,7 +323,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaCubes1: new Upgrade({
         maxLevel: 100,
-        cost: (level) => Math.pow(level, 3),
+        cost: level => Math.pow(level, 3),
         effects: {
             cube: (input, level) => input * (1 + 0.05 * level) * Math.pow(1.1, Math.floor(level / 5)),
             oct:  (input, level) => input * (1 + 0.05 * level) * Math.pow(1.1, Math.floor(level / 5)),
@@ -327,7 +335,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaLuck1: new Upgrade({
         maxLevel: 100,
-        cost: (level) => Math.pow(level, 3),
+        cost: level => Math.pow(level, 3),
         effects: {
             luck: (input, level) => input + 2 * level + 12 * Math.floor(level / 10),
         },
@@ -338,7 +346,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaQuarkCube1: new Upgrade({
         maxLevel: 25,
-        cost: (level) => 250 * Math.pow(level, 3),
+        cost: level => 250 * Math.pow(level, 3),
         effects: {
             cube: (input, level) => input * (1 + 0.001 * Math.floor(Math.pow(Math.log10(stats.quarks + 1) + 1, 2)) * level),
             oct:  (input, level) => input * (1 + 0.001 * Math.floor(Math.pow(Math.log10(stats.quarks + 1) + 1, 2)) * level),
@@ -352,7 +360,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaLuckCube1: new Upgrade({
         maxLevel: 25,
-        cost: (level) => 250 * Math.pow(level, 3),
+        cost: level => 250 * Math.pow(level, 3),
         effects: {
             cube: (input, level, loadout) => input * (1 + 0.0005 * loadout.luck * level),
             oct:  (input, level, loadout) => input * (1 + 0.0005 * loadout.luck * level),
@@ -366,7 +374,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaCubeQuark1: new Upgrade({
         maxLevel: 25,
-        cost: (level) => 500 * Math.pow(level, 3),
+        cost: level => 500 * Math.pow(level, 3),
         effects: {
             quark: (input, level) => input * (1 + 0.0001 * stats.cubeExp * level),
         },
@@ -379,7 +387,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaLuckQuark1: new Upgrade({
         maxLevel: 25,
-        cost: (level) => 500 * Math.pow(level, 3),
+        cost: level => 500 * Math.pow(level, 3),
         effects: {
             quark: (input, level, loadout) => input * (1 + 0.0001 * Math.min(loadout.luck, Math.sqrt(1000 * loadout.luck)) * level),
         },
@@ -392,7 +400,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaCubeLuck1: new Upgrade({
         maxLevel: 25,
-        cost: (level) => 100 * Math.pow(level, 3),
+        cost: level => 100 * Math.pow(level, 3),
         effects: {
             luck: (input, level) => input + 0.02 * stats.cubeExp * level,
         },
@@ -405,7 +413,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaQuarkLuck1: new Upgrade({
         maxLevel: 25,
-        cost: (level) => 100 * Math.pow(level, 3),
+        cost: level => 100 * Math.pow(level, 3),
         effects: {
             luck: (input, level) => input + 0.02 * Math.floor(Math.pow(Math.log10(stats.quarks + 1) + 1, 2)) * level,
         },
@@ -418,7 +426,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaQuarks2: new Upgrade({
         maxLevel: 100,
-        cost: (level) => 500 * level * level,
+        cost: level => 500 * level * level,
         effects: {
             quark: (input, level, loadout) => input * (1 + (0.01 + Math.floor(loadout.effectiveLevel("ambrosiaQuarks1") / 10) * 0.001) * level),
         },
@@ -430,7 +438,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaCubes2: new Upgrade({
         maxLevel: 100,
-        cost: (level) => 500 * level * level,
+        cost: level => 500 * level * level,
         effects: {
             cube: (input, level, loadout) => input * (1 + (0.1 + 0.01 * Math.floor(loadout.effectiveLevel("ambrosiaCubes1") / 10)) * level) * Math.pow(1.15, Math.floor(level / 5)),
             oct:  (input, level, loadout) => input * (1 + (0.1 + 0.01 * Math.floor(loadout.effectiveLevel("ambrosiaCubes1") / 10)) * level) * Math.pow(1.15, Math.floor(level / 5)),
@@ -443,7 +451,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaLuck2: new Upgrade({
         maxLevel: 100,
-        cost: (level) => 250 * level * level,
+        cost: level => 250 * level * level,
         effects: {
             luck: (input, level, loadout) => input + (3 + 0.3 * Math.floor(loadout.effectiveLevel("ambrosiaLuck1") / 10)) * level + 40 * Math.floor(level / 10),
         },
@@ -455,7 +463,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaQuarks3: new Upgrade({
         maxLevel: 10,
-        cost: (level) => (750000 + 25000 * (level - 1)) * level,
+        cost: level => (725000 + 25000 * level) * level,
         effects: {
             quark: (input, level, loadout) => input * (1 + 0.05 * (1 + 0.01 * loadout.effectiveLevel("ambrosiaQuarks2")) * level),
         },
@@ -468,7 +476,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaCubes3: new Upgrade({
         maxLevel: 100,
-        cost: (level) => (75000 + 2500 * (level - 1)) * level,
+        cost: level => (72500 + 2500 * level) * level,
         effects: {
             cube: (input, level, loadout) => input * (1 + 0.2 * (1 + 0.03 * loadout.effectiveLevel("ambrosiaCubes2")) * level) * Math.pow(1.2, Math.floor(level / 5)),
             oct:  (input, level, loadout) => input * (1 + 0.2 * (1 + 0.03 * loadout.effectiveLevel("ambrosiaCubes2")) * level) * Math.pow(1.2, Math.floor(level / 5)),
@@ -482,7 +490,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaLuck3: new Upgrade({
         maxLevel: 100,
-        cost: (level) => 50000 * level,
+        cost: level => 50000 * level,
         effects: {
             luck: (input, level) => input + stats.blueberries * level,
         },
@@ -495,7 +503,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaLuck4: new Upgrade({
         maxLevel: 50,
-        cost: (level) => (250000 + 20000 * (level - 1)) * level,
+        cost: level => (240000 + 10000 * level) * level,
         effects: {
             mLuck: (input, level) => input + 0.0001 * stats.lifetimeAmbExp * level,
         },
@@ -504,14 +512,14 @@ Object.assign(upgrades, {
     }),
     ambrosiaPatreon: new Upgrade({
         maxLevel: 1,
-        cost: (level) => level,
+        cost: level => level,
         effects: {
-            speed: (input) => input * (1 + stats.patreon),
+            speed: input => input * (1 + stats.patreon),
         },
     }),
     ambrosiaObtainium1: new Upgrade({
         maxLevel: 2,
-        cost: (level) => 50000 * (Math.pow(25, level) - 1) / 24,
+        cost: level => 50000 * (Math.pow(25, level) - 1) / 24,
         effects: {
             mObt: (input, level, loadout) => input * (1 + 0.001 * loadout.luck * level),
         },
@@ -519,7 +527,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaOffering1: new Upgrade({
         maxLevel: 2,
-        cost: (level) => 50000 * (Math.pow(25, level) - 1) / 24,
+        cost: level => 50000 * (Math.pow(25, level) - 1) / 24,
         effects: {
             mOff: (input, level, loadout) => input * (1 + 0.001 * loadout.luck * level),
         },
@@ -527,7 +535,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaHyperflux: new Upgrade({
         maxLevel: 7,
-        cost: (level) => ([0, 33333, 99999, 199998, 333330, 499995, 999990, 2499975])[level] ?? 0,
+        cost: level => ([0, 33333, 99999, 199998, 333330, 499995, 999990, 2499975])[level] ?? 0,
         effects: {
             cube: (input, level, _loadout, p4x4 = 50) => input * Math.pow(1 + 0.01 * level, p4x4),
         },
@@ -535,7 +543,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaBaseOffering1: new Upgrade({
         maxLevel: 40,
-        cost: (level) => 5 * Math.pow(level, 3),
+        cost: level => 5 * Math.pow(level, 3),
         effects: {
             off: (input, level) => input + level,
         },
@@ -544,7 +552,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaBaseObtainium1: new Upgrade({
         maxLevel: 20,
-        cost: (level) => 40 * Math.pow(level, 3),
+        cost: level => 40 * Math.pow(level, 3),
         effects: {
             obt: (input, level) => input + level,
         },
@@ -553,7 +561,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaBaseOffering2: new Upgrade({
         maxLevel: 60,
-        cost: (level) => 20 * Math.pow(level, 3),
+        cost: level => 20 * Math.pow(level, 3),
         effects: {
             off: (input, level) => input + level,
         },
@@ -566,7 +574,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaBaseObtainium2: new Upgrade({
         maxLevel: 30,
-        cost: (level) => 160 * Math.pow(level, 3),
+        cost: level => 160 * Math.pow(level, 3),
         effects: {
             obt: (input, level) => input + level,
         },
@@ -579,7 +587,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaSingReduction1: new Upgrade({
         maxLevel: 2,
-        cost: (level) => 1e5 * (Math.pow(99, level) - 1) / 98,
+        cost: level => 1e5 * (Math.pow(99, level) - 1) / 98,
         effects: {
             cube: (input, level) => stats.exalt > 0 || stats.postAoAG ? input : input * Upgrade.singDebuff(stats.sing, "cube") / Upgrade.singDebuff(stats.sing - level, "cube"),
             mOff: (input, level) => stats.exalt > 0 || stats.postAoAG ? input : input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff"),
@@ -592,7 +600,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaInfiniteShopUpgrades1: new Upgrade({
         maxLevel: 20,
-        cost: (level) => 25000 * level,
+        cost: level => 25000 * level,
         effects: {
             cube: (input, level) => stats.exalt === 4 ? input : input * Math.pow(1.012, level) * Upgrade.chronometerEffect(level),
             oct:  (input, level) => stats.exalt === 4 ? input : input * Math.pow(1.012, 1.25 * level) * Upgrade.chronometerEffect(level, stats.mind),
@@ -609,7 +617,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaInfiniteShopUpgrades2: new Upgrade({
         maxLevel: 20,
-        cost: (level) => 75000 * level,
+        cost: level => 75000 * level,
         effects: {
             cube: (input, level) => stats.exalt === 4 ? input : input * Math.pow(1.012, level) * Math.pow(1.006, (1 + stats.spread) * level),
             oct:  (input, level) => stats.exalt === 4 ? input : input * Math.pow(1.012, 1.25 * level) * Math.pow(1.006, (1 + stats.spread) * stats.mind * level),
@@ -627,7 +635,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaSingReduction2: new Upgrade({
         maxLevel: 2,
-        cost: (level) => 1.25e7 * (Math.pow(3, level) - 1) / 2,
+        cost: level => 1.25e7 * (Math.pow(3, level) - 1) / 2,
         effects: {
             cube: (input, level) => stats.exalt > 0 && !stats.postAoAG ? input * Upgrade.singDebuff(stats.sing, "cube") / Upgrade.singDebuff(stats.sing - level, "cube") : input,
             mOff: (input, level) => stats.exalt > 0 && !stats.postAoAG ? input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff") : input,
@@ -638,26 +646,30 @@ Object.assign(upgrades, {
     }),
     ambrosiaTalismanBonusRuneLevel: new Upgrade({
         maxLevel: 100,
-        cost: (level) => 100 * level * level,
+        cost: level => 100 * level * level,
         effects: {
-            cube:  (input) => input,
-            quark: (input) => input,
+            cube: input => input, // The effect is computed in ambrosiaRuneOOMBonus
+            quark: input => input,
+            mObt: input => input,
+            mOff: input => input
         },
         row: 1,
     }),
     ambrosiaRuneOOMBonus: new Upgrade({
         maxLevel: 100,
         costArray: _runeOOMCostArray,
-        cost: (level) => _runeOOMCostArray[level] ?? 0,
+        cost: level => _runeOOMCostArray[level] ?? 0,
         effects: {
             cube:  (input, level, loadout) => input * (1 + 0.01  * Upgrade.runeLevelIA(0.001 * level, 0.005 * loadout.effectiveLevel("ambrosiaTalismanBonusRuneLevel"))) / stats.baseIACube,
             quark: (input, level, loadout) => input * (1 + 0.002 * Upgrade.runeLevelIA(0.001 * level, 0.005 * loadout.effectiveLevel("ambrosiaTalismanBonusRuneLevel"))) / stats.baseIAQuark,
+            mObt:  (input, level, loadout) => input * (1 + Upgrade.runeLevelSI(level, 0.005 * loadout.effectiveLevel("ambrosiaTalismanBonusRuneLevel"))) / stats.baseSI,
+            mOff:  (input, level, loadout) => input * (1 + Upgrade.runeLevelSI(level, 0.005 * loadout.effectiveLevel("ambrosiaTalismanBonusRuneLevel"))) / stats.baseSI,
         },
         row: 3,
     }),
     ambrosiaBrickOfLead: new Upgrade({
         maxLevel: 25,
-        cost: (level) => 10 * Math.pow(level, 3),
+        cost: level => 10 * Math.pow(level, 3),
         effects: {
             mLuck: (input, level) => input + 0.02 * level,
             speed: (input, level) => input * (1 - 0.02 * level),
@@ -666,7 +678,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaFreeLuckUpgrades: new Upgrade({
         maxLevel: 25,
-        cost: (level) => 5000 * level * level,
+        cost: level => 5000 * level * level,
         effects: {
             luck: (input, level) => input + stats.shopLuck * level * (stats.exalt !== 4 ? 1 : 0),
         },
@@ -675,7 +687,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaFreeGenerationUpgrades: new Upgrade({
         maxLevel: 3,
-        cost: (level) => 45000 * (Math.pow(10, level) - 1) / 9,
+        cost: level => 45000 * (Math.pow(10, level) - 1) / 9,
         effects: {
             speed:  (input, level) => stats.exalt === 4 ? input : input * Upgrade.ambGeneration(level),
             rSpeed: (input, level) => stats.exalt === 4 ? input : input * Upgrade.rSpeed(stats.ambSpeed * Upgrade.ambGeneration(level)) / Upgrade.rSpeed(stats.ambSpeed),
@@ -684,9 +696,9 @@ Object.assign(upgrades, {
     }),
     ambrosiaFreeRedLuckUpgrades: new Upgrade({
         maxLevel: 25,
-        cost: (level) => 20000 * level * level,
+        cost: level => 10000 * level * level,
         effects: {
-            rLuck: (input, level, loadout) => input + Upgrade.rLuck(level, loadout) - Upgrade.rLuck(0, loadout) * (stats.exalt !== 4 ? 1 : 0),
+            rLuck: (input, level, loadout) => input + (Upgrade.rLuck(level, loadout) - Upgrade.rLuck(0, loadout)) * (stats.exalt !== 4 ? 1 : 0),
         },
         row: 3,
         blueberryCost: 2,
@@ -696,7 +708,7 @@ Object.assign(upgrades, {
     }),
     ambrosiaFreeQuarkUpgrades: new Upgrade({
         maxLevel: 10,
-        cost: (level) => 25000 * Math.pow(level, 3),
+        cost: level => 25000 * Math.pow(level, 3),
         effects: {
             quark: (input, level) => stats.exalt === 4 ? input : input * Upgrade.shopQuark(level),
         },
@@ -1178,15 +1190,12 @@ function fillStatsFromInput(input: HeaterOptimizerInput): void {
     // --- Bonus levels per row (index 0 unused, rows 1–4)
     stats.bonus = [0, bonusRow2, bonusRow3, bonusRow4, bonusRow5];
 
-    // --- Rune SI coefficients
+    // --- Runes & Talismans
+    stats.runeExp    = runeSiExp.log10();
     stats.runeCoefSI = runeSiRC;
-
-    // --- IA rune level as a log10 exponent value
-    // The sheet stored the value as a string like "1.23e456" and computed log10(1.23) + 456.
-    // runeIaExp is the raw Decimal (e.g. 1.23e456), so we apply log10 here.
-    stats.expIA = runeIaExp.log10();
-
-    // --- Bonus IA levels from various sources
+    stats.bonusSI    = runeSiBonusLevelsTotal;
+    stats.baseSI     = 1 + Upgrade.runeLevelSI();
+    stats.expIA      = runeIaExp.log10();
     stats.bonusIA    = runeIaBonusLevelsTotal.toNumber();
     stats.talismanIA = runeIaBonusLevelsTalisman.toNumber();
     stats.talismanP  = baseTalismanPower.toNumber();
@@ -1430,7 +1439,8 @@ export class HSHeaterOptimizer {
             const tableObt3    = mergeTables(tableObt1, tableObt2, "obt");
             const tableObt4    = mergeTables(tableObt3, tableCache.tableVoucher, "obt");
             const tableObtSing = mergeTables(tableObt4, tableCache.tableSing, "obt");
-            const loadoutObt   = findOpt(tableObtSing, tableCache.tableLuck, "obt");
+            const tableObtRune = mergeTables(tableObtSing, tableCache.tableRune, "obt")
+            const loadoutObt   = findOpt(tableObtRune, tableCache.tableLuck, "obt");
             output.obt = [loadoutObt.generateOutput("obt", maxLoadout)];
 
             const tableOff1    = generateTable(["ambrosiaBaseOffering1", "ambrosiaBaseOffering2"], "off");
@@ -1438,7 +1448,8 @@ export class HSHeaterOptimizer {
             const tableOff3    = mergeTables(tableOff1, tableOff2, "off");
             const tableOff4    = mergeTables(tableOff3, tableCache.tableVoucher, "off");
             const tableOffSing = mergeTables(tableOff4, tableCache.tableSing, "off");
-            const loadoutOff   = findOpt(tableOffSing, tableCache.tableLuck, "off");
+            const tableOffRune = mergeTables(tableOffSing, tableCache.tableRune, "off")
+            const loadoutOff   = findOpt(tableOffRune, tableCache.tableLuck, "off");
             output.off = [loadoutOff.generateOutput("off", maxLoadout)];
         }
 

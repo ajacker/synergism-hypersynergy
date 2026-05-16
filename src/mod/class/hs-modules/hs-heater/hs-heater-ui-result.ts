@@ -51,7 +51,7 @@ type LoadoutPreviewUpgradeKey = keyof typeof LOADOUT_UPGRADE_META_MAP;
 // === Selector and ID Constants ===
 const HEATER_RESULT_UI_SELECTORS = {
     modalBody:          '.hs-modal-body',
-    resultsHeader:      '.hs-heater-results-header',
+    resultsHeader:      '.hs-heater-results-topbar',
     previewId:          'hs-heater-loadout-preview',
     previewRow:         'hs-heater-loadout-preview-row',
     previewButton:      'hs-heater-preview-button',

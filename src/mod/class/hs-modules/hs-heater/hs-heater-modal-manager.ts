@@ -65,6 +65,7 @@ export class HSHeaterModalManager {
         const modalId = await hsui.Modal({
             title: 'Ambrosia Heater Inputs',
             htmlContent: content,
+            headerClass: 'hs-heater-inputs-header',
             bodyClass: 'hs-heater-inputs-body',
             styles: {
                 width: 'auto',
@@ -106,6 +107,7 @@ export class HSHeaterModalManager {
             htmlContent: content,
             position: resultPosition,
             parentModalId,
+            headerClass: 'hs-heater-results-header',
             bodyClass: 'hs-heater-results-body',
             styles: {
                 width: 'auto',
