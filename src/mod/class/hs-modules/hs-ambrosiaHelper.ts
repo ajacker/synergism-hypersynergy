@@ -89,18 +89,13 @@ export class HSAmbrosiaHelper {
         return loadoutEnum;
     }
 
-    /** Ensure the game is in LOAD mode before clicking slots. */
-    static async ensureLoadoutModeIsLoad(): Promise<void> {
-        // The module interacts with the real loadout buttons; game must be in load state to avoid accidental save.
+    /** Ensure the game is in the specified loadout mode before clicking slots. */
+    static async ensureLoadoutMode(mode: 'LOAD' | 'SAVE'): Promise<void> {
+        // The module interacts with the real loadout buttons; game must be in the specified state to avoid accidental actions.
         const modeButton = await this.getCachedBlueberryToggleModeButton();
-
         if (modeButton) {
             const currentMode = modeButton.innerText;
-
-            // If we're in SAVE mode, toggle to LOAD mode.
-            // TODO: exposedPlayer.blueberryLoadoutMode = 'saveTree' / 'loadTree'
-            // TODO: update HSAmbrosiaHelper.ensureLoadoutModeIsLoad to handle either save or load with a parameter
-            if (currentMode.includes('SAVE')) {
+            if (!currentMode.includes(mode)) {
                 modeButton.click();
             }
         }

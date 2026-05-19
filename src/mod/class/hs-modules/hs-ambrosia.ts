@@ -679,35 +679,54 @@ export class HSAmbrosia extends HSModule
     }
 
     async #addCodeButtonHandler(e: Event) {
-        const activeLoadout = this.activeLoadout;
+        const originalLoadout = this.activeLoadout;
         const addLoadoutSetting = HSSettings.getSetting('autoLoadoutAdd') as HSSelectStringSetting;
 
-        if (activeLoadout && addLoadoutSetting) {
+        if (originalLoadout && addLoadoutSetting) {
             const addLoadout = HSAmbrosiaHelper.convertSettingLoadoutToSlot(addLoadoutSetting.getValue());
             const loadoutSlot = await HSElementHooker.HookElement(`#${addLoadout} `) as HTMLButtonElement;
+            if (!addLoadout || !loadoutSlot) { HSLogger.warn('Invalid autoLoadoutAdd setting - cannot resolve addLoadout or loadoutSlot', this.context); return; }
 
-            await HSAmbrosiaHelper.ensureLoadoutModeIsLoad();
-
+            await HSAmbrosiaHelper.ensureLoadoutMode('LOAD');
             await HSUtils.hiddenAction(async () => {
                 loadoutSlot.click();
             });
+            await HSUtils.waitForNextTack();
+
+            if (originalLoadout !== addLoadout) {
+                await this.#restoreLoadout(originalLoadout);
+            }
         }
     }
 
     async #timeCodeButtonHandler(e: Event) {
-        const activeLoadout = this.activeLoadout;
+        const originalLoadout = this.activeLoadout;
         const timeLoadoutSetting = HSSettings.getSetting('autoLoadoutTime') as HSSelectStringSetting;
 
-        if (activeLoadout && timeLoadoutSetting) {
+        if (originalLoadout && timeLoadoutSetting) {
             const timeLoadout = HSAmbrosiaHelper.convertSettingLoadoutToSlot(timeLoadoutSetting.getValue());
             const loadoutSlot = await HSElementHooker.HookElement(`#${timeLoadout} `) as HTMLButtonElement;
+            if (!timeLoadout || !loadoutSlot) { HSLogger.warn('Invalid autoLoadoutTime setting - cannot resolve timeLoadout or loadoutSlot', this.context); return; }
 
-            await HSAmbrosiaHelper.ensureLoadoutModeIsLoad();
-
+            await HSAmbrosiaHelper.ensureLoadoutMode('LOAD');
             await HSUtils.hiddenAction(async () => {
                 loadoutSlot.click();
             });
+            await HSUtils.waitForNextTack();
+
+            if (originalLoadout !== timeLoadout) {
+                await this.#restoreLoadout(originalLoadout);
+            }
         }
+    }
+
+    async #restoreLoadout(loadoutSlotEnum: AMBROSIA_LOADOUT_SLOT) {
+        const restoreSlot = await HSElementHooker.HookElement(`#${loadoutSlotEnum} `) as HTMLButtonElement;
+        if (!restoreSlot) { HSLogger.warn(`Could not restore original loadout ${loadoutSlotEnum}`, this.context); return; }
+        await HSAmbrosiaHelper.ensureLoadoutMode('LOAD');
+        await HSUtils.hiddenAction(async () => {
+            restoreSlot.click();
+        });
     }
 
 
@@ -811,13 +830,9 @@ export class HSAmbrosia extends HSModule
         let skippedCount = 0;
         let failures: { index: number; reason: string }[] = [];
         try {
-            previouslyActiveSlot = document.querySelector(
-                '.blueberryLoadoutSlot.hs-rainbow-border'
-            ) as HTMLButtonElement | null;
-            // previous active slot logged only on error
+            previouslyActiveSlot = document.querySelector( '.blueberryLoadoutSlot.hs-rainbow-border' ) as HTMLButtonElement | null;
 
             text = await navigator.clipboard.readText();
-            // clipboard length hidden
 
             if (!text || typeof text !== 'string') {
                 HSUI.Notify('Clipboard does not contain valid loadout data', {
@@ -826,36 +841,27 @@ export class HSAmbrosia extends HSModule
                 return;
             }
 
-            // Split clipboard by lines
-            const lines = text.split('\n').map(line => line.trim());
-            // parsed clipboard lines
+            // Split clipboard by lines and preserve exact raw line structure
+            const rawLines = text.split('\n').map(line => line.trim());
 
-            // Validate we have between 1 and 16 loadouts
-            if (lines.length === 0 || lines.length > 16) {
-                HSUI.Notify(`Invalid number of loadouts: ${lines.length}. Expected 1 - 16.`, {
+            // Validate we have between 1 and 16 lines/loadouts (empty line = no loadout imported at this spot)
+            if (rawLines.length === 0 || rawLines.length > 16) {
+                HSUI.Notify(`Invalid number of loadouts: ${rawLines.length}. Expected 1 - 16.`, {
                     notificationType: 'warning'
                 });
                 return;
             }
 
+            const isActiveLoadoutImport = rawLines[0] !== '' && (rawLines.length === 1 || (rawLines.length === 2 && rawLines[1] === ''));
+
             const fileInput = document.getElementById('importBlueberries') as HTMLInputElement;
             const modeToggle = await HSElementHooker.HookElement('#blueberryToggleMode') as HTMLButtonElement;
 
-            if (!fileInput) {
-                throw new Error('Import input element not found');
-            }
+            if (!fileInput) { throw new Error('Import input element not found'); } 
 
-            if (!modeToggle) {
-                throw new Error('Mode toggle button not found');
-            }
+            if (!modeToggle) { throw new Error('Mode toggle button not found'); }
 
-            // If the current mode is LOAD, we need to switch to SAVE mode
-            // TODO: update HSAmbrosiaHelper.ensureLoadoutModeIsLoad to handle either save or load with a parameter
-            const currentMode = modeToggle.innerText;
-            if (currentMode.includes('LOAD ')) {
-                // switch blueberry mode to SAVE
-                modeToggle.click();
-            }
+            await HSAmbrosiaHelper.ensureLoadoutMode('SAVE');
 
             importedCount = 0;
             skippedCount = 0;
@@ -866,21 +872,22 @@ export class HSAmbrosia extends HSModule
             failures = [];
 
             // starting loadout import loop
-            for (let i = 0; i < lines.length; i++) {
-                const loadoutData = lines[i];
+            for (let i = 0; i < rawLines.length; i++) {
+                const loadoutData = rawLines[i];
                 // per-line processing
                 // Skip empty lines
                 if (!loadoutData) {
                     skippedCount++;
-                    // skipped empty line
                     continue;
                 }
 
-                // Use dynamic slot element
-                const loadoutBtn = loadoutsSlots[i] as HTMLButtonElement;
+                // Use dynamic slot element (or active loadout when the clipboard contains a single data line)
+                const loadoutBtn = (isActiveLoadoutImport && previouslyActiveSlot)
+                    ? previouslyActiveSlot
+                    : loadoutsSlots[i] as HTMLButtonElement;
+
                 if (!loadoutBtn) {
                     HSLogger.warn(`Loadout slot element for index ${i} not found`, this.context);
-                    // no slot element for index
                     continue;
                 }
 
@@ -1443,7 +1450,7 @@ export class HSAmbrosia extends HSModule
             }
 
             if (loadoutSlot) {
-                await HSAmbrosiaHelper.ensureLoadoutModeIsLoad();
+                await HSAmbrosiaHelper.ensureLoadoutMode('LOAD');
                 await HSUtils.hiddenAction(async () => {
                     loadoutSlot!.click();
                 });

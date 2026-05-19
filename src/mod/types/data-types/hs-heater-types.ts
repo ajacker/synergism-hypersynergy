@@ -65,7 +65,7 @@ export interface HeaterOptimizerInput {
 export type HeaterResultAffordableRow = [
     loadoutJson: string,
     sheetSpacerA: null,
-    sheetSpacerB: null,
+    blueberryCost: number,
     cost: number,
     effect: string,
     p4x4Eq: number | "Never",
@@ -75,7 +75,7 @@ export type HeaterResultAffordableRow = [
 export type HeaterResultUnaffordableRow = [
     loadoutLabel: "Unaffordable",
     sheetSpacerA: null,
-    sheetSpacerB: null,
+    blueberryCost: "N / A",
     cost:   "N / A",
     effect: "N / A",
     p4x4Eq: "N / A",
@@ -97,6 +97,21 @@ export type HeaterResultArrayKey =
     | 'hyperflux'
     | 'ambOct'
     | 'gen';
+
+export type RowBasedResultKey = 'hyperflux' | 'gen';
+export type SingleResultKey = Exclude<HeaterResultArrayKey, RowBasedResultKey>;
+export type HeaterTypeSemanticId = 'none' | SingleResultKey | `${RowBasedResultKey}:${number}`;
+export type HeaterResultSectionId = 'common' | 'p4x4' | 'hybrid';
+
+export type NormalizedHeaterResultEntry = {
+    semanticId: HeaterTypeSemanticId;
+    label: string;
+    rowData: HeaterResultRow;
+    key: HeaterResultArrayKey;
+    section: HeaterResultSectionId;
+    rowIndex: number;
+    isRowBased: boolean;
+};
 
 export interface HeaterOptimizationResult {
     input: HeaterOptimizerInput;

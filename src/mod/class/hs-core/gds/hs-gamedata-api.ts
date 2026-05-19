@@ -2474,7 +2474,7 @@ export class HSGameDataAPI extends HSGameDataAPIPartial {
                     currentSingularity:     gameData.singularityCount,
                     singularityReducers:    (this.calculateSingularityReductions(true, true) as number),
                     exalt:                  this.getActiveExalt(),
-                    postAoag:               gameData.runes.antiquities ? 1 : 0,
+                    postAoag:               Number(gameData.runes.antiquities) > 0,
                     transcription:          gameData.octUpgrades.octeractOneMindImprover.level,
                     ascSpeed:               this.calculateAscensionSpeedMult(),
                     ascSpread:              this.calculateAscensionSpread(),

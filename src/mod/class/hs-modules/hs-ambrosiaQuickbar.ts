@@ -7,7 +7,7 @@ import { HSSetting } from "../hs-core/settings/hs-setting";
 import { HSSettings } from "../hs-core/settings/hs-settings";
 import { HSGlobal } from "../hs-core/hs-global";
 import { HSAmbrosiaHelper } from "./hs-ambrosiaHelper";
-import { resolveHeaterIconFromSemanticId } from "./hs-heater/hs-heater-ui-result-renderer";
+import { getEffectiveHeaterIconSrc } from "./hs-heater/hs-heater-icon-store";
 import { HSQuickbarIconPickerController } from "./hs-qolQuickbarIconPicker";
 
 export interface HeaterSlotIconApplyResult {
@@ -323,7 +323,7 @@ export class HSAmbrosiaQuickbar {
         const realButton = this.#originalQuickBarButtons.get(buttonId) ?? document.getElementById(buttonId) as HTMLButtonElement | null;
         if (!realButton) { HSLogger.warn(`Could not find real button for ${buttonId}`, this.context); return; }
 
-        await HSAmbrosiaHelper.ensureLoadoutModeIsLoad();
+        await HSAmbrosiaHelper.ensureLoadoutMode('LOAD');
         await HSUtils.hiddenAction(async () => { realButton.click(); });
     }
 
@@ -455,7 +455,7 @@ export class HSAmbrosiaQuickbar {
                 continue;
             }
 
-            const resolvedUrl = resolveHeaterIconFromSemanticId(normalizedSemanticId);
+            const resolvedUrl = getEffectiveHeaterIconSrc(normalizedSemanticId);
             if (resolvedUrl) {
                 iconBySlotId[slotId] = resolvedUrl;
                 setCount++;

@@ -1,7 +1,10 @@
 import { HSUI } from "../../hs-core/hs-ui";
-import type { HeaterOptimizationResult } from "../../../types/data-types/hs-heater-types";
-import { escapeHtml } from "./hs-heater-ui-input";
-import { buildResultTableHtml } from "./hs-heater-ui-result-renderer";
+import { HSLogger } from "../../hs-core/hs-logger";
+import { HSQuickbarIconPickerController } from "../hs-qolQuickbarIconPicker";
+import { escapeHtml } from "./hs-heater-utils";
+import { buildResultTableHtmlFromNormalized } from "./hs-heater-ui-result-renderer";
+import { clearHeaterIconOverride, getEffectiveHeaterIconSrc, getOverrideHeaterIconSrc, setHeaterIconOverride, } from "./hs-heater-icon-store";
+import type { NormalizedHeaterResultEntry } from "./hs-heater-result-store";
 
 // === Loadout Preview Metadata Type and Map ===
 type LoadoutPreviewMeta = { iconFile: string };
@@ -47,6 +50,7 @@ const LOADOUT_UPGRADE_META_MAP = {
 
 // === Loadout Preview Upgrade Key Type ===
 type LoadoutPreviewUpgradeKey = keyof typeof LOADOUT_UPGRADE_META_MAP;
+type LoadoutPreviewItem = { key: LoadoutPreviewUpgradeKey; maxLevel: number };
 
 // === Selector and ID Constants ===
 const HEATER_RESULT_UI_SELECTORS = {
@@ -68,19 +72,55 @@ const HEATER_RESULT_UI_SELECTORS = {
 export class HSHeaterResultUI {
 
     // === State ===
-    static currentResultModalId: string | null = null;
-    private static currentResultData: HeaterOptimizationResult | null = null;
+    static #activeResultModal: HTMLElement | null = null;
+    static #context = 'HSHeaterResultUI';
 
-    private static quickbarCloneCleanup: (() => void) | null = null;
+    static setActiveResultModal(modal: HTMLElement | null): void {
+        this.#activeResultModal = modal;
+    }
 
-    private static readonly attachedModalHandlers = new WeakMap<HTMLElement, {
+    static clearActiveResultModal(): void {
+        this.#activeResultModal = null;
+    }
+
+    static #quickbarCloneCleanup: (() => void) | null = null;
+    static #iconPicker = new HSQuickbarIconPickerController<string>({
+        shouldIgnoreClickTarget: (target: Element) => {
+            const modal = this.#activeResultModal;
+            return !!(modal && modal.contains(target));
+        },
+        setSlotPickModeVisual: (semanticId: string, active: boolean) => {
+            const modal = this.#activeResultModal;
+            if (!modal) return;
+            modal.querySelectorAll<HTMLButtonElement>('.hs-heater-type-icon-button').forEach((button) => {
+                const matchId = button.dataset.heaterIconId;
+                button.classList.toggle('hs-quickbar-slot-pickmode', !!active && matchId === semanticId);
+            });
+        },
+        clearAllSlotPickModeVisuals: () => {
+            const modal = this.#activeResultModal;
+            if (!modal) return;
+            modal.querySelectorAll<HTMLButtonElement>('.hs-heater-type-icon-button').forEach((button) => {
+                button.classList.remove('hs-quickbar-slot-pickmode');
+            });
+        },
+        assignIconToSlot: (semanticId: string, iconUrl: string) => {
+            setHeaterIconOverride(semanticId, iconUrl);
+            const modal = this.#activeResultModal;
+            if (modal) {
+                this.#refreshHeaterResultIconButtons(modal);
+            }
+        },
+    });
+
+    static #attachedModalHandlers = new WeakMap<HTMLElement, {
         onClick: (event: Event) => void;
         onShowOverlay: (event: Event) => void;
         onHideOverlay: (event: Event) => void;
         detach: () => void;
     }>();
 
-    private static overlayState: {
+    static #overlayState: {
         kind: 'preview' | 'json' | null;
         target: HTMLElement | null;
     } = {
@@ -89,45 +129,73 @@ export class HSHeaterResultUI {
     };
 
     // === Metadata Maps ===
-    private static readonly loadoutUpgradeMetaMap = LOADOUT_UPGRADE_META_MAP;
+    static #loadoutUpgradeMetaMap = LOADOUT_UPGRADE_META_MAP;
 
-    private static readonly ambrosiaLoadoutPreviewRows: Array<Array<LoadoutPreviewUpgradeKey | null>> = [
-        [ 'ambrosiaTutorial', 'ambrosiaPatreon', 'ambrosiaObtainium1', 'ambrosiaOffering1', 'ambrosiaHyperflux', 'ambrosiaBrickOfLead', null ],
-        [ 'ambrosiaFreeLuckUpgrades', 'ambrosiaQuarks1', 'ambrosiaCubes1', 'ambrosiaLuck1', 'ambrosiaBaseObtainium1', 'ambrosiaBaseOffering1', 'ambrosiaSingReduction1', 'ambrosiaTalismanBonusRuneLevel', null ],
-        [ 'ambrosiaFreeGenerationUpgrades', 'ambrosiaCubeQuark1', 'ambrosiaLuckQuark1', 'ambrosiaLuckCube1', 'ambrosiaQuarkCube1', 'ambrosiaCubeLuck1', 'ambrosiaQuarkLuck1', null ],
-        [ 'ambrosiaFreeRedLuckUpgrades', 'ambrosiaQuarks2', 'ambrosiaCubes2', 'ambrosiaLuck2', 'ambrosiaBaseObtainium2', 'ambrosiaBaseOffering2', 'ambrosiaInfiniteShopUpgrades1', 'ambrosiaRuneOOMBonus', null ],
-        [ 'ambrosiaFreeQuarkUpgrades', 'ambrosiaQuarks3', 'ambrosiaCubes3', 'ambrosiaLuck3', 'ambrosiaSingReduction2', 'ambrosiaInfiniteShopUpgrades2', 'ambrosiaLuck4', null ],
+    static #ambrosiaLoadoutPreviewRows: Array<Array<LoadoutPreviewItem | null>> = [
+        [ 
+            { key: 'ambrosiaTutorial',    maxLevel: 10 }, 
+            { key: 'ambrosiaPatreon',     maxLevel: 1 }, 
+            { key: 'ambrosiaObtainium1',  maxLevel: 2 }, 
+            { key: 'ambrosiaOffering1',   maxLevel: 2 }, 
+            { key: 'ambrosiaHyperflux',   maxLevel: 7 }, 
+            { key: 'ambrosiaBrickOfLead', maxLevel: 25 }, 
+            null 
+        ],
+        [ 
+            { key: 'ambrosiaFreeLuckUpgrades',       maxLevel: 25 }, 
+            { key: 'ambrosiaQuarks1',                maxLevel: 100 }, 
+            { key: 'ambrosiaCubes1',                 maxLevel: 100 }, 
+            { key: 'ambrosiaLuck1',                  maxLevel: 100 }, 
+            { key: 'ambrosiaBaseObtainium1',         maxLevel: 20 }, 
+            { key: 'ambrosiaBaseOffering1',          maxLevel: 40 }, 
+            { key: 'ambrosiaSingReduction1',         maxLevel: 2 }, 
+            { key: 'ambrosiaTalismanBonusRuneLevel', maxLevel: 100 }, 
+            null 
+        ],
+        [ 
+            { key: 'ambrosiaFreeGenerationUpgrades', maxLevel: 3 }, 
+            { key: 'ambrosiaCubeQuark1',             maxLevel: 25 }, 
+            { key: 'ambrosiaLuckQuark1',             maxLevel: 25 }, 
+            { key: 'ambrosiaLuckCube1',              maxLevel: 25 }, 
+            { key: 'ambrosiaQuarkCube1',             maxLevel: 25 }, 
+            { key: 'ambrosiaCubeLuck1',              maxLevel: 25 }, 
+            { key: 'ambrosiaQuarkLuck1',             maxLevel: 25 }, 
+            null 
+        ],
+        [ 
+            { key: 'ambrosiaFreeRedLuckUpgrades',   maxLevel: 40 }, 
+            { key: 'ambrosiaQuarks2',               maxLevel: 100 }, 
+            { key: 'ambrosiaCubes2',                maxLevel: 100 }, 
+            { key: 'ambrosiaLuck2',                 maxLevel: 100 }, 
+            { key: 'ambrosiaBaseObtainium2',        maxLevel: 30 }, 
+            { key: 'ambrosiaBaseOffering2',         maxLevel: 60 }, 
+            { key: 'ambrosiaInfiniteShopUpgrades1', maxLevel: 20 }, 
+            { key: 'ambrosiaRuneOOMBonus',          maxLevel: 100 }, 
+            null 
+        ],
+        [ 
+            { key: 'ambrosiaFreeQuarkUpgrades',     maxLevel: 10 }, 
+            { key: 'ambrosiaQuarks3',               maxLevel: 10 }, 
+            { key: 'ambrosiaCubes3',                maxLevel: 100 }, 
+            { key: 'ambrosiaLuck3',                 maxLevel: 100 }, 
+            { key: 'ambrosiaSingReduction2',        maxLevel: 2 }, 
+            { key: 'ambrosiaInfiniteShopUpgrades2', maxLevel: 20 }, 
+            { key: 'ambrosiaLuck4',                 maxLevel: 50 }, 
+            null 
+        ],
     ];
 
-    static setCurrentResultData(result: HeaterOptimizationResult): void {
-        this.currentResultData = result;
-    }
-
-    static getCurrentResultDataIfModalOpen(): HeaterOptimizationResult | null {
-        if (!this.currentResultModalId) return null;
-        const modal = document.getElementById(this.currentResultModalId);
-        if (!modal) return null;
-        return this.currentResultData;
-    }
-
-    // === Table/Section Rendering (delegated) ===
-    static buildResultTable(result: HeaterOptimizationResult): string {
-        return buildResultTableHtml(result);
-    }
-
     // === UI/DOM Update Methods ===
-    static updateResultModalContent(result: HeaterOptimizationResult): boolean {
-        if (!this.currentResultModalId) return false;
-        const modal = document.getElementById(this.currentResultModalId);
-        if (!modal) return false;
+    static updateResultModalContent(modal: HTMLElement, normalizedEntries: NormalizedHeaterResultEntry[], selectedSemanticIds: Set<string> = new Set()): boolean {
         const body = modal.querySelector(HEATER_RESULT_UI_SELECTORS.modalBody);
         if (!body) return false;
-        
-        body.innerHTML = this.buildResultTable(result);
+
+        body.innerHTML = buildResultTableHtmlFromNormalized(normalizedEntries, selectedSemanticIds);
         modal.style.width = 'auto';
         modal.style.minWidth = '0';
         modal.style.maxWidth = 'none';
         this.populateResultsHeader(modal);
+        this.#refreshHeaterResultIconButtons(modal);
         return true;
     }
 
@@ -136,8 +204,8 @@ export class HSHeaterResultUI {
         if (!header) return;
 
         // Disconnect previous observer and remove previous click listener before reinitializing
-        this.quickbarCloneCleanup?.();
-        this.quickbarCloneCleanup = null;
+        this.#quickbarCloneCleanup?.();
+        this.#quickbarCloneCleanup = null;
 
         header.innerHTML = '';
 
@@ -148,11 +216,29 @@ export class HSHeaterResultUI {
             // Strip child IDs to avoid duplicate DOM IDs
             clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
             header.appendChild(clone);
-            this.quickbarCloneCleanup = this.setupQuickbarCloneLink(clone, slotsSource);
+            this.#quickbarCloneCleanup = this.#setupQuickbarCloneLink(clone, slotsSource);
         }
     }
 
-    private static setupQuickbarCloneLink(clone: HTMLElement, slotsSource: HTMLElement): () => void {
+    // === Icon refresh / quickbar clone helpers ===
+
+    static #refreshHeaterResultIconButtons(modal: HTMLElement): void {
+        modal.querySelectorAll<HTMLButtonElement>('.hs-heater-type-icon-button[data-heater-icon-id]').forEach((button) => {
+            const semanticId = button.dataset.heaterIconId;
+            if (!semanticId) return;
+
+            const img = button.querySelector<HTMLImageElement>('img.hs-heater-type-icon');
+            if (img) {
+                const effectiveIcon = getEffectiveHeaterIconSrc(semanticId);
+                if (effectiveIcon) {
+                    img.src = effectiveIcon;
+                }
+            }
+            button.classList.toggle('hs-heater-type-icon-override', !!getOverrideHeaterIconSrc(semanticId));
+        });
+    }
+
+    static #setupQuickbarCloneLink(clone: HTMLElement, slotsSource: HTMLElement): () => void {
         const originalSlots = Array.from(slotsSource.querySelectorAll<HTMLElement>('.blueberryLoadoutSlot'));
         const cloneSlots = Array.from(clone.querySelectorAll<HTMLElement>('.blueberryLoadoutSlot'));
 
@@ -201,6 +287,7 @@ export class HSHeaterResultUI {
         const preview = document.createElement('div');
         preview.id = HEATER_RESULT_UI_SELECTORS.previewId;
         preview.innerHTML = this.buildLoadoutPreviewHtml(loadout);
+        preview.style.zIndex = String(HSUI.getHighestActiveModalZIndex() + 1);
 
         document.body.appendChild(preview);
         this.positionOverlayNearTarget(preview, button);
@@ -215,13 +302,13 @@ export class HSHeaterResultUI {
 
     static showLoadoutJsonTooltip(trigger: HTMLElement): void {
         this.removeLoadoutJsonTooltip();
-
         const loadout = trigger.getAttribute(HEATER_RESULT_UI_SELECTORS.dataLoadout);
         if (!loadout) return;
 
         const tooltip = document.createElement('div');
         tooltip.id = HEATER_RESULT_UI_SELECTORS.tooltipId;
         tooltip.textContent = this.formatLoadoutJsonForTooltip(loadout);
+        tooltip.style.zIndex = String(HSUI.getHighestActiveModalZIndex() + 1);
 
         document.body.appendChild(tooltip);
         this.positionOverlayNearTarget(tooltip, trigger);
@@ -239,13 +326,13 @@ export class HSHeaterResultUI {
     }
 
     static buildLoadoutPreviewHtml(loadout: Record<string, number>): string {
-        return this.ambrosiaLoadoutPreviewRows
-            .map((row) => `<div class="${HEATER_RESULT_UI_SELECTORS.previewRow}">${row.map((key) => this.buildLoadoutPreviewCell(key, loadout)).join('')}</div>`)
+        return this.#ambrosiaLoadoutPreviewRows
+            .map((row) => `<div class="${HEATER_RESULT_UI_SELECTORS.previewRow}">${row.map((item) => this.buildLoadoutPreviewCell(item, loadout)).join('')}</div>`)
             .join('');
     }
 
-    static buildLoadoutPreviewCell(key: LoadoutPreviewUpgradeKey | null, loadout: Record<string, number>): string {
-        if (key === null) {
+    static buildLoadoutPreviewCell(item: LoadoutPreviewItem | null, loadout: Record<string, number>): string {
+        if (item === null) {
             return `
                 <div class="ambrosiaBorder Exalt5x1">
                     <img src="Pictures/RedAmbrosia/AmbrosiaBorders.png" alt="Border" />
@@ -253,8 +340,9 @@ export class HSHeaterResultUI {
             `;
         }
 
+        const { key, maxLevel } = item;
         const level = Number(loadout[key] ?? 0);
-        const upgradeMeta = this.loadoutUpgradeMetaMap[key];
+        const upgradeMeta = this.#loadoutUpgradeMetaMap[key];
         if (!upgradeMeta) {
             return `<div class="${HEATER_RESULT_UI_SELECTORS.previewEmptyCell}"></div>`;
         }
@@ -263,10 +351,14 @@ export class HSHeaterResultUI {
         const imageClass = level > 0 ? 'dimmed' : 'superDimmed';
         const overlayText = level > 0 ? escapeHtml(String(level)) : '';
 
+        const maxLevelClass = level >= maxLevel 
+            ? 'maxBlueberryLevel' 
+            : '';
+
         return `
             <button class="blueberryUpgrade relative-container ${HEATER_RESULT_UI_SELECTORS.previewButton}" type="button"> 
                 <img src="${escapeHtml(imageUrl)}" class="${imageClass}" alt="${escapeHtml(key)}" />
-                <div class="level-overlay">${overlayText}</div>
+                <div class="level-overlay ${maxLevelClass}">${overlayText}</div>
             </button>
         `;
     }
@@ -274,20 +366,14 @@ export class HSHeaterResultUI {
     static getLoadoutFromButton(button: HTMLElement): Record<string, number> | null {
         const loadout = button.getAttribute(HEATER_RESULT_UI_SELECTORS.dataLoadout);
         if (!loadout) {
-            this.logResultUiIssue('missing-loadout-attribute', {
-                source: 'getLoadoutFromButton',
-                elementClass: button.className,
-            });
+            HSLogger.warn(`missing-loadout-attribute: ${JSON.stringify({ source: 'getLoadoutFromButton', elementClass: button.className })}`, this.#context);
             return null;
         }
 
         try {
             return JSON.parse(loadout) as Record<string, number>;
         } catch (error) {
-            this.logResultUiIssue('loadout-parse-failed', {
-                source: 'getLoadoutFromButton',
-                loadoutPreview: loadout.slice(0, 180),
-            }, error);
+            HSLogger.error(`loadout-parse-failed: ${JSON.stringify({ source: 'getLoadoutFromButton', loadoutPreview: loadout.slice(0, 180) })} ${String(error)}`, this.#context);
             return null;
         }
     }
@@ -337,15 +423,15 @@ export class HSHeaterResultUI {
     static clearActiveOverlay(): void {
         this.removeLoadoutPreview();
         this.removeLoadoutJsonTooltip();
-        this.overlayState = { kind: null, target: null };
+        this.#overlayState = { kind: null, target: null };
     }
 
     static showOverlayForTarget(target: HTMLElement): void {
         const kind = this.getOverlayKindFromTarget(target);
         if (!kind) return;
 
-        const sameTarget = this.overlayState.target === target;
-        const sameKind = this.overlayState.kind === kind;
+        const sameTarget = this.#overlayState.target === target;
+        const sameKind = this.#overlayState.kind === kind;
         if (sameTarget && sameKind) return;
 
         this.clearActiveOverlay();
@@ -354,11 +440,11 @@ export class HSHeaterResultUI {
         } else {
             this.showLoadoutJsonTooltip(target);
         }
-        this.overlayState = { kind, target };
+        this.#overlayState = { kind, target };
     }
 
     static hideOverlayForTarget(target: HTMLElement): void {
-        if (this.overlayState.target !== target) return;
+        if (this.#overlayState.target !== target) return;
         this.clearActiveOverlay();
     }
 
@@ -373,20 +459,12 @@ export class HSHeaterResultUI {
         }
     }
 
-    static logResultUiIssue(code: string, details?: Record<string, unknown>, error?: unknown): void {
-        if (error) {
-            console.warn('[HSHeaterResultUI]', code, details ?? {}, error);
-            return;
-        }
-        console.warn('[HSHeaterResultUI]', code, details ?? {});
-    }
-
     static attachResultModalHandlers(modalId: string): void {
         const modal = document.getElementById(modalId);
         if (!modal) return;
 
-        if (this.attachedModalHandlers.has(modal)) {
-            this.logResultUiIssue('modal-handlers-already-attached', { modalId });
+        if (this.#attachedModalHandlers.has(modal)) {
+            HSLogger.warn(`modal-handlers-already-attached: ${JSON.stringify({ modalId })}`, this.#context);
             return;
         }
 
@@ -396,10 +474,7 @@ export class HSHeaterResultUI {
 
             const loadout = button.getAttribute(HEATER_RESULT_UI_SELECTORS.dataLoadout);
             if (!loadout) {
-                this.logResultUiIssue('missing-loadout-attribute', {
-                    source: 'attachResultModalHandlers:onClick',
-                    elementClass: button.className,
-                });
+                HSLogger.warn(`missing-loadout-attribute: ${JSON.stringify({ source: 'attachResultModalHandlers:onClick', elementClass: button.className })}`, this.#context);
                 return;
             }
 
@@ -410,8 +485,37 @@ export class HSHeaterResultUI {
                 return;
             }
             if (button.classList.contains(HEATER_RESULT_UI_SELECTORS.importLoadoutBtn)) {
-                void this.importLoadoutToGame(loadout);
+                void this.importLoadoutToActiveSlot(loadout);
             }
+        };
+
+        const onIconButtonClick = (event: Event) => {
+            const button = (event.target as HTMLElement | null)?.closest('.hs-heater-type-icon-button') as HTMLElement | null;
+            if (!button || !modal.contains(button)) return;
+
+            const semanticId = button.dataset.heaterIconId;
+            if (!semanticId) return;
+
+            const mouseEvent = event as MouseEvent;
+            if (!mouseEvent.altKey) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+            this.#iconPicker.start(semanticId);
+        };
+
+        const onIconButtonContextMenu = (event: Event) => {
+            const button = (event.target as HTMLElement | null)?.closest('.hs-heater-type-icon-button') as HTMLElement | null;
+            if (!button || !modal.contains(button)) return;
+
+            const semanticId = button.dataset.heaterIconId;
+            if (!semanticId) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+            clearHeaterIconOverride(semanticId);
+            this.#refreshHeaterResultIconButtons(modal);
+            HSUI.Notify('Heater result icon override cleared.', { notificationType: 'default' });
         };
 
         const onShowOverlay = (event: Event) => {
@@ -431,6 +535,8 @@ export class HSHeaterResultUI {
         modal.addEventListener('mouseout', onHideOverlay);
         modal.addEventListener('focusin', onShowOverlay);
         modal.addEventListener('focusout', onHideOverlay);
+        modal.addEventListener('click', onIconButtonClick);
+        modal.addEventListener('contextmenu', onIconButtonContextMenu);
 
         const detach = () => {
             modal.removeEventListener('click', onClick);
@@ -438,11 +544,13 @@ export class HSHeaterResultUI {
             modal.removeEventListener('mouseout', onHideOverlay);
             modal.removeEventListener('focusin', onShowOverlay);
             modal.removeEventListener('focusout', onHideOverlay);
-            this.attachedModalHandlers.delete(modal);
-            this.logResultUiIssue('modal-handlers-detached', { modalId });
+            modal.removeEventListener('click', onIconButtonClick);
+            modal.removeEventListener('contextmenu', onIconButtonContextMenu);
+            this.#attachedModalHandlers.delete(modal);
+            HSLogger.warn(`modal-handlers-detached: ${JSON.stringify({ modalId })}`, this.#context);
         };
 
-        this.attachedModalHandlers.set(modal, {
+        this.#attachedModalHandlers.set(modal, {
             onClick,
             onShowOverlay,
             onHideOverlay,
@@ -450,23 +558,19 @@ export class HSHeaterResultUI {
         });
 
         this.populateResultsHeader(modal);
+        this.#refreshHeaterResultIconButtons(modal);
     }
 
-    static detachResultModalHandlers(modalId: string): boolean {
-        const modal = document.getElementById(modalId);
-        if (!modal) return false;
-
-        const handlers = this.attachedModalHandlers.get(modal);
-        if (!handlers) return false;
-
+    static detachResultModalHandlers(modal: HTMLElement): void {
+        const handlers = this.#attachedModalHandlers.get(modal);
+        if (!handlers) return;
         handlers.detach();
-        this.quickbarCloneCleanup?.();
-        this.quickbarCloneCleanup = null;
+    }
+
+    static clearResultModalResources(): void {
         this.clearActiveOverlay();
-        if (this.currentResultModalId === modalId) {
-            this.currentResultData = null;
-        }
-        return true;
+        this.#quickbarCloneCleanup?.();
+        this.#quickbarCloneCleanup = null;
     }
 
     // === Async/Clipboard/Game Import Methods ===
@@ -475,32 +579,21 @@ export class HSHeaterResultUI {
             await navigator.clipboard.writeText(loadout);
             HSUI.Notify('Loadout copied to clipboard.', { position: 'top', notificationType: 'success' });
         } catch (error) {
-            this.logResultUiIssue('clipboard-write-failed', {
-                source: 'copyLoadoutToClipboard',
-                loadoutPreview: loadout.slice(0, 180),
-            }, error);
+            HSLogger.error(`clipboard-write-failed: ${JSON.stringify({ source: 'copyLoadoutToClipboard', loadoutPreview: loadout.slice(0, 180) })} ${String(error)}`, this.#context);
             HSUI.Notify('Failed to copy loadout to clipboard.', { position: 'top', notificationType: 'error' });
         }
     }
 
-    static async importLoadoutToGame(loadout: string): Promise<void> {
+    static async importLoadoutToActiveSlot(loadout: string): Promise<void> {
         const fileInput = document.getElementById(HEATER_RESULT_UI_SELECTORS.importFileInputId) as HTMLInputElement | null;
         if (!fileInput) {
-            this.logResultUiIssue('import-file-input-missing', {
-                source: 'importLoadoutToGame',
-                inputId: HEATER_RESULT_UI_SELECTORS.importFileInputId,
-            });
+            HSLogger.warn(`import-file-input-missing: ${JSON.stringify({ source: 'importLoadoutToActiveSlot', inputId: HEATER_RESULT_UI_SELECTORS.importFileInputId })}`, this.#context);
             HSUI.Notify('Failed to import loadout: game import file input was not found.', { position: 'top', notificationType: 'error' });
             return;
         }
 
         if (typeof DataTransfer === 'undefined' || typeof File === 'undefined' || typeof Blob === 'undefined') {
-            this.logResultUiIssue('import-not-supported-by-browser', {
-                source: 'importLoadoutToGame',
-                dataTransfer: typeof DataTransfer,
-                file: typeof File,
-                blob: typeof Blob,
-            });
+            HSLogger.warn(`import-not-supported-by-browser: ${JSON.stringify({ source: 'importLoadoutToActiveSlot', dataTransfer: typeof DataTransfer, file: typeof File, blob: typeof Blob })}`, this.#context);
             HSUI.Notify('Loadout import is not supported by this browser.', { position: 'top', notificationType: 'error' });
             return;
         }
@@ -514,10 +607,7 @@ export class HSHeaterResultUI {
             fileInput.dispatchEvent(new Event('change', { bubbles: true }));
             HSUI.Notify('Loadout imported to the active slot.', { position: 'top', notificationType: 'success' });
         } catch (error) {
-            this.logResultUiIssue('import-dispatch-failed', {
-                source: 'importLoadoutToGame',
-                loadoutPreview: loadout.slice(0, 180),
-            }, error);
+            HSLogger.error(`import-dispatch-failed: ${JSON.stringify({ source: 'importLoadoutToActiveSlot', loadoutPreview: loadout.slice(0, 180) })} ${String(error)}`, this.#context);
             HSUI.Notify('Failed to import loadout.', { position: 'top', notificationType: 'error' });
         }
     }

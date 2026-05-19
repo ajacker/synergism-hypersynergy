@@ -1,7 +1,7 @@
 import { HSUI } from "../../hs-core/hs-ui";
 
 export class HSHeaterStyles {
-    private static heaterStylesInjected = false;
+    static #heaterStylesInjected = false;
 
     static getHeaterBaseStylesCss(): string {
         return `
@@ -174,10 +174,33 @@ export class HSHeaterStyles {
                 gap: 2px;
             }
 
-            .hs-heater-active-label {
+            .hs-heater-active-branch {
                 display: flex;
                 align-items: center;
                 gap: 4px;
+                padding: 0px 14px 0px 8px;
+                border-radius: 4px;
+                transition: background-color 120ms ease-in-out, color 120ms ease-in-out;
+                position: relative;
+            }
+
+            .hs-heater-active-branch-required {
+                background-color: rgba(192, 46, 46, 0.20);
+                color: #ffffff;
+            }
+
+            .hs-heater-active-branch-required::after {
+                content: "🔥";
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 14px;
+                height: 14px;
+                display: grid;
+                place-items: center;
+                font-size: 10px;
+                opacity: 0.33;
+                pointer-events: none;
             }
 
             .hs-heater-loadout-buttons {
@@ -234,7 +257,13 @@ export class HSHeaterStyles {
                 min-width: 100px;
                 height: 22px;
                 background-color: black;
+                background-color: #020525;
+                border: 1px solid #0c1b9d;
                 color: white;
+            }
+
+            .hs-heater-type-select-unavailable {
+                border: 1px solid #810b0b;
             }
 
             .hs-heater-type-select-checkbox {
@@ -272,6 +301,29 @@ export class HSHeaterStyles {
                 background: rgba(100,100,100,0.2);
             }
 
+            .hs-heater-header-tooltip {
+                position: relative;
+                cursor: help;
+            }
+
+            .hs-heater-header-tooltip::after {
+                content: "";
+                position: absolute;
+                top: 0px;
+                right: 0px;
+                width: 0;
+                height: 0;
+                border-left: 5px solid transparent;
+                border-bottom: 5px solid transparent;
+                border-top: 5px solid rgba(55, 87, 247, 0.8);
+                border-right: 5px solid rgba(55, 87, 247, 0.8);
+            }
+
+            .hs-heater-selected-type-cell,
+            .hs-heater-selected-type-cell .hs-heater-type-icon-button {
+                background: rgba(40, 110, 240, 0.06);
+            }
+
             .hs-heater-result-cell {
                 white-space: normal;
                 word-break: break-word;
@@ -286,6 +338,13 @@ export class HSHeaterStyles {
                 display: flex;
                 align-items: center;
                 gap: 0;
+            }
+
+            .hs-heater-type-icon-button {
+                display: flex;
+                align-items: center;
+                cursor: pointer;
+                width: 100%;
             }
 
             .hs-heater-type-label {
@@ -319,8 +378,8 @@ export class HSHeaterStyles {
             }
 
             /* === Status & Colors === */
-            .hs-heater-status-maxed { color: #00b14a; }
-            .hs-heater-status-unmaxed { color: #b18585; }
+            .hs-heater-status-maxed { color: #08ba52; }
+            .hs-heater-status-unmaxed { color: #962f2f; }
 
             .hs-heater-inputs-header { background-color: #472323; }
             .hs-heater-results-header { background-color: #232647; }
@@ -339,10 +398,16 @@ export class HSHeaterStyles {
 
     static getHeaterOverlayStylesCss(): string {
         return `
+            .hs-heater-header-icon {
+                vertical-align: middle;
+                height: 22px;
+                width: 22px;
+            }
+
             /* === Floating Preview Container (base) === */
             #hs-heater-loadout-preview {
                 position: fixed;
-                z-index: 9999;
+                z-index: 10000;
                 background: #1e1e1e;
                 border: 1px solid rgba(255, 255, 255, 0.2);
                 border-radius: 4px;
@@ -390,10 +455,14 @@ export class HSHeaterStyles {
                 border-radius: 2px;
             }
 
+            .blueberryUpgrade > .level-overlay {
+                background-color: transparent;
+            }
+
             /* === JSON Tooltip (by id) === */
             #hs-heater-loadout-json-tooltip {
                 position: fixed;
-                z-index: 9999;
+                z-index: 10000;
                 background: #1e1e1e;
                 color: #e0e0e0;
                 border: 1px solid rgba(255,255,255,0.2);
@@ -412,9 +481,9 @@ export class HSHeaterStyles {
     }
 
     static ensureHeaterStylesInjected(): void {
-        if (this.heaterStylesInjected) return;
+        if (this.#heaterStylesInjected) return;
 
         HSUI.injectStyle(`${this.getHeaterBaseStylesCss()}\n${this.getHeaterOverlayStylesCss()}`);
-        this.heaterStylesInjected = true;
+        this.#heaterStylesInjected = true;
     }
 }

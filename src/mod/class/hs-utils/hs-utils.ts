@@ -397,7 +397,7 @@ export class HSUtils {
     static #cachedAlertWrapper: HTMLElement | null = null;
 
     // This might be very volatile, but it works for now and hides alert/confirmation boxes
-    static async hiddenAction(action: (...args: any[]) => any, alertOrConfirm: "alert" | "confirm" = "alert", isDoubleModal = false, waitMs = 25) {
+    static async hiddenAction(action: (...args: any[]) => any, alertOrConfirm: "alert" | "confirm" = "alert", isDoubleModal = false, waitMs = 10) {
 
         const bg = !this.#cachedBG ? await HSElementHooker.HookElement('#transparentBG') as HTMLElement : this.#cachedBG;
         const confirmBox = !this.#cachedConfirmBox ? await HSElementHooker.HookElement('#confirmationBox') as HTMLElement : this.#cachedConfirmBox;

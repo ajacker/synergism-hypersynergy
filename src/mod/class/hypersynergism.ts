@@ -15,7 +15,7 @@ import strategyEditionCSS from "inline:../resource/css/hs-strategy-edition.css";
 import { HSInputType, HSNotifyPosition, HSNotifyType } from "../types/module-types/hs-ui-types";
 import { HSGameDataAPI } from "./hs-core/gds/hs-gamedata-api";
 import { HSAmbrosia } from "./hs-modules/hs-ambrosia";
-import { HSHeaterModalManager } from "./hs-modules/hs-heater/hs-heater-modal-manager";
+import { HSHeaterInputModalController } from "./hs-modules/hs-heater/hs-heater-input-modal-controller";
 import { HSUtils } from "./hs-utils/hs-utils";
 import { HSGithub } from "./hs-core/github/hs-github";
 
@@ -177,7 +177,7 @@ export class Hypersynergism {
             HSUIC.Grid({
                 html: [
                     this.#buildGridSectionHeader('Export tools'),
-                    this.#buildGridFullSpanDiv('hs-panel-amb-heater-p', `Export an extended save file string for the <a href="${HSGlobal.General.heaterUrl}" class="hs-link" target="_blank">Ambrosia Heater</a>.`),
+                    this.#buildGridFullSpanDiv('hs-panel-amb-heater-p', `Export an extended save file string for the <a href="${HSGlobal.General.heaterUrl}" class="hs-link" target="_blank">Ambrosia Heater sheet</a>.`),
                     HSUIC.Button({ id: 'hs-panel-amb-heater-btn', text: 'Copy Heater Data' }),
                     HSUIC.Button({ id: 'hs-panel-amb-heater-compute-btn', text: 'Ambrosia Heater' }),
                     this.#buildGridSectionHeader('References'),
@@ -250,30 +250,7 @@ export class Hypersynergism {
         });
 
         this.#bindToolsButton('#hs-panel-amb-heater-compute-btn', async () => {
-            /*
-            const dataModule = HSModuleManager.getModule<HSGameDataAPI>('HSGameDataAPI');
-            if (!dataModule) return;
-
-            const heaterData = await dataModule.dumpDataForHeater();
-            if (!heaterData) return;
-
-            const json = JSON.stringify(heaterData);
-            const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `ambrosia-heater-data-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(url);
-
-            HSUI.Notify('Ambrosia heater raw data downloaded', {
-                position: 'top',
-                notificationType: 'success'
-            });
-            */
-            await HSHeaterModalManager.openHeaterComputationModal();
+            await HSHeaterInputModalController.openHeaterComputationModal();
         });
 
         this.#bindToolsButton('#hs-panel-cor-ref-btn', () => {

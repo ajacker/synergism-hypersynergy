@@ -60,6 +60,20 @@ export class HSMouse extends HSModule {
             if (event.code === EKeyBoardKeys.LEFT_CTRL) HSMouse.clearInterval('click');
         });
 
+        // Clear auto hover/click timers when the page loses focus, so they don't remain active
+        // if the user switches windows or opens a new tab/window with CTRL or SHIFT pressed.
+        window.addEventListener('blur', () => {
+            HSMouse.clearInterval('click');
+            HSMouse.clearInterval('hover');
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                HSMouse.clearInterval('click');
+                HSMouse.clearInterval('hover');
+            }
+        });
+
         this.isInitialized = true;
     }
 

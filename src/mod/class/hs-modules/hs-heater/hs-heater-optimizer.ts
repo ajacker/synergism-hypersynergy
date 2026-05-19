@@ -928,7 +928,7 @@ class Loadout {
 
         this.costCache = null;
         if (this.cost > stats.amb || stat === "")
-            return ["Unaffordable", null, null, "N / A", "N / A", "N / A", false];
+            return ["Unaffordable", null, "N / A", "N / A", "N / A", "N / A", false];
 
         const baseLoadout = new Loadout();
         const effect = this.getStat(stat) / baseLoadout.getStat(stat);
@@ -943,7 +943,7 @@ class Loadout {
         return [
             this.format,
             null,
-            null,
+            this.blueberryCost,
             this.cost,
             effectStr,
             p4x4 > 50 ? "Never" : p4x4,
@@ -1257,17 +1257,17 @@ function fillStatsFromInput(input: HeaterOptimizerInput): void {
 
 function fillOptionsFromInput(input: HeaterOptimizerInput): void {
     const a = input.heaterOptions;
-    // active array order matches the sheet_script options:
+    // active array order matches HEATER_BRANCH_DEFINITIONS:
     // [calculateAmb, calculateQuarks, calculateCubes, calculateOct,
-    //  calculateOff, calculateHyperflux, calculateAmbOct, calculateGen]
+    //  calculateOff, calculateHyperflux, calculateGen, calculateAmbOct] // Drift with sheet for UI re-ordering ...
     options.calculateAmb       = a[0]  ?? false;
     options.calculateQuarks    = a[1]  ?? false;
     options.calculateCubes     = a[2]  ?? false;
     options.calculateOct       = a[3]  ?? false;
     options.calculateOff       = a[4]  ?? false;
     options.calculateHyperflux = a[5]  ?? false;
-    options.calculateAmbOct    = a[6]  ?? false;
-    options.calculateGen       = a[7]  ?? false;
+    options.calculateGen       = a[6]  ?? false;
+    options.calculateAmbOct    = a[7]  ?? false;
 }
 
 

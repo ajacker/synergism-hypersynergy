@@ -48,6 +48,7 @@ export class HSUI extends HSModule {
 
     #activeModals: Set<HTMLDivElement> = new Set();
     #modalParents: Map<string, string> = new Map();
+    #modalZIndexCounter = 7000;
 
     static #injectedStyles = new Map<string, string>();
     static #injectedStylesHolder?: HTMLStyleElement;
@@ -59,11 +60,11 @@ export class HSUI extends HSModule {
     readonly #tabConfigMap: Map<number, HSPanelTabDefinition>;
 
     readonly #quickbarSubMenuItems = [
-        { label: 'Ambrosia', btnId: 'hs-setting-qol-ambrosia-quickbar-btn' },
-        { label: 'Amb minibars', btnId: 'hs-setting-ambrosia-minibar-btn' },
-        { label: 'Corruption', btnId: 'hs-setting-qol-enable-corruption-quickbar-btn' },
-        { label: 'Automation', btnId: 'hs-setting-qol-enable-syn-ui-btn' },
-        { label: 'Events', btnId: 'hs-setting-qol-enable-events-quickbar-btn' }
+        { label: 'Ambrosia',     btnId: 'hs-setting-qol-ambrosia-quickbar-btn',          icon: 'Pictures/Default/Blueberries.png',           hoverColor: '#0a1085' },
+        { label: 'Amb minibars', btnId: 'hs-setting-ambrosia-minibar-btn',               icon: 'Pictures/Default/Blueberries.png',           hoverColor: '#0a1085' },
+        { label: 'Corruption',   btnId: 'hs-setting-qol-enable-corruption-quickbar-btn', icon: 'Pictures/Default/CorruptHyperchallenge.png', hoverColor: '#560404' },
+        { label: 'Automation',   btnId: 'hs-setting-qol-enable-syn-ui-btn',              icon: 'Pictures/Default/Generators.png',            hoverColor: '#083d02' },
+        { label: 'Events',       btnId: 'hs-setting-qol-enable-events-quickbar-btn',     icon: 'Pictures/PseudoShop/HAPPY_HOUR_BELL.png',    hoverColor: '#654a02' }
     ];
 
     #tabs: HSPanelTabDefinition[] = [
@@ -168,7 +169,33 @@ export class HSUI extends HSModule {
         const panelResizeHandle = await HSElementHooker.HookElement('.hs-resizer') as HTMLDivElement;
 
         this.#makeDraggable(this.#uiPanel, panelHandle);
+        panelHandle.addEventListener('mousedown', () => {
+            if (this.#uiPanel) {
+                this.#bringElementToFront(this.#uiPanel);
+            }
+        });
         this.#makeResizable(this.#uiPanel, panelResizeHandle);
+    }
+
+    #bringElementToFront(element: HTMLElement): void {
+        const highestZIndex = HSUI.getHighestActiveModalZIndex();
+        this.#modalZIndexCounter = Math.max(this.#modalZIndexCounter, highestZIndex, 6999) + 1;
+        element.style.zIndex = String(this.#modalZIndexCounter);
+    }
+
+    static getHighestActiveModalZIndex(): number {
+        const relevantElements = Array.from(document.querySelectorAll<HTMLElement>('#hs-panel, .hs-modal'));
+        let maxZ = 0;
+
+        for (const element of relevantElements) {
+            const computedZ = window.getComputedStyle(element).zIndex;
+            const zIndexValue = Number.parseInt(computedZ, 10);
+            if (!Number.isNaN(zIndexValue)) {
+                maxZ = Math.max(maxZ, zIndexValue);
+            }
+        }
+
+        return maxZ;
     }
 
     #setupPanelInteractions(): void {
@@ -304,6 +331,7 @@ export class HSUI extends HSModule {
                 const selectedTab = document.querySelector<HTMLDivElement>('.hs-panel-tab.hs-tab-selected');
                 HSUI.#logTabActive = selectedTab?.dataset.tab === '1';
 
+                this.#bringElementToFront(this.#uiPanel);
                 this.#uiPanel.style.opacity = '0';
                 this.#uiPanel.classList.remove('hs-panel-closed');
 
@@ -328,14 +356,16 @@ export class HSUI extends HSModule {
 
         const quickMenu = this.#buildQuickAccessMenuContainer();
         const quickbarsSubmenu = this.#buildQuickbarsSubmenu();
-        const quickbarsBtn = this.#buildQuickbarsButton();
-        const autoSingBtn = this.#buildQuickAccessButton('autosing', '▶', 'Start Auto-Sing (S256+)', () => this.#toggleAutoSing());
-        const heaterBtn = this.#buildQuickAccessButton('amb-heater', '🔥', 'Amb Heater Export', () => this.#triggerHeaterExport());
+        const quickbarsBtn     = this.#buildQuickbarsButton();
+        const autoSingBtn     = this.#buildQuickAccessButton('autosing',   '▶', 'Start Auto-Sing (S256+)', () => this.#toggleAutoSing());
+        const heaterHSBtn     = this.#buildQuickAccessButton('amb-heater', '🔥', 'Amb Heater (HS)',         () => this.#triggerHeaterHS());
+        const heaterExportBtn = this.#buildQuickAccessButton('amb-heater', '🔥', 'Amb Heater (Export)',     () => this.#triggerHeaterExport());
 
         quickMenu.appendChild(quickbarsSubmenu);
         quickMenu.appendChild(quickbarsBtn);
         quickMenu.appendChild(autoSingBtn);
-        quickMenu.appendChild(heaterBtn);
+        quickMenu.appendChild(heaterHSBtn);
+        quickMenu.appendChild(heaterExportBtn);
         document.body.appendChild(quickMenu);
 
         this.#attachQuickAccessMenuHandlers(quickMenu, quickbarsBtn, quickbarsSubmenu);
@@ -346,6 +376,18 @@ export class HSUI extends HSModule {
         quickMenu.id = 'hs-quick-access-menu';
         quickMenu.style.display = 'none';
         return quickMenu;
+    }
+
+    #buildQuickbarsSubmenu(): HTMLDivElement {
+        const quickbarsSubmenu = document.createElement('div');
+        quickbarsSubmenu.id = 'hs-quickbars-submenu';
+        quickbarsSubmenu.style.display = 'none';
+
+        this.#quickbarSubMenuItems.forEach(({ label, btnId, icon, hoverColor }) => {
+            quickbarsSubmenu.appendChild(this.#createQuickbarToggle(label, btnId, icon, hoverColor));
+        });
+
+        return quickbarsSubmenu;
     }
 
     #buildQuickbarsButton(): HTMLButtonElement {
@@ -362,18 +404,6 @@ export class HSUI extends HSModule {
         return quickbarsBtn;
     }
 
-    #buildQuickbarsSubmenu(): HTMLDivElement {
-        const quickbarsSubmenu = document.createElement('div');
-        quickbarsSubmenu.id = 'hs-quickbars-submenu';
-        quickbarsSubmenu.style.display = 'none';
-
-        this.#quickbarSubMenuItems.forEach(({ label, btnId }) => {
-            quickbarsSubmenu.appendChild(this.#createQuickbarToggle(label, btnId));
-        });
-
-        return quickbarsSubmenu;
-    }
-
     #buildQuickAccessButton(type: string, icon: string, label: string, onClick: () => void): HTMLButtonElement {
         const button = document.createElement('button');
         button.innerHTML = `
@@ -385,9 +415,38 @@ export class HSUI extends HSModule {
         return button;
     }
 
-    #createQuickbarToggle(label: string, btnId: string): HTMLElement {
+    #createQuickbarToggle(label: string, btnId: string, icon: string, hoverColor?: string): HTMLElement {
         const btn = document.createElement('button');
-        btn.textContent = label;
+
+        const iconSpan = document.createElement('span');
+        iconSpan.classList.add('hs-quickbar-icon-container');
+        iconSpan.style.marginRight = '8px';
+        
+        const img = document.createElement('img');
+        img.src = icon;
+        img.alt = `${label} icon`;
+        img.style.width = '18px'; 
+        img.style.height = '18px';
+        img.style.verticalAlign = 'middle';
+        
+        iconSpan.appendChild(img);
+        btn.appendChild(iconSpan);
+
+        const labelSpan = document.createElement('span');
+        labelSpan.textContent = label;
+        labelSpan.style.verticalAlign = 'middle';
+        btn.appendChild(labelSpan);
+
+        if (hoverColor) {
+            const originalBg = btn.style.backgroundColor;
+            btn.addEventListener('mouseenter', () => {
+                btn.style.backgroundColor = hoverColor;
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.backgroundColor = originalBg;
+            });
+        }
+
         btn.addEventListener('click', () => {
             const toggleBtn = document.getElementById(btnId) as HTMLElement | null;
             if (toggleBtn) {
@@ -405,7 +464,6 @@ export class HSUI extends HSModule {
             if (hoverTimeout) clearTimeout(hoverTimeout);
             quickMenu.style.display = 'flex';
         };
-
         const hideMenu = () => {
             hoverTimeout = window.setTimeout(() => {
                 quickMenu.style.display = 'none';
@@ -447,6 +505,14 @@ export class HSUI extends HSModule {
         if (autoSingToggle) {
             autoSingToggle.click();
             HSLogger.log('Auto-Sing toggled via quick menu', this.context);
+        }
+    }
+
+    #triggerHeaterHS() {
+        const heaterHSBtn = document.getElementById('hs-panel-amb-heater-compute-btn') as HTMLElement | null;
+        if (heaterHSBtn) {
+            heaterHSBtn.click();
+            HSLogger.log('Ambrosia Heater (HS) triggered via quick menu', this.context);
         }
     }
 
@@ -774,9 +840,15 @@ export class HSUI extends HSModule {
         };
     }
 
+    #bringModalToFront(modal: HTMLDivElement): void {
+        this.#bringElementToFront(modal);
+    }
+
     #attachModalHandlers(modal: HTMLDivElement, modalHead: HTMLDivElement | null): void {
         if (modalHead) {
+            this.#bringModalToFront(modal);
             this.#makeDraggable(modal, modalHead);
+            modalHead.addEventListener('mousedown', () => this.#bringModalToFront(modal));
         }
 
         const modalResizer = modal.querySelector('.hs-modal-resizer') as HTMLElement | null;
@@ -796,41 +868,7 @@ export class HSUI extends HSModule {
             // Handle minimize button
             const minimizeTarget = target?.closest('[data-minimize]') as HTMLElement | null;
             if (minimizeTarget?.dataset.minimize) {
-                const modalBody = modal.querySelector('.hs-modal-body') as HTMLElement | null;
-                if (modalBody) {
-                    const isMinimized = modalBody.style.display === 'none';
-                    
-                    if (isMinimized) {
-                        // Restore: show body/resizer and restore saved dimensions
-                        modalBody.style.display = '';
-                        
-                        const resizer = modal.querySelector('.hs-modal-resizer') as HTMLElement | null;
-                        if (resizer) {
-                            resizer.style.display = '';
-                        }
-                        
-                        // Restore modal dimensions
-                        modal.style.width = '';
-                        modal.style.height = '';
-                    } else {
-                        // Clamp left border to page before minimizing
-                        const modalRect = modal.getBoundingClientRect();
-                        if (modalRect.left < 0) {
-                            modal.style.left = '0px';
-                        }
-                        // Minimize: hide body/resizer and save/reset dimensions
-                        modalBody.style.display = 'none';
-                        
-                        const resizer = modal.querySelector('.hs-modal-resizer') as HTMLElement | null;
-                        if (resizer) {
-                            resizer.style.display = 'none';
-                        }
-                        
-                        // Reset to header-only size
-                        modal.style.width = 'auto';
-                        modal.style.height = 'auto';
-                    }
-                }
+                await this.MinimizeModal(minimizeTarget.dataset.minimize);
             }
         });
     }
@@ -906,6 +944,7 @@ export class HSUI extends HSModule {
         const modalHead = modal.querySelector('.hs-modal-head') as HTMLDivElement | null;
 
         this.#activeModals.add(modal);
+        this.#bringModalToFront(modal);
         if (modalOptions.parentModalId) {
             this.#modalParents.set(uuid, modalOptions.parentModalId);
         }
@@ -960,6 +999,45 @@ export class HSUI extends HSModule {
         }
     }
 
+    async MinimizeModal(modalId: string): Promise<void> {
+        const modal = document.getElementById(modalId) as HTMLDivElement | null;
+        if (!modal) return;
+        const modalBody = modal.querySelector('.hs-modal-body') as HTMLElement | null;
+        if (!modalBody) return;
+        const isMinimized = modalBody.style.display === 'none';
+        
+        if (isMinimized) {
+            // Restore: show body/resizer and restore saved dimensions
+            modalBody.style.display = '';
+
+            const resizer = modal.querySelector('.hs-modal-resizer') as HTMLElement | null;
+            if (resizer) {
+                resizer.style.display = '';
+            }
+
+            // Restore modal dimensions
+            modal.style.width = '';
+            modal.style.height = '';
+        } else {
+            // Clamp left border to page before minimizing
+            const modalRect = modal.getBoundingClientRect();
+            if (modalRect.left < 0) {
+                modal.style.left = '0px';
+            }
+            // Minimize: hide body/resizer and save/reset dimensions
+            modalBody.style.display = 'none';
+            
+            const resizer = modal.querySelector('.hs-modal-resizer') as HTMLElement | null;
+            if (resizer) {
+                resizer.style.display = 'none';
+            }
+            
+            // Reset to header-only size
+            modal.style.width = 'auto';
+            modal.style.height = 'auto';
+        }
+    }
+
 
     // ========================================
     // --------- Notification helpers ---------
@@ -1006,7 +1084,10 @@ export class HSUI extends HSModule {
         notificationDiv.className = HSGlobal.HSUI.notifyClassName;
         notificationText.className = HSGlobal.HSUI.notifyTextClassName;
 
-        notificationDiv.style.cssText = HSUtils.objectToCSS(HSUI.#getNotifyStyles(options));
+        notificationDiv.style.cssText = HSUtils.objectToCSS({
+            ...HSUI.#getNotifyStyles(options),
+            zIndex: String(HSUI.getHighestActiveModalZIndex() + 1)
+        });
 
         notificationText.innerText = text;
         notificationDiv.appendChild(notificationText);
