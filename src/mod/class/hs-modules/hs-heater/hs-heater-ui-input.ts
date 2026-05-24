@@ -4,15 +4,16 @@ import { HSSettings } from "../../hs-core/settings/hs-settings";
 import { escapeHtml } from "./hs-heater-utils";
 import { getEffectiveHeaterIconSrc, subscribeHeaterIconOverrideChanges, unsubscribeHeaterIconOverrideChanges, HeaterIconOverrideChangeListener } from "./hs-heater-icon-store";
 import type { HeaterOptimizerInput } from "../../../types/data-types/hs-heater-types";
+import type { HeaterBranchId } from "./hs-heater-result-config";
 import { HSInputType } from "../../../types/module-types/hs-ui-types";
 import {
     exportFieldExtractors,
-    heaterOptionLabels,
     inputDefinitions,
     type HeaterInputBase,
     type HeaterInputField,
     type HeaterInputKey,
 } from "./hs-heater-input-config";
+import { HEATER_BRANCH_DEFINITIONS } from "./hs-heater-result-config";
 
 type HeaterInputValue = HeaterInputBase[HeaterInputKey];
 
@@ -24,7 +25,6 @@ export class HSHeaterUIInput {
 
     static readonly inputDefinitions = inputDefinitions;
     static readonly exportFieldExtractors = exportFieldExtractors;
-    static readonly heaterOptionLabels = heaterOptionLabels;
     static #lockHandlersAttachedModals = new WeakSet<HTMLElement>();
 
     static #cachedTypeSelects: HTMLSelectElement[] = [];
@@ -34,7 +34,9 @@ export class HSHeaterUIInput {
     static buildOptimizerInput(exportData: any): HeaterOptimizerInput {
         return {
             ...this.buildInputBaseFromHeaterData(exportData),
-            heaterOptions: Array(this.heaterOptionLabels.length).fill(true),
+            heaterOptions: Object.fromEntries(
+                HEATER_BRANCH_DEFINITIONS.map((branch) => [branch.id, true])
+            ) as Record<HeaterBranchId, boolean>,
         };
     }
 
@@ -60,14 +62,14 @@ export class HSHeaterUIInput {
         `;
     }
 
-    static buildHeaterOptionToggleGrid(active: boolean[]): string {
-        const checkboxRows = this.heaterOptionLabels.map((label, index) => {
-            const fieldId = `hs-heater-input-active-${index}`;
-            const checked = active[index] ? 'checked' : '';
+    static buildHeaterOptionToggleGrid(active: Record<HeaterBranchId, boolean>): string {
+        const checkboxRows = HEATER_BRANCH_DEFINITIONS.map((branch) => {
+            const fieldId = `hs-heater-input-active-${branch.id}`;
+            const checked = active[branch.id] ? 'checked' : '';
             return `
-                <label class="hs-heater-active-branch">
+                <label class="hs-heater-active-branch" data-branch-id="${branch.id}">
                     <input type="checkbox" id="${fieldId}" class="hs-heater-active-checkbox" ${checked} />
-                    ${label}
+                    ${branch.label}
                 </label>
             `;
         });
@@ -103,10 +105,12 @@ export class HSHeaterUIInput {
     }
 
     static readInputValues(modal: HTMLElement): HeaterOptimizerInput {
-        const heaterOptions = this.heaterOptionLabels.map((_, index) => {
-            const element = modal.querySelector<HTMLInputElement>(`#hs-heater-input-active-${index}`);
-            return this.parseFieldValueFromInputElement('boolean', element) as boolean;
-        });
+        const heaterOptions = Object.fromEntries(
+            HEATER_BRANCH_DEFINITIONS.map((branch) => {
+                const element = modal.querySelector<HTMLInputElement>(`#hs-heater-input-active-${branch.id}`);
+                return [branch.id, this.parseFieldValueFromInputElement('boolean', element) as boolean];
+            })
+        ) as Record<HeaterBranchId, boolean>;
 
         return {
             ...this.parseInputBaseRawFromModal(modal),

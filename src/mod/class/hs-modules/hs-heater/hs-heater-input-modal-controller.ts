@@ -18,6 +18,7 @@ import { HSSettings } from "../../hs-core/settings/hs-settings";
 import { HSSettingsUI } from "../../hs-core/settings/hs-settings-ui";
 import { HSLogger } from "../../hs-core/hs-logger";
 import { HSSettingsDefinition } from "../../../types/module-types/hs-settings-types";
+import type { HeaterBranchId } from "./hs-heater-result-config";
 
 export class HSHeaterInputModalController {
     static context = 'HSHeaterInputModalController';
@@ -68,9 +69,7 @@ export class HSHeaterInputModalController {
         if (!heaterData) return;
 
         const initialInput = HSHeaterUIInput.buildOptimizerInput(heaterData);
-        if (initialInput.amb < 69838851) { // Amb needed to max all amb modules...
-            initialInput.heaterOptions[7] = false;
-        }
+
         HSHeaterUIStyles.ensureHeaterStylesInjected();
 
         const ambrosiaModule = HSModuleManager.getModule<any>('HSAmbrosia') as { getAmbrosiaLoadoutsAmount?: () => number } | undefined;
@@ -398,11 +397,12 @@ export class HSHeaterInputModalController {
 
     private static refreshRequiredBranchHighlights(modal: HTMLElement): void {
         const selectedSemanticIds = HSHeaterResultStore.collectSelectedSemanticIds(modal);
-        const unavailableBranchIndexes = HSHeaterResultStore.getUnavailableRequiredBranchIndexes(selectedSemanticIds);
+        const unavailableBranchIds = HSHeaterResultStore.getUnavailableRequiredBranchIds(selectedSemanticIds);
         const branchLabels = this.#cachedActiveLabels.length > 0 ? this.#cachedActiveLabels : Array.from(modal.querySelectorAll('.hs-heater-active-branch')) as HTMLElement[];
 
-        branchLabels.forEach((label, index) => {
-            const unavailable = unavailableBranchIndexes.has(index);
+        branchLabels.forEach((label) => {
+            const branchId = label.dataset.branchId as HeaterBranchId | undefined;
+            const unavailable = branchId ? unavailableBranchIds.has(branchId) : false;
             label.classList.toggle('hs-heater-active-branch-required', unavailable);
             label.title = unavailable ? 'Result unavailable' : '';
         });

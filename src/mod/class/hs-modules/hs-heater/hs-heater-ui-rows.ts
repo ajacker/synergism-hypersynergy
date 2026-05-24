@@ -41,7 +41,7 @@ export function buildHeaterSheetRow(
         cost,
         costDetail: maxed ? "Maxed" : cost,
         effect,
-        p4x4Eq: row[5] as number | "Never" | "N / A",
+        p4x4Eq: row[5] as number | "Never" | "",
         maxed,
         p4Effect,
         p4CefLog: buildHeaterSheetCefLog(p4Effect, cost),

@@ -1,5 +1,6 @@
 import type { HeaterOptimizerInput, HeaterOptimizationResult, HeaterRedAmbUpgradeEffects, HeaterResultRow, HeaterResultRowMatrix, } from "../../../types/data-types/hs-heater-types";
-
+import { formatNumber } from "./hs-heater-utils";
+import { HEATER_BRANCH_DEFINITIONS } from "./hs-heater-result-config";
 /*
     This file closely match the script on Rus9384's sheet (credits to him),
     in order to be easily updatable when the sheet updates (and vice-versa...)
@@ -11,18 +12,20 @@ import type { HeaterOptimizerInput, HeaterOptimizationResult, HeaterRedAmbUpgrad
 // ===========================================================================
 
 interface UpgradeEffectMap {
-    luck?:  (input: number, level: number, loadout: Loadout) => number;
-    mLuck?: (input: number, level: number, loadout: Loadout) => number;
-    quark?: (input: number, level: number, loadout: Loadout) => number;
-    cube?:  (input: number, level: number, loadout: Loadout, p4x4?: number) => number;
-    oct?:   (input: number, level: number, loadout: Loadout) => number;
-    speed?: (input: number, level: number, loadout: Loadout) => number;
-    rSpeed?:(input: number, level: number, loadout: Loadout) => number;
-    rLuck?: (input: number, level: number, loadout: Loadout) => number;
-    obt?:   (input: number, level: number, loadout: Loadout) => number;
-    off?:   (input: number, level: number, loadout: Loadout) => number;
-    mObt?:  (input: number, level: number, loadout: Loadout) => number;
-    mOff?:  (input: number, level: number, loadout: Loadout) => number;
+    luck?:          (input: number, level: number, loadout: Loadout) => number;
+    mLuck?:         (input: number, level: number, loadout: Loadout) => number;
+    quark?:         (input: number, level: number, loadout: Loadout) => number;
+    cube?:          (input: number, level: number, loadout: Loadout, p4x4?: number) => number;
+    oct?:           (input: number, level: number, loadout: Loadout) => number;
+    speed?:         (input: number, level: number, loadout: Loadout) => number;
+    rSpeed?:        (input: number, level: number, loadout: Loadout) => number;
+    rLuck?:         (input: number, level: number, loadout: Loadout) => number;
+    obt?:           (input: number, level: number, loadout: Loadout) => number;
+    off?:           (input: number, level: number, loadout: Loadout) => number;
+    mObt?:          (input: number, level: number, loadout: Loadout) => number;
+    mOff?:          (input: number, level: number, loadout: Loadout) => number;
+    vouchers?:      (input: number, level: number, loadout: Loadout) => number;
+    singReduction?: (input: number, level: number, loadout: Loadout) => number;
 }
 
 interface UpgradeParameters {
@@ -101,11 +104,12 @@ interface Options {
     calculateCubes:     boolean;
     calculateOct:       boolean;
     calculateOff:       boolean;
+    calculateVoucher:   boolean;
     calculateHyperflux: boolean;
+    calculateSR:        boolean;
     calculateAmbOct:    boolean;
     calculateGen:       boolean;
 }
-
 
 // ===========================================================================
 // Module-level mutable state (reset on each call to createHeaterOptimizerResultFromInput)
@@ -133,7 +137,7 @@ let stats: Stats = {
     baseObt: 1,
     baseOff: 1,
     blueberries: 3,
-    bonus: [0, 0, 0, 0, 0],
+    bonus: [0, 0, 0, 0, 0, 0],
     runeExp: 0,
     runeCoefSI: 30,
     bonusSI: 0,
@@ -166,7 +170,9 @@ let options: Options = {
     calculateCubes: false,
     calculateOct: false,
     calculateOff: false,
+    calculateVoucher: false,
     calculateHyperflux: false,
+    calculateSR: false,
     calculateAmbOct: false,
     calculateGen: false,
 };
@@ -625,7 +631,8 @@ Object.assign(upgrades, {
       effects: {
         cube: (input, level) => stats.exalt > 0 || stats.postAoAG ? input : input * Upgrade.singDebuff(stats.sing, "cube") / Upgrade.singDebuff(stats.sing - level, "cube"),
         mOff: (input, level) => stats.exalt > 0 || stats.postAoAG ? input : input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff"),
-        mObt: (input, level) => stats.exalt > 0 || stats.postAoAG ? input : input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff")
+        mObt: (input, level) => stats.exalt > 0 || stats.postAoAG ? input : input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff"),
+        singReduction: (input, level) => stats.exalt > 0 || stats.postAoAG ? input : input + level
       },
       blueberryCost: 2,
       prerequisites: {
@@ -639,7 +646,8 @@ Object.assign(upgrades, {
         cube: (input, level) => stats.exalt === 4 ? input : input * 1.012 ** level * Upgrade.chronometerEffect(level),
         oct: (input, level) => stats.exalt === 4 ? input : input * 1.012 ** (1.25 * level) * Upgrade.chronometerEffect(level, stats.mind),
         mObt: (input, level) => stats.exalt === 4 ? input : input * 1.012 ** level,
-        mOff: (input, level) => stats.exalt === 4 ? input : input * 1.012 ** level
+        mOff: (input, level) => stats.exalt === 4 ? input : input * 1.012 ** level,
+        vouchers: (input, level) => input + level
       },
       row: 3,
       blueberryCost: 1,
@@ -656,7 +664,8 @@ Object.assign(upgrades, {
         cube: (input, level) => stats.exalt === 4 ? input : input * 1.012 ** level * 1.006 ** ((1 + stats.spread) * level),
         oct: (input, level) => stats.exalt === 4 ? input : input * 1.012 ** (1.25 * level) * 1.006 ** ((1 + stats.spread) * stats.mind * level),
         mObt: (input, level) => stats.exalt === 4 ? input : input * 1.012 ** level,
-        mOff: (input, level) => stats.exalt === 4 ? input : input * 1.012 ** level
+        mOff: (input, level) => stats.exalt === 4 ? input : input * 1.012 ** level,
+        vouchers: (input, level) => input + level
       },
       row: 4,
       blueberryCost: 2,
@@ -673,8 +682,10 @@ Object.assign(upgrades, {
       effects: {
         cube: (input, level) => stats.exalt > 0 && !stats.postAoAG ? input * Upgrade.singDebuff(stats.sing, "cube") / Upgrade.singDebuff(stats.sing - level, "cube") : input,
         mOff: (input, level) => stats.exalt > 0 && !stats.postAoAG ? input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff") : input,
-        mObt: (input, level) => stats.exalt > 0 && !stats.postAoAG ? input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff") : input
+        mObt: (input, level) => stats.exalt > 0 && !stats.postAoAG ? input * Upgrade.singDebuff(stats.sing, "mOff") / Upgrade.singDebuff(stats.sing - level, "mOff") : input,
+        singReduction: (input, level) => stats.exalt > 0 && !stats.postAoAG ? input + level : input
       },
+      row: 5,
       blueberryCost: 4,
       ignoresExalt: true
     }),
@@ -867,6 +878,9 @@ class Loadout {
               obt = this.getEffect(obt, upgrade, "obt")
             this.statCache[stat] = obt * this.getStat("mObt")
             break
+          case "singReduction":
+          case "vouchers":
+            this.statCache[stat] = 0
           default:
             for (let upgrade in upgrades)
               this.statCache[stat] = this.getEffect(this.statCache[stat], upgrade, stat as keyof UpgradeEffectMap)
@@ -947,21 +961,18 @@ class Loadout {
         return JSON.stringify(upgradeLevels);
     }
 
-    generateOutput(stat: string = "", maxLoadout: Loadout, p4x4 = 0): HeaterResultRow {
+    generateOutput(stat: string = "", maxLoadout: Loadout, p4x4: number | null = null): HeaterResultRow {
 
         this.costCache = null;
         if (this.cost > stats.amb || stat === "")
             return ["Unaffordable", null, "N / A", "N / A", "N / A", "N / A", false];
 
         let baseLoadout = new Loadout();
-        let effect = this.getStat(stat) / baseLoadout.getStat(stat);
         let effectStr: string;
-        if (effect >= 1e6) {
-            effectStr = effect.toExponential(2);
-        } else {
-            let digits = Math.max(0, Math.min(2, 4 - Math.floor(Math.log10(Math.max(effect, 1)))));
-            effectStr = effect.toFixed(digits);
-        }
+        if (stat === "singReduction" || stat === "vouchers")
+          effectStr = formatNumber(this.getStat(stat) - baseLoadout.getStat(stat))
+        else
+          effectStr = formatNumber(this.getStat(stat) / baseLoadout.getStat(stat))
 
         return [
             this.format,
@@ -969,7 +980,7 @@ class Loadout {
             this.blueberryCost,
             this.cost,
             effectStr,
-            p4x4 > 50 ? "Never" : p4x4,
+            (p4x4 === null) ? "" : (p4x4 > 50 ? "Never" : p4x4),
             this.getStat(stat) >= maxLoadout.getStat(stat),
         ];
 
@@ -1017,8 +1028,10 @@ function generateTable(selectedUpgrades: string[], stat: string, minLevels: Reco
       let upgrade = upgrades[upgradeName]
 
       if ((minLevels[upgradeName] ?? 0) <= 0)
-        // Process the next upgrade without having any levels in the current upgrade
-        processUpgrade(upgradeIndex + 1, parentLoadout)
+        processUpgrade(upgradeIndex + 1, parentLoadout) // Process the next upgrade without having any levels in the current upgrade
+
+      if (stats.rAmb <= 0 && upgrade.row > 2) // This upgrade is not unlocked
+        return
 
       let preLoadout = new Loadout(parentLoadout)
       for (let prerequisite in upgrade.prerequisites) {
@@ -1030,6 +1043,7 @@ function generateTable(selectedUpgrades: string[], stat: string, minLevels: Reco
       preLoadout.satisfyPrerequisites()
       if (preLoadout.blueberryCost > stats.blueberries)
         return
+      preLoadout.upgradeLevels[upgradeName] = 0
 
       for (let level = minLevels[upgradeName] ?? 1; level <= upgrade.maxLevel; level++) {
 
@@ -1149,7 +1163,7 @@ function findOpt(table1: Loadout[], table2: Loadout[], stat: string, budget = st
 // Input mapping: HeaterOptimizerInput → stats + options
 // ===========================================================================
 
-function fillStatsFromInput(input: HeaterOptimizerInput): void {
+function fillStatsAndOptionsFromInput(input: HeaterOptimizerInput): void {
     const {
         amb, ramb, ambSpeedNonAmbBerries, blueberries,
         luckBaseNonAmb, luckMultNonAmb, redLuckBase, luckConversion,
@@ -1199,7 +1213,7 @@ function fillStatsFromInput(input: HeaterOptimizerInput): void {
     stats.baseOff  = baseOff;
 
     // --- Bonus levels per row (index 0 unused, rows 1–4)
-    stats.bonus = [0, bonusRow2, bonusRow3, bonusRow4, bonusRow5];
+    stats.bonus = [0, bonusRow2, bonusRow3, bonusRow4, bonusRow5, 0];
 
     // --- Runes & Talismans
     stats.runeExp    = runeSiExp.log10();
@@ -1245,18 +1259,14 @@ function fillStatsFromInput(input: HeaterOptimizerInput): void {
     stats.fusion   *= rBar > 0 ? rSpeed / rBar : 0;
     stats.viscount         = viscount;
     stats.ossifiedTactics2 = ossifiedTactics2;
-}
 
-function fillOptionsFromInput(input: HeaterOptimizerInput): void {
-    const a = input.heaterOptions;
-    options.calculateAmb       = a[0] ?? false;
-    options.calculateQuarks    = a[1] ?? false;
-    options.calculateCubes     = a[2] ?? false;
-    options.calculateOct       = a[3] ?? false;
-    options.calculateOff       = a[4] ?? false;
-    options.calculateHyperflux = a[5] ?? false;
-    options.calculateGen       = a[6] ?? false;
-    options.calculateAmbOct    = a[7] ?? false;
+    const optionsState = input.heaterOptions;
+    HEATER_BRANCH_DEFINITIONS.forEach((branch) => {
+        const optionKey = branch.optionKey;
+        if (optionKey in options) {
+            options[optionKey] = optionsState[branch.id] ?? false;
+        }
+    });
 }
 
 // ===========================================================================
@@ -1268,8 +1278,7 @@ export class HSHeaterOptimizer {
     static createHeaterOptimizerResultFromInput(input: HeaterOptimizerInput): HeaterOptimizationResult {
 
         // Populate stats + options from input
-        fillStatsFromInput(input);
-        fillOptionsFromInput(input);
+        fillStatsAndOptionsFromInput(input);
 
         // Build maxLoadout (used by generateOutput to detect if a loadout is maxed)
         let maxLoadout = new Loadout();
@@ -1413,7 +1422,7 @@ export class HSHeaterOptimizer {
 
         // --- Shared luck/rune/voucher tables for cube-class calculations ---
         if (
-            options.calculateQuarks || options.calculateCubes || options.calculateOct ||
+            options.calculateQuarks || options.calculateCubes || options.calculateOct || options.calculateSR ||
             options.calculateHyperflux || options.calculateOff || options.calculateGen
         ) {
             let luckMinLevel: Record<string, number> = { ambrosiaLuck1: 20 }; // This is necessary for correct local optima
@@ -1426,7 +1435,8 @@ export class HSHeaterOptimizer {
             tableCache.tableRune = generateTable(["ambrosiaTalismanBonusRuneLevel", "ambrosiaRuneOOMBonus"], "cube");
         }
 
-        if (options.calculateQuarks || options.calculateCubes || options.calculateOct || options.calculateOff || options.calculateGen) {
+        if (options.calculateQuarks || options.calculateCubes || options.calculateOct || options.calculateSR ||
+          options.calculateOff || options.calculateVoucher || options.calculateGen) {
             // Local optima for cubes match local optima for quarks and octeracts
             tableCache.tableVoucher = generateTable(["ambrosiaInfiniteShopUpgrades1", "ambrosiaInfiniteShopUpgrades2"], "cube");
         }
@@ -1451,7 +1461,7 @@ export class HSHeaterOptimizer {
         }
 
         // --- Shared cube tables (cubes / oct / ambOct / hyperflux / gen) ---
-        if (options.calculateCubes || options.calculateOct || options.calculateAmbOct || options.calculateHyperflux || options.calculateGen) {
+        if (options.calculateCubes || options.calculateOct || options.calculateSR || options.calculateAmbOct || options.calculateHyperflux || options.calculateGen) {
             let minLevels: Record<string, number> = {};
             if (stats.amb >= 1e7) {
                 minLevels.ambrosiaCubes1 = 100;
@@ -1466,19 +1476,22 @@ export class HSHeaterOptimizer {
             tableCache.tableCubeR = mergeTables(tableCube2, tableCache.tableRune, "cube", minLevels);
         }
 
-        if (options.calculateCubes || options.calculateOct || options.calculateHyperflux || options.calculateGen) {
+        if (options.calculateCubes || options.calculateOct || options.calculateSR || options.calculateHyperflux || options.calculateGen) {
             let tableLuckCube1 = generateTable(["ambrosiaLuckCube1"], "cube");
             // Local optima for cubes match local optima for octeracts
             tableCache.tableLuckCube = mergeTables(tableCache.tableLuck, tableLuckCube1, "cube");
         }
 
         // --- calculateCubes ---
-        if (options.calculateCubes) {
+        if (options.calculateCubes || options.calculateSR) {
             let tableCubeV     = mergeTables(tableCache.tableCubeR, tableCache.tableVoucher, "cube");
             let tableCubeH     = generateTable(["ambrosiaHyperflux"], "cube");
-            let tableCubeTotal = mergeTables(tableCubeV, tableCubeH, "cube");
-            let loadoutCube    = findOpt(tableCubeTotal, tableCache.tableLuckCube, "cube");
-            output.cubes = [loadoutCube.generateOutput("cube", maxLoadout)];
+            tableCache.tableCubeTotal = mergeTables(tableCubeV, tableCubeH, "cube")
+        }
+
+        if (options.calculateCubes) {
+          let loadoutCube = findOpt(tableCache.tableCubeTotal, tableCache.tableLuckCube, "cube")
+          output.cubes = [loadoutCube.generateOutput("cube", maxLoadout)];
         }
 
         // --- Shared oct table ---
@@ -1570,9 +1583,9 @@ export class HSHeaterOptimizer {
         }
 
         // --- Shared sing table (off / hyperflux) ---
-        if (options.calculateOff || options.calculateHyperflux) {
+        if (options.calculateOff || options.calculateSR || options.calculateHyperflux) {
             // Local optima for cubes match local optima for offerings/obtainium
-            tableCache.tableSing = generateTable(["ambrosiaSingReduction1", "ambrosiaSingReduction2"], "cube");
+            tableCache.tableSing = generateTable([stats.exalt > 0 ? "ambrosiaSingReduction2" : "ambrosiaSingReduction1"], "cube")
         }
 
         // --- calculateOff: Obt + Off ---
@@ -1594,6 +1607,40 @@ export class HSHeaterOptimizer {
             let tableOffRune = mergeTables(tableOffSing, tableCache.tableRune, "off")
             let loadoutOff   = findOpt(tableOffRune, tableCache.tableLuck, "off");
             output.off = [loadoutOff.generateOutput("off", maxLoadout)];
+        }
+
+        if (options.calculateVoucher) {
+          let loadoutVoucher = tableCache.tableVoucher.at(-1)!
+          let budget = stats.amb - loadoutVoucher.cost
+          let tableGen = generateTable(["ambrosiaFreeGenerationUpgrades"], "amb")
+          let loadoutGen = tableGen.findLast(loadout => loadout.cost <= budget)!
+          loadoutVoucher = Loadout.union(loadoutVoucher, loadoutGen)
+          output.voucher = [loadoutVoucher.generateOutput("vouchers", maxLoadout)];
+        }
+
+        if (options.calculateSR) {
+
+          let exalt = stats.exalt
+          let postAoAG = stats.postAoAG
+          stats.postAoAG = false
+
+          stats.exalt = 0
+          let loadoutSR1 = generateTable(["ambrosiaSingReduction1"], "singReduction").at(-1)!
+          let levelSR1 = loadoutSR1.upgradeLevels.ambrosiaSingReduction1
+          let tableSR1Cube = tableCache.tableCubeTotal.map(loadout => new Loadout(loadout))
+          tableSR1Cube.forEach(loadout => loadout.upgradeLevels.ambrosiaSingReduction1 = levelSR1)
+          loadoutSR1 = findOpt(tableSR1Cube, tableCache.tableLuckCube, "cube")
+          output.sr1 = [loadoutSR1.generateOutput("singReduction", maxLoadout)];
+
+          stats.exalt = 7
+          let loadoutSR2 = generateTable(["ambrosiaSingReduction2"], "singReduction").at(-1)!
+          let levelSR2 = loadoutSR2.upgradeLevels.ambrosiaSingReduction2
+          let tableSR2Cube = tableCache.tableCubeTotal.map(loadout => new Loadout(loadout))
+          tableSR2Cube.forEach(loadout => loadout.upgradeLevels.ambrosiaSingReduction2 = levelSR2)
+          loadoutSR2 = findOpt(tableSR2Cube, tableCache.tableLuckCube, "cube")
+          output.sr2 = [loadoutSR2.generateOutput("singReduction", maxLoadout)];
+          stats.exalt = exalt
+          stats.postAoAG = postAoAG
         }
 
         // --- calculateAmbOct ---
@@ -1627,18 +1674,20 @@ export class HSHeaterOptimizer {
 
             let tableVoucher = generateTable(["ambrosiaInfiniteShopUpgrades1", "ambrosiaInfiniteShopUpgrades2"], "cube");
             let tableCubeV   = mergeTables(tableCache.tableCubeR, tableVoucher, "cube");
-            let tableSing    = generateTable(["ambrosiaSingReduction1", "ambrosiaSingReduction2"], "cube");
-            tableSing.forEach((loadout) => { loadout.upgradeLevels.ambrosiaHyperflux = 0; });
-            let tableCubeVS  = mergeTables(tableCubeV, tableSing, "cube");
+            let tableCubeVS  = mergeTables(tableCubeV, tableCache.tableSing, "cube");
 
             let loadoutsH: (Loadout | undefined)[] = new Array(8).fill(undefined);
             let thresholds: number[] = new Array(8).fill(0);
 
             for (let h = 0; h <= upgrades.ambrosiaHyperflux.maxLevel; h++) {
                 let budget = stats.amb - upgrades.ambrosiaHyperflux.cost(h);
+                let tableCubeVX = tableCubeV
+                if (stats.exalt > 0 || h >= (upgrades.ambrosiaSingReduction1.prerequisites.ambrosiaHyperflux ?? 0)) {
+                  tableCubeVX = tableCubeVS
+                  budget += upgrades.ambrosiaHyperflux.cost(upgrades.ambrosiaSingReduction1.prerequisites.ambrosiaHyperflux ?? 0)
+                }
                 if (budget < 0)
                     break;
-                let tableCubeVX = stats.exalt > 0 || h >= (upgrades.ambrosiaSingReduction1.prerequisites.ambrosiaHyperflux ?? 0) ? tableCubeVS : tableCubeV;
                 loadoutsH[h] = findOpt(tableCubeVX, tableCache.tableLuckCube, "cube", budget);
                 thresholds[h] = 0;
                 for (let p = h - 1; p >= 0; p--) {
@@ -1660,8 +1709,6 @@ export class HSHeaterOptimizer {
             for (let i = 0; i < 8; i++) {
                 let maxLoadoutH = new Loadout(maxLoadout);
                 maxLoadoutH.upgradeLevels.ambrosiaHyperflux = i;
-                if (i < (upgrades.ambrosiaSingReduction1.prerequisites.ambrosiaHyperflux ?? 4))
-                    maxLoadoutH.upgradeLevels.ambrosiaSingReduction1 = 0;
                 if (loadoutsH[i] === undefined) {
                     hyperOutput.push(maxLoadout.generateOutput("", maxLoadout));
                 } else {

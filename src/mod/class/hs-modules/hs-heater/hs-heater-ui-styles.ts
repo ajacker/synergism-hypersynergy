@@ -177,18 +177,6 @@ export class HSHeaterUIStyles {
                 overflow-x: auto;
             }
 
-            .hs-heater-redamb-table th,
-            .hs-heater-redamb-table td {
-                padding: 6px 8px;
-            }
-
-            .hs-heater-red-ambrosia-table th,
-            .hs-heater-red-ambrosia-table td {
-                padding: 1px 6px;
-                line-height: 1.2;
-                font-size: 0.92rem;
-            }
-
             .hs-heater-red-ambrosia-icon-cell {
                 width: 24px;
                 padding: 0px 0px !important;
@@ -207,6 +195,57 @@ export class HSHeaterUIStyles {
 
             .hs-heater-red-ambrosia-maxed-row .hs-heater-red-ambrosia-icon {
                 opacity: 0.35;
+            }
+
+            .hs-heater-redamb-table {
+                table-layout: fixed;
+                width: auto;
+                min-width: auto;
+            }
+
+            .hs-heater-redamb-table th,
+            .hs-heater-redamb-table td {
+                padding: 6px 8px;
+            }
+
+            .hs-heater-red-ambrosia-table th,
+            .hs-heater-red-ambrosia-table td {
+                padding: 1px 6px;
+                line-height: 1.2;
+                font-size: 0.92rem;
+            }
+
+            .hs-heater-red-ambrosia-table th {
+                white-space: normal;
+                overflow-wrap: anywhere;
+                word-break: break-word;
+                max-width: 10rem;
+            }
+
+            .hs-heater-redamb-table th:first-child {
+                max-width: 3rem;
+                white-space: nowrap;
+            }
+
+            .hs-heater-red-ambrosia-table th:nth-child(2) {
+                max-width: 8rem;
+            }
+
+            .hs-heater-red-ambrosia-cef-log-cell {
+                transition: background-color 0.2s ease;
+                background-color: rgba(75, 180, 90, var(--cef-log-alpha, 0));
+            }
+
+            .hs-heater-red-ambrosia-cef-log-cell--ambrosia {
+                background-color: rgba(95, 155, 255, var(--cef-log-alpha, 0));
+            }
+
+            .hs-heater-red-ambrosia-cef-log-cell--red-ambrosia {
+                background-color: rgba(215, 80, 80, var(--cef-log-alpha, 0));
+            }
+
+            .hs-heater-red-ambrosia-cef-log-cell--octeract {
+                background-color: rgba(75, 180, 90, var(--cef-log-alpha, 0));
             }
 
             .hs-heater-redamb-section-header-row td {

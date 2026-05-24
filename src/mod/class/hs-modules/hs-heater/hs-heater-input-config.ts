@@ -1,5 +1,4 @@
 import type { HeaterOptimizerInput } from "../../../types/data-types/hs-heater-types";
-import { HEATER_BRANCH_DEFINITIONS } from "./hs-heater-result-config";
 
 type HeaterInputBase = Omit<HeaterOptimizerInput, 'heaterOptions'>;
 type HeaterInputKey = keyof HeaterInputBase;
@@ -113,5 +112,3 @@ export const exportFieldExtractors: Readonly<Partial<{ [K in HeaterInputKey]: (h
     rBar:               (hsData) => hsData.redBarCapacity,
     rSpeed:             (hsData) => hsData.redBarSpeed,
 };
-
-export const heaterOptionLabels = HEATER_BRANCH_DEFINITIONS.map((branch) => branch.label) as readonly string[];

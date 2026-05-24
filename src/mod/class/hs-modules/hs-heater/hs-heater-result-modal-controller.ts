@@ -173,11 +173,13 @@ export class HSHeaterResultModalController {
 
     private static refreshRequiredBranchHighlights(modal: HTMLElement): void {
         const selectedSemanticIds = HSHeaterResultStore.collectSelectedSemanticIds(modal);
-        const unavailableBranchIndexes = HSHeaterResultStore.getUnavailableRequiredBranchIndexes(selectedSemanticIds);
+        const unavailableBranchIds = HSHeaterResultStore.getUnavailableRequiredBranchIds(selectedSemanticIds);
         const branchLabels = Array.from(modal.querySelectorAll('.hs-heater-active-branch')) as HTMLElement[];
 
-        branchLabels.forEach((label, index) => {
-            label.classList.toggle('hs-heater-active-branch-required', unavailableBranchIndexes.has(index));
+        branchLabels.forEach((label) => {
+            const branchId = label.dataset.branchId as string | undefined;
+            const unavailable = branchId ? unavailableBranchIds.has(branchId as any) : false;
+            label.classList.toggle('hs-heater-active-branch-required', unavailable);
         });
     }
 

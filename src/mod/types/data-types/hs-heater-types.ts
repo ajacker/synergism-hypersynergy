@@ -1,5 +1,6 @@
 import type Decimal from "break_infinity.js";
-import { GameData } from "./hs-player-savedata";
+import type { HeaterBranchId, HeaterResultArrayKey } from "../../class/hs-modules/hs-heater/hs-heater-result-config";
+export type { HeaterResultArrayKey } from "../../class/hs-modules/hs-heater/hs-heater-result-config";
 
 export interface HeaterOptimizerInput {
     amb: number;
@@ -62,7 +63,7 @@ export interface HeaterOptimizerInput {
     viscount: boolean;
     rBar: number;
     rSpeed: number;
-    heaterOptions: boolean[];
+    heaterOptions: Record<HeaterBranchId, boolean>;
 }
 
 export type HeaterResultAffordableRow = [
@@ -71,7 +72,7 @@ export type HeaterResultAffordableRow = [
     blueberryCost: number,
     cost: number,
     effect: string,
-    p4x4Eq: number | "Never",
+    p4x4Eq: number | "Never" | "",
     isMaxed: boolean,
 ];
 
@@ -94,7 +95,7 @@ export type HeaterResultSheetRow = {
     cost:           number | "N / A";
     costDetail:     number | "Maxed" | "N / A";
     effect:         string;
-    p4x4Eq:         number | "Never" | "N / A";
+    p4x4Eq:         number | "Never" | "" | "N / A";
     maxed:          boolean;
     p4Effect:       number | "-" | "N / A";
     p4CefLog:       number | "-" | "N / A" | "Never";
@@ -104,20 +105,7 @@ export type HeaterResultSheetRow = {
 
 export type HeaterResultSheetRowMatrix = HeaterResultSheetRow[];
 
-export type HeaterResultArrayKey =
-    | 'luck'
-    | 'rLuck'
-    | 'allAmb'
-    | 'quarks'
-    | 'cubes'
-    | 'oct'
-    | 'obt'
-    | 'off'
-    | 'hyperflux'
-    | 'ambOct'
-    | 'gen';
-
-export type RowBasedResultKey = 'hyperflux' | 'gen';
+export type RowBasedResultKey = import("../../class/hs-modules/hs-heater/hs-heater-result-config").RowBasedResultKey;
 export type SingleResultKey = Exclude<HeaterResultArrayKey, RowBasedResultKey>;
 export type HeaterTypeSemanticId = 'none' | SingleResultKey | `${RowBasedResultKey}:${number}`;
 export type HeaterResultSectionId = 'common' | 'p4x4' | 'hybrid';
@@ -167,7 +155,10 @@ export interface HeaterOptimizationResult {
     oct?: HeaterResultRowMatrix;
     obt?: HeaterResultRowMatrix;
     off?: HeaterResultRowMatrix;
+    voucher?: HeaterResultRowMatrix;
     hyperflux?: HeaterResultRowMatrix;
+    sr1?: HeaterResultRowMatrix;
+    sr2?: HeaterResultRowMatrix;
     ambOct?: HeaterResultRowMatrix;
     gen?: HeaterResultRowMatrix;
     redAmbUpgradeEffects?: HeaterRedAmbUpgradeEffects;

@@ -1,4 +1,4 @@
-import type { HeaterResultArrayKey, HeaterTypeSemanticId, HeaterResultSectionId, RowBasedResultKey } from "../../../types/data-types/hs-heater-types";
+import type { HeaterTypeSemanticId, HeaterResultSectionId } from "../../../types/data-types/hs-heater-types";
 export type { HeaterTypeSemanticId, HeaterResultSectionId } from "../../../types/data-types/hs-heater-types";
 
 export type HeaterResultSectionConfig = {
@@ -8,8 +8,6 @@ export type HeaterResultSectionConfig = {
     order: number;
 };
 
-type ResultKey = HeaterResultArrayKey;
-
 type HeaterResultTypeConfig = {
     label: string;
     section: HeaterResultSectionId;
@@ -17,6 +15,10 @@ type HeaterResultTypeConfig = {
     rowLabels?: readonly string[];
     rowIcons?: readonly string[];
 };
+
+function createHeaterResultTypeConfig<T extends Record<string, HeaterResultTypeConfig>>(config: T): { [K in keyof T]: HeaterResultTypeConfig } {
+    return config;
+}
 
 const HEATER_RESULT_SECTION_CONFIG: Record<HeaterResultSectionId, HeaterResultSectionConfig> = {
     common: {
@@ -39,7 +41,7 @@ const HEATER_RESULT_SECTION_CONFIG: Record<HeaterResultSectionId, HeaterResultSe
     },
 };
 
-const HEATER_RESULT_TYPE_CONFIG: Record<ResultKey, HeaterResultTypeConfig> = {
+const HEATER_RESULT_TYPE_CONFIG = createHeaterResultTypeConfig({
     luck: {
         label: "Luck",
         section: "common",
@@ -80,11 +82,26 @@ const HEATER_RESULT_TYPE_CONFIG: Record<ResultKey, HeaterResultTypeConfig> = {
         section: "common",
         icon: "Pictures/Default/BlueberryOffering.png",
     },
+    voucher: {
+        label: "Vouchers",
+        section: "common",
+        icon: "Pictures/Default/BlueberryInfiniteShopUpgrades2.png",
+    },
     hyperflux: {
         label: "Hyperflux (H0–H7)",
         section: "p4x4",
         rowLabels: ["H0", "H1", "H2", "H3", "H4", "H5", "H6", "H7"],
         rowIcons: Array(8).fill("Pictures/Default/BlueberryHyperflux.png"),
+    },
+    sr1: {
+        label: "Max SR1",
+        section: "p4x4",
+        icon: "Pictures/Default/BlueberrySingReduction.png",
+    },
+    sr2: {
+        label: "Max SR2",
+        section: "p4x4",
+        icon: "Pictures/Default/BlueberrySingReduction2.png",
     },
     gen: {
         label: "Amb Gen (Gen1–Gen3)",
@@ -97,7 +114,14 @@ const HEATER_RESULT_TYPE_CONFIG: Record<ResultKey, HeaterResultTypeConfig> = {
         section: "hybrid",
         icon: "Pictures/Default/BlueberryLuck4.png",
     },
-};
+});
+
+export type HeaterResultArrayKey = keyof typeof HEATER_RESULT_TYPE_CONFIG;
+export type RowBasedResultKey = {
+    [K in keyof typeof HEATER_RESULT_TYPE_CONFIG]: typeof HEATER_RESULT_TYPE_CONFIG[K] extends { rowLabels: readonly string[] } ? K : never;
+}[keyof typeof HEATER_RESULT_TYPE_CONFIG];
+
+type ResultKey = HeaterResultArrayKey;
 
 const HEATER_RESULT_SECTION_ORDERED_IDS = Object.entries(HEATER_RESULT_SECTION_CONFIG)
     .sort(([, a], [, b]) => a.order - b.order)
@@ -130,34 +154,33 @@ export function getHeaterTypeConfig(key: ResultKey): HeaterResultTypeConfig | nu
     return HEATER_RESULT_TYPE_CONFIG[key] ?? null;
 }
 
-export type HeaterBranchIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-
-export type HeaterBranchDefinition = {
-    label: string;
-    resultKeys: ResultKey[];
-};
-
-export const HEATER_BRANCH_DEFINITIONS: ReadonlyArray<HeaterBranchDefinition> = [
-    { label: "Luck", resultKeys: ["luck", "rLuck", "allAmb"] },
-    { label: "Quarks", resultKeys: ["quarks"] },
-    { label: "3-7D Cubes", resultKeys: ["cubes"] },
-    { label: "Octeracts", resultKeys: ["oct"] },
-    { label: "Obtainium + Offering", resultKeys: ["obt", "off"] },
-    { label: "Hyperflux (p4x4, pre-AoAG)", resultKeys: ["hyperflux"] },
-    { label: "Amb Generation + Oct", resultKeys: ["gen"] },
-    { label: "Max Amb + Oct", resultKeys: ["ambOct"] },
-];
-
-export function getHeaterTypeBranchIndex(semanticId: string): HeaterBranchIndex | null {
+export function getHeaterTypeBranchId(semanticId: string): HeaterBranchId | null {
     const parsed = parseHeaterTypeSemanticId(semanticId);
     if (!parsed) return null;
 
-    const branchIndex = HEATER_BRANCH_DEFINITIONS.findIndex((branch) =>
-        branch.resultKeys.includes(parsed.baseKey)
+    const branch = HEATER_BRANCH_DEFINITIONS.find((branch) =>
+        (branch.resultKeys as readonly ResultKey[]).includes(parsed.baseKey)
     );
 
-    return branchIndex >= 0 ? (branchIndex as HeaterBranchIndex) : null;
+    return branch?.id ?? null;
 }
+
+export const HEATER_BRANCH_DEFINITIONS = [
+    { id: "luck",      label: "Luck",                        resultKeys: ["luck", "rLuck", "allAmb"], optionKey: "calculateAmb" },
+    { id: "quarks",    label: "Quarks",                      resultKeys: ["quarks"],                  optionKey: "calculateQuarks" },
+    { id: "cubes",     label: "3-7D Cubes",                  resultKeys: ["cubes"],                   optionKey: "calculateCubes" },
+    { id: "oct",       label: "Octeracts",                   resultKeys: ["oct"],                     optionKey: "calculateOct" },
+    { id: "obtOff",    label: "Obtainium + Offering",        resultKeys: ["obt", "off"],              optionKey: "calculateOff" },
+    { id: "voucher",   label: "Vouchers",                    resultKeys: ["voucher"],                 optionKey: "calculateVoucher" },
+    { id: "hyperflux", label: "Hyperflux (p4x4, pre-AoAG)",  resultKeys: ["hyperflux"],               optionKey: "calculateHyperflux" },
+    { id: "sr",        label: "Max SR",                      resultKeys: ["sr1", "sr2"],              optionKey: "calculateSR" },
+    { id: "gen",       label: "Amb Generation + Oct",        resultKeys: ["gen"],                     optionKey: "calculateGen" },
+    { id: "ambOct",    label: "Max Amb + Oct",               resultKeys: ["ambOct"],                  optionKey: "calculateAmbOct" },
+] as const;
+
+export type HeaterBranchDefinition = typeof HEATER_BRANCH_DEFINITIONS[number];
+export type HeaterBranchId = HeaterBranchDefinition["id"];
+export type HeaterOptionKey = HeaterBranchDefinition["optionKey"];
 
 export function getHeaterTypeRowCount(key: ResultKey): number {
     return HEATER_RESULT_TYPE_CONFIG[key]?.rowLabels?.length ?? 1;

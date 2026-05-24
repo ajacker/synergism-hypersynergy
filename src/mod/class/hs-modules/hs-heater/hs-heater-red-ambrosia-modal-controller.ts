@@ -4,13 +4,14 @@ import { HSHeaterUIStyles } from "./hs-heater-ui-styles";
 import { buildRedAmbrosiaUpgradeTableHtml } from "./hs-heater-red-ambrosia-table";
 import { EPredefinedPosition } from "../../../types/module-types/hs-ui-types";
 
-function buildRedAmbrosiaModalHtml(): string {
-    return buildRedAmbrosiaUpgradeTableHtml();
+function buildRedAmbrosiaModalHtml(compactView = true): string {
+    return buildRedAmbrosiaUpgradeTableHtml(undefined, compactView);
 }
 
 export class HSHeaterRedAmbrosiaModalController {
     static currentRedAmbrosiaModalId: string | null = null;
     static #currentRedAmbrosiaModalObserver: MutationObserver | null = null;
+    static #isCompactRedAmbrosiaView = true;
 
     static async openRedAmbrosiaUpgradeModal(): Promise<void> {
         const hsui = HSModuleManager.getModule<HSUI>('HSUI');
@@ -26,6 +27,7 @@ export class HSHeaterRedAmbrosiaModalController {
                 const body = existingModal.querySelector('.hs-modal-body');
                 if (body) {
                     body.innerHTML = content;
+                    this.attachModalHandlers(existingModal);
                     return;
                 }
             }
@@ -46,10 +48,25 @@ export class HSHeaterRedAmbrosiaModalController {
 
         const outputModal = this.currentRedAmbrosiaModalId ? document.getElementById(this.currentRedAmbrosiaModalId) : null;
         if (outputModal) {
+            this.attachModalHandlers(outputModal);
             this.monitorRedAmbrosiaModalRemoval(outputModal);
         } else {
             this.currentRedAmbrosiaModalId = null;
         }
+    }
+
+    private static attachModalHandlers(modal: HTMLElement): void {
+        const toggleButton = modal.querySelector<HTMLButtonElement>('#hs-heater-red-ambrosia-action-btn');
+        if (!toggleButton) { return; }
+
+        toggleButton.onclick = () => {
+            this.#isCompactRedAmbrosiaView = !this.#isCompactRedAmbrosiaView;
+            const body = modal.querySelector('.hs-modal-body');
+            if (!body) { return; }
+
+            body.innerHTML = buildRedAmbrosiaModalHtml(this.#isCompactRedAmbrosiaView);
+            this.attachModalHandlers(modal);
+        };
     }
 
     static async closeCurrentRedAmbrosiaModal(): Promise<void> {

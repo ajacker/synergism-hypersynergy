@@ -7,6 +7,22 @@ export function escapeHtml(value: string): string {
         .replace(/'/g, '&#39;');
 }
 
+export const formatNumber = (number: number): string => {
+    if (number >= 1e6) {
+        return number.toLocaleString(undefined, {
+            maximumSignificantDigits: 3,
+            notation: 'scientific',
+            roundingMode: 'trunc'
+        }).toLowerCase();
+    }
+
+    const digits = Math.max(0, Math.min(2, 4 - Math.floor(Math.log10(number))));
+    return number.toLocaleString(undefined, {
+        maximumFractionDigits: digits,
+        roundingMode: 'trunc'
+    });
+};
+
 export interface HeaterFusionInputs {
     fusion: number;
     rBar: number;

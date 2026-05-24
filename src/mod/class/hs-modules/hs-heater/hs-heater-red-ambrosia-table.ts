@@ -1,9 +1,10 @@
 import { HSModuleManager } from "../../hs-core/module/hs-module-manager";
+import { HSUIC } from "../../hs-core/hs-ui-components";
 import { HSGameDataAPI } from "../../hs-core/gds/hs-gamedata-api";
 import { redAmbrosiaUpgradeCalculationCollection } from "../../hs-core/gds/stored-vars-and-calculations";
 import { HSHeaterResultStore } from "./hs-heater-result-store";
 import type { HeaterOptimizerInput, HeaterRedAmbCommonValues, HeaterRedAmbUpgradeEffects } from "../../../types/data-types/hs-heater-types";
-import type { RedAmbrosiaUpgradeCalculationConfig, RedAmbrosiaUpgradeKey, RedAmbrosiaUpgradeRewards } from "../../../types/data-types/hs-gamedata-api-types";
+import type { RedAmbrosiaUpgradeCalculationConfig, RedAmbrosiaUpgradeKey } from "../../../types/data-types/hs-gamedata-api-types";
 import { escapeHtml, normalizeHeaterFusion, computeHeaterFusionValue, computeHeaterFusionGain, computeHeaterRedAmbrosiaSheetValue } from "./hs-heater-utils";
 
 export type RedAmbrosiaUpgradeCategoryEffectValue = number | "N / A" | "-";
@@ -27,7 +28,8 @@ export interface RedAmbrosiaUpgradeTableRow {
     octeractCefLog: RedAmbrosiaUpgradeCefLogValue;
 }
 
-const SHOW_RED_AMBROSIA_RAW_COLUMNS = false; // Set to true when debugging raw values
+const SHOW_RED_AMBROSIA_RAW_COLUMNS = false; // Set to true when debugging
+const SHOW_RED_AMBROSIA_MAXED_ROWS = false;  // Set to true when debugging
 
 const EXCLUDED_RED_AMBROSIA_UPGRADES: RedAmbrosiaUpgradeKey[] = [
     'redAmbrosiaFreeAccumulator',
@@ -184,9 +186,7 @@ function computeAmbrosiaEffectRawValue(
 ): number | undefined {
     const { input, commonValues } = context;
     const totalRedLuck = commonValues?.totalRedLuck;
-    if (!input || totalRedLuck === undefined) {
-        return undefined;
-    }
+    if (!input || totalRedLuck === undefined) { return undefined; }
 
     const fusionValue = computeHeaterFusionValue(
         normalizeHeaterFusion(acceleratorLevel, input.rBar, input.rSpeed),
@@ -206,9 +206,7 @@ function computeAmbrosiaEffectRawValue(
         'regularLuck2',
     ]);
 
-    if (redAmbRawEffect === undefined && requiresRawValue.has(upgradeKey)) {
-        return undefined;
-    }
+    if (redAmbRawEffect === undefined && requiresRawValue.has(upgradeKey)) { return undefined; }
 
     switch (upgradeKey) {
         case 'conversionImprovement1':
@@ -444,21 +442,42 @@ function buildRedAmbrosiaUpgradeRow(
     };
 }
 
-function applyMaxedRowOverrides(row: RedAmbrosiaUpgradeTableRow): RedAmbrosiaUpgradeTableRow {
-    return {
-        ...row,
-        ambrosiaEffect: '-',
-        ambrosiaCefLog: '-',
-        redAmbrosiaEffect: '-',
-        redAmbrosiaCefLog: '-',
-        octeractEffect: '-',
-        octeractCefLog: '-',
-    };
-}
-
 function formatRedAmbrosiaUpgradeCategoryValue(value: RedAmbrosiaUpgradeCategoryEffectValue | undefined): string {
     if (value === undefined || value === 'N / A' || value === '-') { return value === undefined ? '-' : value; }
     return value.toFixed(9);
+}
+
+type CefLogKey = 'ambrosiaCefLog' | 'redAmbrosiaCefLog' | 'octeractCefLog';
+
+type CefLogRange = {
+    min: number;
+    max: number;
+};
+
+function computeCefLogRange(rows: RedAmbrosiaUpgradeTableRow[], key: CefLogKey): CefLogRange | null {
+    let min = Infinity;
+    let max = -Infinity;
+    for (const row of rows) {
+        const value = row[key];
+        if (typeof value === 'number') {
+            min = Math.min(min, value);
+            max = Math.max(max, value);
+        }
+    }
+    return min === Infinity ? null : { min, max };
+}
+
+function buildCefLogCellHtml(value: RedAmbrosiaUpgradeCefLogValue, range: CefLogRange | null, columnClass = ''): string {
+    const innerText = escapeHtml(formatRedAmbrosiaUpgradeCefLogValue(value));
+    const classNames = ['hs-heater-red-ambrosia-cef-log-cell', columnClass].filter(Boolean).join(' ');
+
+    if (typeof value !== 'number' || range === null || range.max <= range.min) {
+        return `<td class="${classNames}">${innerText}</td>`;
+    }
+
+    const normalized = (value - range.min) / (range.max - range.min);
+    const alpha = Math.max(0, 0.35 * (1 - normalized));
+    return `<td class="${classNames}" style="--cef-log-alpha: ${alpha.toFixed(3)}">${innerText}</td>`;
 }
 
 function formatRedAmbrosiaUpgradeCefLogValue(value: RedAmbrosiaUpgradeCefLogValue): string {
@@ -511,16 +530,35 @@ export function computeRedAmbrosiaUpgradeRows(gameDataApi?: HSGameDataAPI): RedA
                 optimizerContext,
             );
 
-            return isMaxLevel ? applyMaxedRowOverrides(row) : row;
-        });
+            return row;
+        })
+        .filter((row) => SHOW_RED_AMBROSIA_MAXED_ROWS || row.nextCost !== 'Maxed');
 }
 
-function renderRedAmbrosiaUpgradeRowHtml(row: RedAmbrosiaUpgradeTableRow, showRawColumns = false): string {
+function renderRedAmbrosiaUpgradeRowHtml(
+    row: RedAmbrosiaUpgradeTableRow,
+    cefLogRanges: Record<CefLogKey, CefLogRange | null>,
+    showRawColumns = false,
+    compactView = false,
+): string {
     const isMaxed = row.nextCost === 'Maxed';
-    const costCell = isMaxed ? 'Maxed' : String(row.nextCost);
     const iconCell = row.iconUrl
         ? `<img src="${escapeHtml(row.iconUrl)}" alt="${escapeHtml(row.label)}" class="hs-heater-red-ambrosia-icon">`
         : '';
+
+    if (compactView) {
+        return `
+            <tr class="hs-heater-red-ambrosia-row${isMaxed ? ' hs-heater-red-ambrosia-maxed-row' : ''}">
+                <td class="hs-heater-red-ambrosia-icon-cell">${iconCell}</td>
+                <td>${escapeHtml(row.label)}</td>
+                ${buildCefLogCellHtml(row.ambrosiaCefLog, cefLogRanges.ambrosiaCefLog, 'hs-heater-red-ambrosia-cef-log-cell--ambrosia')}
+                ${buildCefLogCellHtml(row.redAmbrosiaCefLog, cefLogRanges.redAmbrosiaCefLog, 'hs-heater-red-ambrosia-cef-log-cell--red-ambrosia')}
+                ${buildCefLogCellHtml(row.octeractCefLog, cefLogRanges.octeractCefLog, 'hs-heater-red-ambrosia-cef-log-cell--octeract')}
+            </tr>
+        `;
+    }
+
+    const costCell = isMaxed ? 'Maxed' : String(row.nextCost);
 
     return `
         <tr class="hs-heater-red-ambrosia-row${isMaxed ? ' hs-heater-red-ambrosia-maxed-row' : ''}">
@@ -531,18 +569,32 @@ function renderRedAmbrosiaUpgradeRowHtml(row: RedAmbrosiaUpgradeTableRow, showRa
             <td>${escapeHtml(costCell)}</td>
             ${showRawColumns ? `<td>${escapeHtml(formatRedAmbrosiaUpgradeCategoryValue(row.ambrosiaEffectRaw))}</td>` : ''}
             <td>${escapeHtml(formatRedAmbrosiaUpgradeCategoryValue(row.ambrosiaEffect))}</td>
-            <td>${escapeHtml(formatRedAmbrosiaUpgradeCefLogValue(row.ambrosiaCefLog))}</td>
+            ${buildCefLogCellHtml(row.ambrosiaCefLog, cefLogRanges.ambrosiaCefLog, 'hs-heater-red-ambrosia-cef-log-cell--ambrosia')}
             ${showRawColumns ? `<td>${escapeHtml(formatRedAmbrosiaUpgradeCategoryValue(row.redAmbrosiaEffectRaw))}</td>` : ''}
             <td>${escapeHtml(formatRedAmbrosiaUpgradeCategoryValue(row.redAmbrosiaEffect))}</td>
-            <td>${escapeHtml(formatRedAmbrosiaUpgradeCefLogValue(row.redAmbrosiaCefLog))}</td>
+            ${buildCefLogCellHtml(row.redAmbrosiaCefLog, cefLogRanges.redAmbrosiaCefLog, 'hs-heater-red-ambrosia-cef-log-cell--red-ambrosia')}
             ${showRawColumns ? `<td>${escapeHtml(formatRedAmbrosiaUpgradeCategoryValue(row.octeractEffectRaw))}</td>` : ''}
             <td>${escapeHtml(formatRedAmbrosiaUpgradeCategoryValue(row.octeractEffect))}</td>
-            <td>${escapeHtml(formatRedAmbrosiaUpgradeCefLogValue(row.octeractCefLog))}</td>
+            ${buildCefLogCellHtml(row.octeractCefLog, cefLogRanges.octeractCefLog, 'hs-heater-red-ambrosia-cef-log-cell--octeract')}
         </tr>
     `;
 }
 
-function renderRedAmbrosiaUpgradeTableHeaderHtml(showRawColumns = false): string {
+function renderRedAmbrosiaUpgradeTableHeaderHtml(showRawColumns = false, compactView = false): string {
+    if (compactView) {
+        return `
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Upgrade</th>
+                    <th>Amb</th>
+                    <th>Red Amb</th>
+                    <th>Oct</th>
+                </tr>
+            </thead>
+        `;
+    }
+
     const ambrosiaColspan = showRawColumns ? 3 : 2;
     const redAmbrosiaColspan = showRawColumns ? 3 : 2;
     const octeractColspan = showRawColumns ? 3 : 2;
@@ -577,10 +629,10 @@ function renderRedAmbrosiaUpgradeContextSummaryHtml(context: ReturnType<typeof g
     const commonValues = context.commonValues;
 
     const summaryRows = [
-        ['Total Luck in Red Luck Loadout', formatRedAmbrosiaUpgradeCategoryValue(commonValues?.luck)],
+        ['Total Luck (Red Luck ldt)', formatRedAmbrosiaUpgradeCategoryValue(commonValues?.luck)],
         ['Total Red Luck', formatRedAmbrosiaUpgradeCategoryValue(commonValues?.totalRedLuck)],
-        ['Luck Multiplier in Red Luck Loadout', formatRedAmbrosiaUpgradeCategoryValue(commonValues?.mLuck)],
-        ['Total Luck Conversion', formatRedAmbrosiaUpgradeCategoryValue(commonValues?.luckConversion)],
+        ['Luck Mult. (Red Luck ldt)', formatRedAmbrosiaUpgradeCategoryValue(commonValues?.mLuck)],
+        ['Total Luck Conv.', formatRedAmbrosiaUpgradeCategoryValue(commonValues?.luckConversion)],
     ];
 
     const rowsHtml = `
@@ -609,31 +661,39 @@ function renderRedAmbrosiaUpgradeContextSummaryHtml(context: ReturnType<typeof g
     `;
 }
 
-function renderRedAmbrosiaUpgradeTableHtml(rows: RedAmbrosiaUpgradeTableRow[], context: ReturnType<typeof getCurrentRedAmbrosiaOptimizerContext>): string {
+function renderRedAmbrosiaUpgradeTableHtml(rows: RedAmbrosiaUpgradeTableRow[], context: ReturnType<typeof getCurrentRedAmbrosiaOptimizerContext>, compactView = false): string {
     if (!rows.length) {
         return `<div class="hs-heater-red-ambrosia-empty">No red ambrosia upgrade rows available.</div>`;
     }
 
     const showRawColumns = SHOW_RED_AMBROSIA_RAW_COLUMNS;
-    const rowsHtml = rows.map(row => renderRedAmbrosiaUpgradeRowHtml(row, showRawColumns)).join('');
+    const cefLogRanges: Record<CefLogKey, CefLogRange | null> = {
+        ambrosiaCefLog: computeCefLogRange(rows, 'ambrosiaCefLog'),
+        redAmbrosiaCefLog: computeCefLogRange(rows, 'redAmbrosiaCefLog'),
+        octeractCefLog: computeCefLogRange(rows, 'octeractCefLog'),
+    };
+    const rowsHtml = rows.map(row => renderRedAmbrosiaUpgradeRowHtml(row, cefLogRanges, showRawColumns, compactView)).join('');
 
     return `
-        <div class="hs-heater-red-ambrosia-table-section">
+        <div class="hs-heater-red-ambrosia-table-section${compactView ? ' hs-heater-red-ambrosia-compact-view' : ''}">
             <div class="hs-heater-redamb-table-wrapper">
                 <table class="hs-heater-redamb-table hs-heater-red-ambrosia-table">
-                    ${renderRedAmbrosiaUpgradeTableHeaderHtml(showRawColumns)}
+                    ${renderRedAmbrosiaUpgradeTableHeaderHtml(showRawColumns, compactView)}
                     <tbody>
                         ${rowsHtml}
                     </tbody>
                 </table>
             </div>
-            ${renderRedAmbrosiaUpgradeContextSummaryHtml(context)}
+            ${compactView ? '' : renderRedAmbrosiaUpgradeContextSummaryHtml(context)}
+            <div class="hs-heater-red-ambrosia-footer">
+                <div>${HSUIC.Button({ id: 'hs-heater-red-ambrosia-action-btn', class: 'redButton', text: 'Toggle Data' })}</div>
+            </div>
         </div>
     `;
 }
 
-export function buildRedAmbrosiaUpgradeTableHtml(gameDataApi?: HSGameDataAPI): string {
+export function buildRedAmbrosiaUpgradeTableHtml(gameDataApi?: HSGameDataAPI, compactView = false): string {
     const rows = computeRedAmbrosiaUpgradeRows(gameDataApi);
     const optimizerContext = getCurrentRedAmbrosiaOptimizerContext();
-    return renderRedAmbrosiaUpgradeTableHtml(rows, optimizerContext);
+    return renderRedAmbrosiaUpgradeTableHtml(rows, optimizerContext, compactView);
 }

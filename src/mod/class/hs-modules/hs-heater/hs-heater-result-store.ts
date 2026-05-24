@@ -1,5 +1,6 @@
-import { buildHeaterTypeSemanticId, getHeaterTypeBranchIndex, getHeaterTypeConfig, getHeaterTypeRowCount, resolveHeaterTypeLabel } from "./hs-heater-result-config";
-import type { HeaterOptimizationResult, HeaterResultArrayKey, HeaterResultRow, NormalizedHeaterResultEntry } from "../../../types/data-types/hs-heater-types";
+import { buildHeaterTypeSemanticId, getHeaterTypeBranchId, getHeaterTypeConfig, getHeaterTypeRowCount, resolveHeaterTypeLabel } from "./hs-heater-result-config";
+import type { HeaterOptimizationResult, HeaterResultArrayKey, NormalizedHeaterResultEntry } from "../../../types/data-types/hs-heater-types";
+import type { HeaterBranchId } from "./hs-heater-result-config";
 
 export type { NormalizedHeaterResultEntry } from "../../../types/data-types/hs-heater-types";
 
@@ -97,33 +98,25 @@ export class HSHeaterResultStore {
         return selectedSemanticIds;
     }
 
-    static getUnavailableRequiredBranchIndexes(selectedSemanticIds: Set<string>): Set<number> {
-        if (selectedSemanticIds.size === 0) return new Set<number>();
+    static getUnavailableRequiredBranchIds(selectedSemanticIds: Set<string>): Set<HeaterBranchId> {
+        if (selectedSemanticIds.size === 0) return new Set<HeaterBranchId>();
 
         const normalizedResult = this.getCurrentNormalizedResult();
-        if (!normalizedResult) {
-            const unavailableBranchIndexes = new Set<number>();
-            for (const semanticId of selectedSemanticIds) {
-                const branchIndex = getHeaterTypeBranchIndex(semanticId);
-                if (branchIndex !== null) {
-                    unavailableBranchIndexes.add(branchIndex);
-                }
-            }
-            return unavailableBranchIndexes;
-        }
+        const availableSemanticIds = normalizedResult
+            ? new Set<string>(normalizedResult.map((entry) => entry.semanticId as string))
+            : null;
 
-        const availableSemanticIds = new Set<string>(normalizedResult.map((entry) => entry.semanticId as string));
-        const unavailableBranchIndexes = new Set<number>();
+        const unavailableBranchIds = new Set<HeaterBranchId>();
 
         for (const semanticId of selectedSemanticIds) {
-            if (availableSemanticIds.has(semanticId)) continue;
-            const branchIndex = getHeaterTypeBranchIndex(semanticId);
-            if (branchIndex !== null) {
-                unavailableBranchIndexes.add(branchIndex);
+            if (availableSemanticIds?.has(semanticId)) continue;
+            const branchId = getHeaterTypeBranchId(semanticId);
+            if (branchId !== null) {
+                unavailableBranchIds.add(branchId);
             }
         }
 
-        return unavailableBranchIndexes;
+        return unavailableBranchIds;
     }
 
     static setResultFromRaw(result: HeaterOptimizationResult): void {
