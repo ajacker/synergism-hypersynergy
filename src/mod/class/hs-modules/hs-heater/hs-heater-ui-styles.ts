@@ -569,13 +569,13 @@ export class HSHeaterUIStyles {
             }
 
             /* === Floating Preview Container (base) === */
-            #hs-heater-loadout-preview {
+            .hs-heater-loadout-preview {
                 position: fixed;
                 z-index: 10000;
                 background: #1e1e1e;
                 border: 1px solid rgba(255, 255, 255, 0.2);
                 border-radius: 4px;
-                padding: 8px;
+                padding: 2px;
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
                 max-width: 480px;
                 max-height: 400px;
@@ -624,7 +624,7 @@ export class HSHeaterUIStyles {
             }
 
             /* === Heater Tooltip Overlays === */
-            #hs-heater-loadout-json-tooltip,
+            .hs-heater-loadout-json-tooltip,
             #hs-heater-sync-settings-tooltip,
             #hs-heater-start-heater-tooltip,
             #hs-heater-topbar-help-tooltip {
@@ -649,6 +649,43 @@ export class HSHeaterUIStyles {
             }
             .hs-heater-tooltip-bigger {
                 font-size: 0.95em !important;
+            }
+
+            .hs-heater-tooltip-title {
+                width: auto;
+                text-align: center;
+                margin-bottom: 2px;
+                font-size: 0.9em;
+            }
+
+            .hs-heater-tooltip-pin-button {
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 18px;
+                height: 18px;
+                min-width: 18px;
+                min-height: 18px;
+                border: none;
+                border-radius: 50%;
+                background: rgba(255,255,255,0.1);
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+                font-size: 0.9em;
+                line-height: 1;
+            }
+
+            .hs-heater-tooltip-pinned {
+                border-color: rgba(86, 156, 255, 0.85);
+                cursor: grab;
+                touch-action: none;
+            }
+
+            .hs-heater-tooltip-pinned:active {
+                cursor: grabbing;
             }
 
             #hs-heater-sync-settings-tooltip .hs-heater-sync-settings-tooltip-key {

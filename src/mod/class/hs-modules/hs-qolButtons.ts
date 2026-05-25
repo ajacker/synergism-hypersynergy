@@ -756,6 +756,10 @@ export class HSQOLButtons extends HSModule {
             const afkSwapperToggle = document.createElement('button');
             afkSwapperToggle.id = 'hs-ambrosia-loadout-idle-swap-toggle';
             afkSwapperToggle.textContent = 'Toggle AFK Swapper';
+            afkSwapperToggle.classList.add('hs-tooltip');
+            afkSwapperToggle.dataset.tooltip = [
+                'You need three loadouts [... Feel free to contribute]',
+            ].join('\n');
 
             afkSwapperToggle.addEventListener('click', () => {
                 const idleSwapToggle = document.getElementById('hs-setting-ambrosia-idle-swap-btn') as HTMLElement;

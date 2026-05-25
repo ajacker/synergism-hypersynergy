@@ -20,8 +20,8 @@ import { HSUI } from "../hs-core/hs-ui";
 import { HSUtils } from "../hs-utils/hs-utils";
 import { HSGameDataAPI } from "../hs-core/gds/hs-gamedata-api";
 import { HSAmbrosiaHelper } from "./hs-ambrosiaHelper";
-import minibarCSS from "inline:../../resource/css/module/hs-ambrosia-minibars.css";
 import { HSSettingsDefinition } from "../../types/module-types/hs-settings-types";
+import minibarCSS from "inline:../../resource/css/module/hs-ambrosia-minibars.css";
 
 /**
  * Class: HSAmbrosia
@@ -48,6 +48,11 @@ export class HSAmbrosia extends HSModule
     #importBlueberriesButton: HTMLButtonElement | null = null;
     #importBlueberriesInput: HTMLInputElement | null = null;
     #blueberryToggleModeButton: HTMLButtonElement | null = null;
+    #showCurrAmbrosiaUpgradesButton: HTMLButtonElement | null = null;
+    #state = {
+        activeLoadout: null as AMBROSIA_LOADOUT_SLOT | null,
+        showCurrentLevelsPersistent: true
+    };
     #debugElement?: HTMLDivElement;
 
     activeLoadout?: AMBROSIA_LOADOUT_SLOT;
@@ -135,7 +140,6 @@ export class HSAmbrosia extends HSModule
 
     async init() {
         HSLogger.log(`Initializing HSAmbrosia module`, this.context);
-        HSLogger.debug(() => 'init() called', this.context);
 
         await this.#cacheDomRefs();
 
@@ -146,6 +150,8 @@ export class HSAmbrosia extends HSModule
         await this.#createPersistentMinibars();
 
         await this.#injectImportFromClipboardButton();
+        await this.#hookShowCurrAmbrosiaUpgradesButton();
+
         this.#setupLoadoutContainerEvents();
 
         HSSettingsUI.refreshAmbrosiaLoadoutDropdowns();
@@ -687,14 +693,12 @@ export class HSAmbrosia extends HSModule
     // ---------------- Persistence -----------------
     // ==============================================
 
-    async saveState(): Promise<any> {
+    async saveState(): Promise<void> {
         const storageModule = HSModuleManager.getModule('HSStorage') as HSStorage;
 
         if (storageModule) {
-            const payload = {
-                activeLoadout: this.activeLoadout ?? null
-            };
-            storageModule.setData(HSGlobal.HSAmbrosia.storageKey, JSON.stringify(payload));
+            this.#state.activeLoadout = this.activeLoadout ?? null;
+            storageModule.setData(HSGlobal.HSAmbrosia.storageKey, JSON.stringify(this.#state));
         } else {
             HSLogger.warn(`saveState - Could not find storage module`, this.context);
         }
@@ -703,40 +707,204 @@ export class HSAmbrosia extends HSModule
     async loadState(): Promise<void> {
         const storageModule = HSModuleManager.getModule('HSStorage') as HSStorage;
 
-        if (storageModule) {
-            const data = storageModule.getData(HSGlobal.HSAmbrosia.storageKey);
+        if (!storageModule) { return; }
 
-            if (!data) {
-                HSLogger.warn(`loadState - No data found`, this.context);
-                return;
-            }
+        const data = storageModule.getData(HSGlobal.HSAmbrosia.storageKey);
+        if (!data) { return; }
 
-            let parsedData: any = data;
-            if (typeof data === 'string') {
-                try {
-                    parsedData = JSON.parse(data);
-                } catch {
-                    // TEMPORARY:Legacy raw string format may be stored directly as the active loadout value.
-                    this.activeLoadout = HSAmbrosiaHelper.resolveAmbrosiaLoadout(data);
-                    return;
-                }
-            }
-
+        let parsedData: any = data;
+        if (typeof data === 'string') {
             try {
-                if (parsedData && typeof parsedData === 'object' && !Array.isArray(parsedData)) {
-                    if (parsedData.activeLoadout) {
-                        this.activeLoadout = HSAmbrosiaHelper.resolveAmbrosiaLoadout(parsedData.activeLoadout);
-                    } else {
-                        this.activeLoadout = undefined;
-                    }
-                }
-            } catch (e) {
-                HSLogger.warn(`loadState - Error parsing data`, this.context);
+                parsedData = JSON.parse(data);
+            } catch {
                 return;
             }
-        } else {
-            HSLogger.warn(`loadState - Could not find storage module`, this.context);
         }
+
+        try {
+            if (parsedData && typeof parsedData === 'object' && !Array.isArray(parsedData)) {
+                if (parsedData.activeLoadout) {
+                    this.activeLoadout = HSAmbrosiaHelper.resolveAmbrosiaLoadout(parsedData.activeLoadout);
+                    this.#state.activeLoadout = this.activeLoadout ?? null;
+                } else {
+                    this.activeLoadout = undefined;
+                    this.#state.activeLoadout = null;
+                }
+
+                this.#state.showCurrentLevelsPersistent = Boolean(parsedData.showCurrentLevelsPersistent);
+            }
+        } catch (e) {
+            HSLogger.warn(`loadState - Error parsing data`, this.context);
+            return;
+        }
+    }
+
+
+    // ==============================================
+    // ---- Ambrosia Loadouts Perma-show levels -----
+    // ==============================================
+
+    async #hookShowCurrAmbrosiaUpgradesButton() {
+        const button = this.#showCurrAmbrosiaUpgradesButton ?? await HSElementHooker.HookElement('#showCurrAmbrosiaUpgrades') as HTMLButtonElement;
+        if (!button) { HSLogger.warn('hookShowCurrAmbrosiaUpgradesButton() could not find #showCurrAmbrosiaUpgrades', this.context); return; }
+        this.#showCurrAmbrosiaUpgradesButton = button;
+
+        button.removeAttribute('title');
+        button.setAttribute('aria-label', 'Toggle persistent amb levels display');
+        button.dataset.tooltip = 'Toggle persistent amb levels display';
+        button.classList.add('hs-tooltip');
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            HSLogger.debug(() => 'showCurrAmbrosiaUpgrades clicked', this.context);
+            this.#togglePersistentCurrentLevels();
+        });
+
+        if (this.#state.showCurrentLevelsPersistent) {
+            this.#enablePersistentCurrentLevels();
+        }
+    }
+
+    #togglePersistentCurrentLevels() {
+        if (this.#state.showCurrentLevelsPersistent) {
+            this.#disablePersistentCurrentLevels();
+        } else {
+            this.#enablePersistentCurrentLevels();
+        }
+    }
+
+    #enablePersistentCurrentLevels() {
+        if (!this.#showCurrAmbrosiaUpgradesButton) { HSLogger.warn('enablePersistentCurrentLevels() missing button reference', this.context); return; }
+
+        this.#state.showCurrentLevelsPersistent = true;
+        this.#showCurrAmbrosiaUpgradesButton.classList.add('hs-ambrosia-current-levels-active');
+        this.#showCurrAmbrosiaUpgradesButton.textContent = '📌';
+        this.#displayCurrentAmbrosiaLevels();
+
+        this.#showCurrAmbrosiaUpgradesButton.addEventListener('mouseover', this.#showCurrAmbrosiaButtonMouseOverCaptureHandler, true);
+        this.#showCurrAmbrosiaUpgradesButton.addEventListener('mouseout', this.#showCurrAmbrosiaButtonMouseOutCaptureHandler, true);
+
+        this.#loadoutContainer?.addEventListener('mouseout', this.#showCurrentLevelsSlotMouseOutHandler);
+
+        void this.saveState();
+    }
+
+    #disablePersistentCurrentLevels() {
+        if (!this.#showCurrAmbrosiaUpgradesButton) { HSLogger.warn('disablePersistentCurrentLevels() missing button reference', this.context); return; }
+        this.#showCurrAmbrosiaUpgradesButton.textContent = '🔎';
+
+        this.#state.showCurrentLevelsPersistent = false;
+        this.#showCurrAmbrosiaUpgradesButton.classList.remove('hs-ambrosia-current-levels-active');
+
+        this.#showCurrAmbrosiaUpgradesButton.removeEventListener('mouseover', this.#showCurrAmbrosiaButtonMouseOverCaptureHandler, true);
+        this.#showCurrAmbrosiaUpgradesButton.removeEventListener('mouseout', this.#showCurrAmbrosiaButtonMouseOutCaptureHandler, true);
+        this.#loadoutContainer?.removeEventListener('mouseout', this.#showCurrentLevelsSlotMouseOutHandler);
+
+        void this.saveState();
+
+        if (!this.#showCurrAmbrosiaUpgradesButton.matches(':hover')) {
+            this.#restoreCurrentAmbrosiaDisplay();
+        }
+    }
+
+    #showCurrAmbrosiaButtonMouseOverCaptureHandler = (event: Event) => {
+        if (!this.#state.showCurrentLevelsPersistent) return;
+        if (!(event.target instanceof HTMLElement)) return;
+        if (!event.target.closest('#showCurrAmbrosiaUpgrades')) return;
+        // Ignore synthetic events dispatched by our own code; we only want real user hover events
+        if (!event.isTrusted) return;
+
+        HSLogger.debug(() => 'showCurrAmbrosiaButtonMouseOverCaptureHandler() hiding current levels while button is hovered', this.context);
+        event.stopImmediatePropagation();
+        this.#hideCurrentAmbrosiaDisplay();
+    };
+
+    #showCurrAmbrosiaButtonMouseOutCaptureHandler = (event: Event) => {
+        if (!this.#state.showCurrentLevelsPersistent) return;
+        if (!(event.target instanceof HTMLElement)) return;
+        if (!event.target.closest('#showCurrAmbrosiaUpgrades')) return;
+        // Ignore synthetic events dispatched by our own code; we only want real user hover events
+        if (!event.isTrusted) return;
+
+        HSLogger.debug(() => 'showCurrAmbrosiaButtonMouseOutCaptureHandler() restoring current levels after button hover', this.context);
+        event.stopImmediatePropagation();
+
+        setTimeout(() => {
+            if (!this.#state.showCurrentLevelsPersistent) return;
+            if (this.#loadoutsSlots.some((loadoutSlot) => loadoutSlot.matches(':hover'))) {
+                HSLogger.debug(() => 'showCurrAmbrosiaButtonMouseOutCaptureHandler() slot still hovered, skipping restore', this.context);
+                return;
+            }
+            this.#displayCurrentAmbrosiaLevels();
+        }, 0);
+    };
+
+    #showCurrentLevelsSlotMouseOutHandler = (event: MouseEvent) => {
+        if (!this.#state.showCurrentLevelsPersistent) return;
+        if (!(event.target instanceof HTMLElement)) return;
+
+        const slot = event.target.closest('.blueberryLoadoutSlot');
+        if (!slot) return;
+
+        const relatedTarget = event.relatedTarget;
+        if (relatedTarget instanceof Node && slot.contains(relatedTarget)) { return; }
+
+        HSLogger.debug(() => 'showCurrentLevelsSlotMouseOutHandler() restoring pinned current levels after native slot hover', this.context);
+        setTimeout(() => {
+            if (!this.#state.showCurrentLevelsPersistent) return;
+            if (this.#showCurrAmbrosiaUpgradesButton?.matches(':hover')) {
+                HSLogger.debug(() => 'showCurrentLevelsSlotMouseOutHandler() button is hovered; skipping restore', this.context);
+                return;
+            }
+            if (this.#loadoutsSlots.some((loadoutSlot) => loadoutSlot.matches(':hover'))) {
+                HSLogger.debug(() => 'showCurrentLevelsSlotMouseOutHandler() another slot is still hovered; skipping restore', this.context);
+                return;
+            }
+            this.#displayCurrentAmbrosiaLevels();
+        }, 0);
+    };
+
+    #displayCurrentAmbrosiaLevels() {
+        const button = this.#showCurrAmbrosiaUpgradesButton;
+        if (!button) { HSLogger.warn('displayCurrentAmbrosiaLevels() missing persistent levels button', this.context); return; }
+
+        const event = new MouseEvent('mouseover', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+        });
+        button.dispatchEvent(event);
+    }
+
+    #hideCurrentAmbrosiaDisplay() {
+        const button = this.#showCurrAmbrosiaUpgradesButton;
+        if (!button) { HSLogger.warn('hideCurrentAmbrosiaDisplay() missing persistent levels button', this.context); return; }
+
+        const event = new MouseEvent('mouseout', {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+            relatedTarget: document.body
+        });
+        button.dispatchEvent(event);
+    }
+
+    #restoreCurrentAmbrosiaDisplay() {
+        const button = this.#showCurrAmbrosiaUpgradesButton;
+        if (!button) { HSLogger.warn('restoreCurrentAmbrosiaDisplay() missing persistent levels button', this.context); return; }
+
+        if (button.matches(':hover')) {
+            HSLogger.debug(() => 'restoreCurrentAmbrosiaDisplay() button still hovered; deferring to normal hover state', this.context);
+            return;
+        }
+
+        const event = new MouseEvent('mouseout', {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+            relatedTarget: document.body
+        });
+        button.dispatchEvent(event);
     }
 
 
@@ -1372,6 +1540,10 @@ export class HSAmbrosia extends HSModule
         let redSwapThresholdRedMin = HSGlobal.HSAmbrosia.idleSwapMaxRedThreshold;
 
         let targetLoadout: string | undefined;
+        const isKnownSwapLoadout =
+            this.activeLoadout === octeractLoadout
+            || this.activeLoadout === normalLuckLoadout
+            || this.activeLoadout === redLuckLoadout;
 
         if (this.#holdBlueLuckUntilReset && hasBlueBarReset) {
             this.#holdBlueLuckUntilReset = false;
@@ -1401,6 +1573,8 @@ export class HSAmbrosia extends HSModule
         } else if (shouldSwapToBlueLuck) {
             targetLoadout = normalLuckLoadout;
             this.#holdBlueLuckUntilReset = true;
+        } else if (!isKnownSwapLoadout) {
+            targetLoadout = octeractLoadout;
         } else {
             targetLoadout = this.activeLoadout;
         }

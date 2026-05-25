@@ -56,11 +56,11 @@ type LoadoutPreviewItem = { key: LoadoutPreviewUpgradeKey; maxLevel: number };
 const HEATER_RESULT_UI_SELECTORS = {
     modalBody:          '.hs-modal-body',
     resultsHeader:      '.hs-heater-results-topbar',
-    previewId:          'hs-heater-loadout-preview',
     previewRow:         'hs-heater-loadout-preview-row',
     previewButton:      'hs-heater-preview-button',
     previewEmptyCell:   'hs-heater-preview-empty-cell',
-    copyJsonTooltipId:  'hs-heater-loadout-json-tooltip',
+    previewHoverClass:  'hs-heater-loadout-preview--hover',
+    jsonTooltipHoverClass: 'hs-heater-loadout-json-tooltip--hover',
     topbarHelpTooltipId: 'hs-heater-topbar-help-tooltip',
     copyLoadoutBtn:     'hs-heater-copy-loadout-btn',
     importLoadoutBtn:   'hs-heater-import-loadout-btn',
@@ -118,16 +118,30 @@ export class HSHeaterUIResult {
         onClick: (event: Event) => void;
         onShowOverlay: (event: Event) => void;
         onHideOverlay: (event: Event) => void;
+        onEscape: (event: KeyboardEvent) => void;
         detach: () => void;
     }>();
 
-    static #overlayState: {
-        kind: 'preview' | 'json' | null;
-        target: HTMLElement | null;
-    } = {
-        kind: null,
-        target: null,
-    };
+    static #activeHoverOverlay: {
+        target: HTMLElement;
+        kind: 'preview' | 'json';
+        tooltip: HTMLElement;
+    } | null = null;
+
+    static #pinnedOverlays = new Map<HTMLElement, {
+        kind: 'preview' | 'json';
+        tooltip: HTMLElement;
+        position?: { left: number; top: number };
+    }>();
+
+    static #tooltipDragState = new Map<HTMLElement, {
+        pointerId: number | null;
+        offsetX: number;
+        offsetY: number;
+        onPointerMove: ((event: PointerEvent) => void) | null;
+        onPointerUp: ((event: PointerEvent) => void) | null;
+        cleanup: (() => void) | null;
+    }>();
 
     // === Metadata Maps ===
     static #loadoutUpgradeMetaMap = LOADOUT_UPGRADE_META_MAP;
@@ -289,44 +303,89 @@ export class HSHeaterUIResult {
     }
 
     // === Loadout Preview/Tooltip Methods ===
-    static showLoadoutPreview(button: HTMLElement): void {
-        this.removeLoadoutPreview();
-
+    static #buildLoadoutPreviewTooltip(button: HTMLElement, isHover = false): HTMLElement | null {
         const loadout = this.getLoadoutFromButton(button);
-        if (!loadout) return;
+        if (!loadout) return null;
 
         const preview = document.createElement('div');
-        preview.id = HEATER_RESULT_UI_SELECTORS.previewId;
+        preview.classList.add('hs-heater-loadout-preview');
+        if (isHover) {
+            preview.classList.add(HEATER_RESULT_UI_SELECTORS.previewHoverClass);
+        }
         preview.style.zIndex = String(HSUI.getHighestActiveModalZIndex() + 1);
-        preview.innerHTML = this.buildLoadoutPreviewHtml(loadout);
+
+        const titleText = button.getAttribute('data-loadout-label');
+        if (titleText) {
+            const title = document.createElement('div');
+            title.className = 'hs-heater-tooltip-title';
+            title.textContent = titleText;
+            preview.appendChild(title);
+        }
+
+        const content = document.createElement('div');
+        content.className = 'hs-heater-tooltip-content';
+        content.innerHTML = this.buildLoadoutPreviewHtml(loadout);
+        preview.appendChild(content);
+
+        return preview;
+    }
+
+    static showLoadoutPreview(button: HTMLElement): HTMLElement | null {
+        this.removeLoadoutPreview();
+        const preview = this.#buildLoadoutPreviewTooltip(button, true);
+        if (!preview) return null;
 
         document.body.appendChild(preview);
         this.positionOverlayNearTarget(preview, button);
+        return preview;
     }
 
     static removeLoadoutPreview(): void {
-        const existing = document.getElementById(HEATER_RESULT_UI_SELECTORS.previewId);
+        const existing = document.querySelector(`.hs-heater-loadout-preview.${HEATER_RESULT_UI_SELECTORS.previewHoverClass}`) as HTMLElement | null;
         if (existing && existing.parentElement) {
             existing.parentElement.removeChild(existing);
         }
     }
 
-    static showLoadoutJsonTooltip(trigger: HTMLElement): void {
-        this.removeLoadoutJsonTooltip();
+    static #buildLoadoutJsonTooltip(trigger: HTMLElement, isHover = false): HTMLElement | null {
         const loadout = trigger.getAttribute(HEATER_RESULT_UI_SELECTORS.dataLoadout);
-        if (!loadout) return;
+        if (!loadout) return null;
 
         const tooltip = document.createElement('div');
-        tooltip.id = HEATER_RESULT_UI_SELECTORS.copyJsonTooltipId;
+        tooltip.classList.add('hs-heater-loadout-json-tooltip');
+        if (isHover) {
+            tooltip.classList.add(HEATER_RESULT_UI_SELECTORS.jsonTooltipHoverClass);
+        }
         tooltip.style.zIndex = String(HSUI.getHighestActiveModalZIndex() + 1);
-        tooltip.textContent = this.formatLoadoutJsonForTooltip(loadout);
+
+        const titleText = trigger.getAttribute('data-loadout-label');
+        if (titleText) {
+            const title = document.createElement('div');
+            title.className = 'hs-heater-tooltip-title';
+            title.textContent = titleText;
+            tooltip.appendChild(title);
+        }
+
+        const content = document.createElement('div');
+        content.className = 'hs-heater-tooltip-content';
+        content.textContent = this.formatLoadoutJsonForTooltip(loadout);
+        tooltip.appendChild(content);
+
+        return tooltip;
+    }
+
+    static showLoadoutJsonTooltip(trigger: HTMLElement): HTMLElement | null {
+        this.removeLoadoutJsonTooltip();
+        const tooltip = this.#buildLoadoutJsonTooltip(trigger, true);
+        if (!tooltip) return null;
 
         document.body.appendChild(tooltip);
         this.positionOverlayNearTarget(tooltip, trigger);
+        return tooltip;
     }
 
     static removeLoadoutJsonTooltip(): void {
-        const existing = document.getElementById(HEATER_RESULT_UI_SELECTORS.copyJsonTooltipId);
+        const existing = document.querySelector(`.hs-heater-loadout-json-tooltip.${HEATER_RESULT_UI_SELECTORS.jsonTooltipHoverClass}`) as HTMLElement | null;
         if (existing && existing.parentElement) {
             existing.parentElement.removeChild(existing);
         }
@@ -343,7 +402,10 @@ export class HSHeaterUIResult {
             `The loadouts will only be as good as your inputs, this means:\n`
             + `- If you want an optimized p4x4 loadout, you need to actually have\n pre-AoAG inputs.\n`
             + `- Same for Obt/Off loadouts (but less problematic, so simply (un)checking the "post-aoag" input is enough).\n`
-            + `- ??? (Feel free to contribute)`;
+            + `- ??? (Feel free to contribute)`
+            + `\n\n`
+            + `Right-click an Import button to pin his tooltip. Esc key to un-pin all.\n`
+            ;
 
         document.body.appendChild(tooltip);
         this.positionOverlayNearTarget(tooltip, trigger, { placement: 'below' });
@@ -448,6 +510,112 @@ export class HSHeaterUIResult {
         preview.style.top = `${top}px`;
     }
 
+    static #appendPinnedTooltipButton(tooltip: HTMLElement, target: HTMLElement): void {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'hs-heater-tooltip-pin-button';
+        button.title = 'Close pinned tooltip';
+        button.textContent = '📌';
+        button.addEventListener('pointerdown', (event) => {
+            event.stopPropagation();
+        });
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this.#removePinnedOverlay(target);
+        });
+        tooltip.appendChild(button);
+    }
+
+    static #bindTooltipDrag(tooltip: HTMLElement): void {
+        this.#unbindTooltipDrag(tooltip);
+
+        const dragState = {
+            pointerId: null as number | null,
+            offsetX: 0,
+            offsetY: 0,
+            onPointerMove: null as ((event: PointerEvent) => void) | null,
+            onPointerUp: null as ((event: PointerEvent) => void) | null,
+            cleanup: null as (() => void) | null,
+        };
+
+        const onPointerDown = (event: PointerEvent) => {
+            if (event.button !== 0) return;
+            if ((event.target as HTMLElement | null)?.closest('.hs-heater-tooltip-pin-button')) return;
+            tooltip.setPointerCapture(event.pointerId);
+            const rect = tooltip.getBoundingClientRect();
+            dragState.pointerId = event.pointerId;
+            dragState.offsetX = event.clientX - rect.left;
+            dragState.offsetY = event.clientY - rect.top;
+
+            dragState.onPointerMove = (moveEvent: PointerEvent) => {
+                if (moveEvent.pointerId !== dragState.pointerId) return;
+                const left = Math.max(8, Math.min(window.innerWidth - tooltip.offsetWidth - 8, moveEvent.clientX - dragState.offsetX));
+                const top = Math.max(8, Math.min(window.innerHeight - tooltip.offsetHeight - 8, moveEvent.clientY - dragState.offsetY));
+                tooltip.style.left = `${left}px`;
+                tooltip.style.top = `${top}px`;
+                for (const entry of this.#pinnedOverlays.values()) {
+                    if (entry.tooltip === tooltip) {
+                        entry.position = { left, top };
+                        break;
+                    }
+                }
+            };
+
+            dragState.onPointerUp = (upEvent: PointerEvent) => {
+                if (upEvent.pointerId !== dragState.pointerId) return;
+                tooltip.releasePointerCapture(upEvent.pointerId);
+                if (dragState.onPointerMove) {
+                    document.removeEventListener('pointermove', dragState.onPointerMove);
+                }
+                if (dragState.onPointerUp) {
+                    document.removeEventListener('pointerup', dragState.onPointerUp);
+                    document.removeEventListener('pointercancel', dragState.onPointerUp);
+                }
+                dragState.pointerId = null;
+            };
+
+            if (dragState.onPointerMove) {
+                document.addEventListener('pointermove', dragState.onPointerMove);
+            }
+            if (dragState.onPointerUp) {
+                document.addEventListener('pointerup', dragState.onPointerUp);
+                document.addEventListener('pointercancel', dragState.onPointerUp);
+            }
+            event.preventDefault();
+        };
+
+        tooltip.addEventListener('pointerdown', onPointerDown);
+
+        dragState.cleanup = () => {
+            tooltip.removeEventListener('pointerdown', onPointerDown);
+            if (dragState.onPointerMove) {
+                document.removeEventListener('pointermove', dragState.onPointerMove);
+            }
+            if (dragState.onPointerUp) {
+                document.removeEventListener('pointerup', dragState.onPointerUp);
+                document.removeEventListener('pointercancel', dragState.onPointerUp);
+            }
+            dragState.pointerId = null;
+        };
+
+        this.#tooltipDragState.set(tooltip, dragState);
+    }
+
+    static #unbindTooltipDrag(tooltip?: HTMLElement): void {
+        if (tooltip) {
+            const state = this.#tooltipDragState.get(tooltip);
+            if (state?.cleanup) state.cleanup();
+            this.#tooltipDragState.delete(tooltip);
+            return;
+        }
+
+        for (const state of this.#tooltipDragState.values()) {
+            state.cleanup?.();
+        }
+        this.#tooltipDragState.clear();
+    }
+
     // === Modal/Interaction/Event Methods ===
     static getResultInteractionTarget(modal: HTMLElement, event: Event): HTMLElement | null {
         const target = (event.target as HTMLElement | null)?.closest(`.${HEATER_RESULT_UI_SELECTORS.importLoadoutBtn}, .${HEATER_RESULT_UI_SELECTORS.jsonTooltipTrigger}`) as HTMLElement | null;
@@ -472,38 +640,127 @@ export class HSHeaterUIResult {
         return null;
     }
 
-    static clearActiveOverlay(): void {
-        this.removeLoadoutPreview();
-        this.removeLoadoutJsonTooltip();
-        this.#overlayState = { kind: null, target: null };
+    static #clearOverlayButtonBorder(): void {
+        const clearTarget = (target: HTMLElement | null) => {
+            if (target instanceof HTMLElement && target.classList.contains(HEATER_RESULT_UI_SELECTORS.importLoadoutBtn)) {
+                target.classList.remove('hs-rainbow-border');
+            }
+        };
+
+        clearTarget(this.#activeHoverOverlay?.target ?? null);
+        this.#pinnedOverlays.forEach((_, target) => clearTarget(target));
+    }
+
+    static #removeHoverOverlay(): void {
+        if (!this.#activeHoverOverlay) return;
+        this.#activeHoverOverlay.tooltip.remove();
+        this.#activeHoverOverlay = null;
+    }
+
+    static #removePinnedOverlay(target: HTMLElement): void {
+        const entry = this.#pinnedOverlays.get(target);
+        if (!entry) return;
+        this.#unbindTooltipDrag(entry.tooltip);
+        entry.tooltip.remove();
+        this.#pinnedOverlays.delete(target);
+        if (target.classList.contains(HEATER_RESULT_UI_SELECTORS.importLoadoutBtn)) {
+            target.classList.remove('hs-rainbow-border');
+        }
+    }
+
+    static #clearPinnedOverlays(): void {
+        for (const target of Array.from(this.#pinnedOverlays.keys())) {
+            this.#removePinnedOverlay(target);
+        }
+    }
+
+    static clearAllOverlays(): void {
+        this.#clearOverlayButtonBorder();
+        this.#removeHoverOverlay();
+        this.#clearPinnedOverlays();
     }
 
     static showOverlayForTarget(target: HTMLElement): void {
         const kind = this.getOverlayKindFromTarget(target);
         if (!kind) return;
 
-        const sameTarget = this.#overlayState.target === target;
-        const sameKind = this.#overlayState.kind === kind;
-        if (sameTarget && sameKind) return;
+        const sameHover = this.#activeHoverOverlay?.target === target && this.#activeHoverOverlay.kind === kind;
+        if (sameHover) return;
 
-        this.clearActiveOverlay();
-        if (kind === 'preview') {
-            this.showLoadoutPreview(target);
-        } else {
-            this.showLoadoutJsonTooltip(target);
+        this.#removeHoverOverlay();
+        if (this.#pinnedOverlays.has(target)) return;
+
+        const tooltip = kind === 'preview'
+            ? this.showLoadoutPreview(target)
+            : this.showLoadoutJsonTooltip(target);
+        if (!tooltip) return;
+
+        this.#activeHoverOverlay = { target, kind, tooltip };
+        if (target.classList.contains(HEATER_RESULT_UI_SELECTORS.importLoadoutBtn)) {
+            target.classList.add('hs-rainbow-border');
         }
-        this.#overlayState = { kind, target };
     }
 
     static hideOverlayForTarget(target: HTMLElement): void {
-        if (this.#overlayState.target !== target) return;
-        this.clearActiveOverlay();
+        if (this.#activeHoverOverlay?.target !== target) return;
+        this.#removeHoverOverlay();
+    }
+
+    static #createPinnedTooltip(target: HTMLElement, kind: 'preview' | 'json'): HTMLElement | null {
+        const tooltip = kind === 'preview'
+            ? this.#buildLoadoutPreviewTooltip(target)
+            : this.#buildLoadoutJsonTooltip(target);
+        if (!tooltip) return null;
+
+        document.body.appendChild(tooltip);
+        this.positionOverlayNearTarget(tooltip, target);
+        return tooltip;
+    }
+
+    static #pinTooltip(target: HTMLElement, kind: 'preview' | 'json', tooltip: HTMLElement): void {
+        const rect = tooltip.getBoundingClientRect();
+        tooltip.classList.add('hs-heater-tooltip-pinned');
+        this.#appendPinnedTooltipButton(tooltip, target);
+        this.#bindTooltipDrag(tooltip);
+        this.#pinnedOverlays.set(target, {
+            kind,
+            tooltip,
+            position: { left: rect.left, top: rect.top },
+        });
+        if (target.classList.contains(HEATER_RESULT_UI_SELECTORS.importLoadoutBtn)) {
+            target.classList.add('hs-rainbow-border');
+        }
+    }
+
+    static #togglePinnedOverlay(target: HTMLElement): void {
+        const kind = this.getOverlayKindFromTarget(target);
+        if (!kind) return;
+
+        if (this.#pinnedOverlays.has(target)) {
+            this.#removePinnedOverlay(target);
+            return;
+        }
+
+        if (this.#activeHoverOverlay?.target === target && this.#activeHoverOverlay.kind === kind) {
+            const tooltip = this.#activeHoverOverlay.tooltip;
+            tooltip.classList.remove(HEATER_RESULT_UI_SELECTORS.previewHoverClass, HEATER_RESULT_UI_SELECTORS.jsonTooltipHoverClass);
+            tooltip.removeAttribute('id');
+            this.#activeHoverOverlay = null;
+            this.#pinTooltip(target, kind, tooltip);
+            return;
+        }
+
+        const tooltip = this.#createPinnedTooltip(target, kind);
+        if (!tooltip) return;
+        this.#pinTooltip(target, kind, tooltip);
     }
 
     static toggleResultInteractionOverlay(target: HTMLElement, show: boolean): void {
+        const keepSelected = show || this.#pinnedOverlays.has(target);
         if (target.classList.contains(HEATER_RESULT_UI_SELECTORS.importLoadoutBtn)) {
-            target.classList.toggle('hs-rainbow-border', show);
+            target.classList.toggle('hs-rainbow-border', keepSelected);
         }
+
         if (show) {
             this.showOverlayForTarget(target);
         } else {
@@ -530,7 +787,7 @@ export class HSHeaterUIResult {
                 return;
             }
 
-            this.clearActiveOverlay();
+            this.clearAllOverlays();
 
             if (button.classList.contains(HEATER_RESULT_UI_SELECTORS.copyLoadoutBtn)) {
                 void this.copyLoadoutToClipboard(loadout);
@@ -539,6 +796,24 @@ export class HSHeaterUIResult {
             if (button.classList.contains(HEATER_RESULT_UI_SELECTORS.importLoadoutBtn)) {
                 void this.importLoadoutToActiveSlot(loadout);
             }
+        };
+
+        const onImportButtonContextMenu = (event: Event) => {
+            const button = (event.target as HTMLElement | null)?.closest(`.${HEATER_RESULT_UI_SELECTORS.importLoadoutBtn}`) as HTMLElement | null;
+            if (!button) return;
+
+            const mouseEvent = event as MouseEvent;
+            if (mouseEvent.button !== 2) return;
+
+            const loadout = button.getAttribute(HEATER_RESULT_UI_SELECTORS.dataLoadout);
+            if (!loadout) {
+                HSLogger.warn(`missing-loadout-attribute: ${JSON.stringify({ source: 'attachResultModalHandlers:onImportButtonContextMenu', elementClass: button.className })}`, this.#context);
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            this.#togglePinnedOverlay(button);
         };
 
         const onIconButtonClick = (event: Event) => {
@@ -570,6 +845,13 @@ export class HSHeaterUIResult {
             HSUI.Notify('Heater result icon override cleared.', { notificationType: 'default' });
         };
 
+        const onEscape = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+            if (this.#pinnedOverlays.size === 0) return;
+            event.preventDefault();
+            this.#clearPinnedOverlays();
+        };
+
         const onShowOverlay = (event: Event) => {
             const target = this.getResultInteractionTarget(modal, event);
             if (!target || this.isSelfTransitionEvent(event, target)) return;
@@ -588,7 +870,9 @@ export class HSHeaterUIResult {
         modal.addEventListener('focusin', onShowOverlay);
         modal.addEventListener('focusout', onHideOverlay);
         modal.addEventListener('click', onIconButtonClick);
+        modal.addEventListener('contextmenu', onImportButtonContextMenu);
         modal.addEventListener('contextmenu', onIconButtonContextMenu);
+        window.addEventListener('keydown', onEscape);
 
         const detach = () => {
             modal.removeEventListener('click', onClick);
@@ -597,7 +881,9 @@ export class HSHeaterUIResult {
             modal.removeEventListener('focusin', onShowOverlay);
             modal.removeEventListener('focusout', onHideOverlay);
             modal.removeEventListener('click', onIconButtonClick);
+            modal.removeEventListener('contextmenu', onImportButtonContextMenu);
             modal.removeEventListener('contextmenu', onIconButtonContextMenu);
+            window.removeEventListener('keydown', onEscape);
             this.#attachedModalHandlers.delete(modal);
             HSLogger.warn(`modal-handlers-detached: ${JSON.stringify({ modalId })}`, this.#context);
         };
@@ -606,6 +892,7 @@ export class HSHeaterUIResult {
             onClick,
             onShowOverlay,
             onHideOverlay,
+            onEscape,
             detach,
         });
 
@@ -620,7 +907,7 @@ export class HSHeaterUIResult {
     }
 
     static clearResultModalResources(): void {
-        this.clearActiveOverlay();
+        this.clearAllOverlays();
         this.#quickbarCloneCleanup?.();
         this.#quickbarCloneCleanup = null;
     }

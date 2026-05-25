@@ -781,12 +781,10 @@ class Loadout {
     private costCache:  number | null;
     private statCache:  Record<string, number>;
 
-    constructor(loadout?: Loadout | Record<string, number>) {
+    constructor(loadout?: Loadout) {
         this.upgradeLevels = {};
-        if (loadout instanceof Loadout) {
+        if (loadout !== undefined) {
             Object.assign(this.upgradeLevels, loadout.upgradeLevels);
-        } else if (loadout !== undefined) {
-            Object.assign(this.upgradeLevels, loadout);
         }
         this.upgradeLevels.ambrosiaPatreon = 1; // Always buy 1 level of ambrosiaPatreon
         this.costCache = null;
@@ -1048,7 +1046,7 @@ function generateTable(selectedUpgrades: string[], stat: string, minLevels: Reco
       for (let level = minLevels[upgradeName] ?? 1; level <= upgrade.maxLevel; level++) {
 
         let cost = preLoadout.cost + upgrade.cost(level)
-        if (stats.amb <= cost)
+        if (stats.amb < cost)
           return // No point in adding unaffordable loadouts to the table
 
         let loadout = new Loadout(preLoadout)
@@ -1061,10 +1059,7 @@ function generateTable(selectedUpgrades: string[], stat: string, minLevels: Reco
 
     }
 
-    let baseUpgrades: Record<string, number> = {};
-    for (let upgrade of selectedUpgrades)
-      baseUpgrades[upgrade] = 0
-    let emptyLoadout = new Loadout(baseUpgrades)
+    let emptyLoadout = new Loadout()
     table.push(emptyLoadout)
     processUpgrade(0, emptyLoadout)
     return trimTable(table, stat)
@@ -1703,10 +1698,10 @@ export class HSHeaterOptimizer {
                 loadoutsH[h]!.upgradeLevels.ambrosiaHyperflux = h;
             }
 
-            loadoutsH.length = 8
+            loadoutsH.length = upgrades.ambrosiaHyperflux.maxLevel + 1
 
             let hyperOutput: HeaterResultRowMatrix = [];
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i <= upgrades.ambrosiaHyperflux.maxLevel; i++) {
                 let maxLoadoutH = new Loadout(maxLoadout);
                 maxLoadoutH.upgradeLevels.ambrosiaHyperflux = i;
                 if (loadoutsH[i] === undefined) {

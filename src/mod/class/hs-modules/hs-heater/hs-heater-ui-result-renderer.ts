@@ -85,10 +85,10 @@ function buildArraySectionHeaderRow(showP4x4: boolean, effectHeader: string): st
         : `<tr class="hs-heater-header-row"><th>Types</th><th>Loadout</th><th>${blueberryHeader}</th><th>Cost</th><th colspan="2">${escapeHtml(effectHeader)}</th><th>Maxed?</th></tr>`;
 }
 
-function buildLoadoutActionControls(escapedFullLoadout: string, isValidJson: boolean): string {
+function buildLoadoutActionControls(escapedFullLoadout: string, escapedLoadoutLabel: string, isValidJson: boolean): string {
     if (!isValidJson) return "";
-    const copyButton = `<button class="hs-heater-copy-loadout-btn hs-heater-json-tooltip-trigger" type="button" data-loadout="${escapedFullLoadout}">Copy</button>`;
-    const importButton = `<button class="hs-heater-import-loadout-btn" type="button" data-loadout="${escapedFullLoadout}">Import</button>`;
+    const copyButton = `<button class="hs-heater-copy-loadout-btn hs-heater-json-tooltip-trigger" type="button" data-loadout="${escapedFullLoadout}" data-loadout-label="${escapedLoadoutLabel}">Copy</button>`;
+    const importButton = `<button class="hs-heater-import-loadout-btn" type="button" data-loadout="${escapedFullLoadout}" data-loadout-label="${escapedLoadoutLabel}">Import</button>`;
     return `${copyButton}${importButton}`;
 }
 
@@ -104,7 +104,7 @@ function buildArraySectionDataRow(
     const fullLoadout = isUnaffordable ? "" : loadoutValue;
     const escapedFullLoadout = escapeHtml(fullLoadout);
     const isValidJson = !isUnaffordable && fullLoadout.trim().startsWith("{") && fullLoadout.trim().endsWith("}");
-    const actionControlsHtml = buildLoadoutActionControls(escapedFullLoadout, isValidJson);
+    const actionControlsHtml = buildLoadoutActionControls(escapedFullLoadout, escapeHtml(entry.label), isValidJson);
     const isSelectedType = selectedSemanticIds.has(entry.semanticId);
     const typeCellClass = isSelectedType ? ' class="hs-heater-selected-type-cell"' : '';
 
