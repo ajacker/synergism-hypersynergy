@@ -25,11 +25,11 @@
   },
   "ambrosia": {
     "groupName": "Add+Time Amb loadouts auto-switch settings",
-    "order": 7
+    "order": 8
   },
   "ambrosia2": {
     "groupName": "Idle Swapper settings",
-    "order": 8
+    "order": 7
   },
   "ambrosia3": {
     "groupName": "Minibar settings",

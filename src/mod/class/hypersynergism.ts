@@ -15,6 +15,7 @@ import strategyEditionCSS from "inline:../resource/css/hs-strategy-edition.css";
 import { HSInputType, HSNotifyPosition, HSNotifyType } from "../types/module-types/hs-ui-types";
 import { HSGameDataAPI } from "./hs-core/gds/hs-gamedata-api";
 import { HSAmbrosia } from "./hs-modules/hs-ambrosia";
+import { HSHeaterInputModalController } from "./hs-modules/hs-heater/hs-heater-input-modal-controller";
 import { HSUtils } from "./hs-utils/hs-utils";
 import { HSGithub } from "./hs-core/github/hs-github";
 
@@ -85,6 +86,21 @@ export class Hypersynergism {
         });
 
         HSGithub.startVersionPolling(HSGlobal.Release.checkIntervalMs);
+        this.#startVanillaGlobalEventPolling();
+    }
+
+    #startVanillaGlobalEventPolling() {
+        const dataModule = HSModuleManager.getModule<HSGameDataAPI>('HSGameDataAPI');
+        if (!dataModule) return;
+
+        const refresh = async () => {
+            try {
+                await dataModule.fetchVanillaGlobalEventData();
+            } catch (error) { HSLogger.warn(`Failed to refresh vanilla global event data: ${error}`, this.#context); }
+        };
+
+        void refresh();
+        window.setInterval(refresh, HSGlobal.HSGameData.globalEventRefreshInterval);
     }
 
     async #waitForGameReady(): Promise<boolean> {
@@ -161,8 +177,9 @@ export class Hypersynergism {
             HSUIC.Grid({
                 html: [
                     this.#buildGridSectionHeader('Export tools'),
-                    this.#buildGridFullSpanDiv('hs-panel-amb-heater-p', `Export an extended save file string for the <a href="${HSGlobal.General.heaterUrl}" class="hs-link" target="_blank">Ambrosia Heater.</a>`),
-                    HSUIC.Button({ id: 'hs-panel-amb-heater-btn', text: 'Export Heater' }),
+                    this.#buildGridFullSpanDiv('hs-panel-amb-heater-p', `Export an extended save file string for the <a href="${HSGlobal.General.heaterUrl}" class="hs-link" target="_blank">Ambrosia Heater sheet</a>.`),
+                    HSUIC.Button({ id: 'hs-panel-amb-heater-btn', text: 'Copy Heater Data' }),
+                    HSUIC.Button({ id: 'hs-panel-amb-heater-compute-btn', text: 'Ambrosia Heater' }),
                     this.#buildGridSectionHeader('References'),
                     HSUIC.Button({ id: 'hs-panel-cor-ref-btn', text: 'Corruption Ref.' }),
                     HSUIC.Button({ id: 'hs-panel-cor-ref-btn-2', text: 'Crpt. Onemind' }),
@@ -230,6 +247,10 @@ export class Hypersynergism {
                 position: 'top',
                 notificationType: 'success'
             });
+        });
+
+        this.#bindToolsButton('#hs-panel-amb-heater-compute-btn', async () => {
+            await HSHeaterInputModalController.openHeaterComputationModal();
         });
 
         this.#bindToolsButton('#hs-panel-cor-ref-btn', () => {
@@ -328,12 +349,12 @@ export class Hypersynergism {
         }
 
         if (exposedPlayer.insideSingularityChallenge === false) {
-            HSLogger.debug(() => 'No active Exalt found in DOM or exposed stuff... Are you sure you have a bug?', this.#context);
+            HSLogger.info('No active Exalt found in DOM or exposed stuff... Are you sure you have a bug?', this.#context);
             return;
         }
 
         exposedPlayer.insideSingularityChallenge = true;
-        HSLogger.log('Exalt bug fix done with exposed stuff (?)', this.#context);
+        HSLogger.info('Exalt bug fixed.', this.#context);
     }
 
     #runCalculation(mode: 'reduced' | 'components') {
@@ -345,11 +366,12 @@ export class Hypersynergism {
         }
 
         const selValue = sel.value.split('|');
-        const calcFnName = selValue[0] as keyof HSGameDataAPI;
+        const calcFnName = selValue[0] as string;   // as keyof HSGameDataAPI
         const isComponentMode = mode === 'components';
         const supportsComponent = selValue.includes('c');
 
-        const calcFn = dataModule[calcFnName];
+        const calcFn = dataModule.getCalculationFunction(calcFnName);
+
         if (typeof calcFn !== 'function') {
             HSLogger.warn(`${calcFnName} is not a function`, this.#context);
             return;

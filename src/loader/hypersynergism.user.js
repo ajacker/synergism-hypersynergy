@@ -44,6 +44,28 @@
         return origDefine.call(this, name, ctor, options);
     };
 
+    // ─── Error detection & reload ─────────────────────────────────────────────
+    const illegalDivPattern = /Failed to construct\s*'?HTMLDivElement'?|Illegal constructor/i;
+
+    window.addEventListener('error', (event) => {
+        const text = `${String(event?.message || '')}\n${String(event?.error?.stack || '')}`;
+        if (illegalDivPattern.test(text)) {
+            warn(`Illegal constructor detected, reloading page...`);
+            window.location.reload();
+        }
+    }, true);
+
+    window.addEventListener('unhandledrejection', (event) => {
+        const reason = event?.reason;
+        const message = reason instanceof Error ? reason.message : String(reason);
+        const stack = reason instanceof Error ? reason.stack : '';
+        const text = `${message}\n${stack}`;
+        if (illegalDivPattern.test(text)) {
+            warn(`Illegal constructor detected (unhandledrejection), reloading page...`);
+            window.location.reload();
+        }
+    }, true);
+
     // ─── Fetch block ──────────────────────────────────────────────────────────
     window.fetch = async function (input, init) {
         const url = typeof input === 'string' ? input

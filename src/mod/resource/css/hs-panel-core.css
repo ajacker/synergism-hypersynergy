@@ -2,39 +2,31 @@
 
 /* ===== SCROLLBAR STYLES ===== */
 /* Custom scrollbar styling for panel elements */
-.hs-panel-body::-webkit-scrollbar,
-#hs-ui-log::-webkit-scrollbar,
-.hs-timer-content::-webkit-scrollbar {
+.hs-scrollbar-themed::-webkit-scrollbar,
+select::-webkit-scrollbar {
     width: 5px;
     height: 5px;
 }
-
-.hs-panel-body::-webkit-scrollbar-track,
-#hs-ui-log::-webkit-scrollbar-track,
-.hs-timer-content::-webkit-scrollbar-track {
+.hs-scrollbar-themed::-webkit-scrollbar-track,
+select::-webkit-scrollbar-track {
     background: #1c1b22;
     border-radius: 3px;
 }
-
-.hs-panel-body::-webkit-scrollbar-thumb,
-#hs-ui-log::-webkit-scrollbar-thumb,
-.hs-timer-content::-webkit-scrollbar-thumb {
+.hs-scrollbar-themed::-webkit-scrollbar-thumb,
+select::-webkit-scrollbar-thumb {
     background: #a22a2a;
     border-radius: 3px;
 }
-
-.hs-panel-body::-webkit-scrollbar-corner,
-#hs-ui-log::-webkit-scrollbar-corner,
-.hs-timer-content::-webkit-scrollbar-corner {
+.hs-scrollbar-themed::-webkit-scrollbar-corner,
+select::-webkit-scrollbar-corner {
     background: #1c1b22;
 }
-
 /* Firefox scrollbar support */
 @supports not selector(::-webkit-scrollbar) {
-    .hs-panel-body::-webkit-scrollbar,
-    #hs-ui-log::-webkit-scrollbar,
-    .hs-timer-content::-webkit-scrollbar {
+    .hs-scrollbar-themed,
+    select {
         scrollbar-color: #a22a2a #1c1b22;
+        scrollbar-width: thin;
     }
 }
 
@@ -109,17 +101,18 @@
 }
 
 .hs-panel-header-right {
-    width: 36px;
     margin: 4px;
-    border: 1px solid white;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
     flex-grow: 0;
     line-height: 35px;
-    text-align: center;
     font-size: 13pt;
     font-weight: bold;
 }
 
-.hs-panel-header-right:hover {
+.hs-panel-header-right > .hs-modal-btn:hover {
     background-color: maroon;
     cursor: pointer;
 }
@@ -416,8 +409,6 @@
 /* ===== MODAL BASE STYLES ===== */
 
 .hs-modal {
-    width: auto;
-    height: auto;
     position: absolute;
     z-index: 7000;
 
@@ -463,21 +454,31 @@
     flex-grow: 1;
 }
 
-.hs-modal-head-right {
+.hs-modal-head-buttons {
+    display: flex;
+    gap: 4px;
+    margin: 4px;
+    flex-grow: 0;
+}
+
+.hs-modal-btn {
     width: 36px;
     height: 36px;
-    margin: 4px;
     border: 1px solid white;
-    flex-grow: 0;
     line-height: 35px;
     text-align: center;
     font-size: 13pt;
     font-weight: bold;
+    cursor: pointer;
 }
 
-.hs-modal-head-right:hover {
+.hs-modal-btn:hover {
     background-color: maroon;
-    cursor: pointer;
+}
+
+.hs-modal-minimize-btn,
+.hs-modal-close-btn {
+    color: white;
 }
 
 .hs-modal-body {
@@ -739,6 +740,43 @@
     display: block;
 }
 
+/* ===== TOOLTIPS ===== */
+
+.hs-tooltip {
+    position: relative;
+    cursor: help;
+}
+.hs-tooltip::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 2px);
+    transform: translateX(-50%);
+    min-width: 12rem;
+    max-width: 24rem;
+    padding: 8px 10px;
+    background: rgba(30, 30, 30, 0.95);
+    color: #f5f5f5;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    white-space: pre-line;
+    text-align: left;
+    font-size: 10px !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+    letter-spacing: 0px !important;
+    line-height: 1.35;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+    z-index: 10000;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.1s ease-in-out;
+}
+.hs-tooltip:hover::before {
+    opacity: 1;
+    visibility: visible;
+}
+
 /* ===== RESIZERS ===== */
 
 .hs-resizer {
@@ -756,10 +794,6 @@
 
 /* ===== LINK STYLES ===== */
 
-a.hs-link:visited {
-    color: #ff3d00;
-}
-
 a.hs-link:hover {
     color: #ff3d00;
     text-decoration: underline;
@@ -767,5 +801,5 @@ a.hs-link:hover {
 
 a.hs-link {
     color: #ff3d00;
-    text-decoration: none;
+    text-decoration: underline;
 }

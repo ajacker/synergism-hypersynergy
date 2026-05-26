@@ -310,7 +310,7 @@ export class HSAutosingModal {
 
         // ----- CONTENT -----
         this.#timerContent = document.createElement('div');
-        this.#timerContent.className = 'hs-timer-content';
+        this.#timerContent.className = 'hs-scrollbar-themed';
 
         this.#dynamicContent = document.createElement('div');
         this.#dynamicContent.innerHTML = `

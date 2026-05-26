@@ -87,16 +87,6 @@ export class HSGameState extends HSModule {
             const viewElement = document.querySelector(`#${view}`) as HTMLDivElement;
 
             HSElementHooker.watchElement(viewElement, async (display: string) => {
-                /*
-                // TODO: there seem to be some issues with tab monitoring...
-                HSLogger.debug(() => `DIAG: Main view watcher fired for #${viewElement.id}, display='${display}'. Current state: ${self.#viewStates.MAIN_VIEW.currentView.getName()}`, self.context);
-                // Log all main tab display values
-                const allDisplays = self.#mainUIViews.map(tabId => {
-                    const el = document.getElementById(tabId);
-                    return `${tabId}: '${el ? el.style.display : 'N/A'}'`;
-                }).join(', ');
-                HSLogger.debug(() => `DIAG: All main tab displays: ${allDisplays}`, self.context);
-                */
                 if (display && display !== 'none') {
                     const uiView = new MainView(viewElement.id);
 
@@ -124,17 +114,17 @@ export class HSGameState extends HSModule {
                     this.#resolveSubViewChanges(uiView.getId());
                 }
             },
-                {
-                    characterData: false,
-                    childList: false,
-                    subtree: false,
-                    attributes: true,
-                    attributeOldValue: false,
-                    attributeFilter: ['style'],
-                    valueParser: (element) => {
-                        return (element as HTMLElement).style.getPropertyValue('display');
-                    }
-                });
+            {
+                characterData: false,
+                childList: false,
+                subtree: false,
+                attributes: true,
+                attributeOldValue: false,
+                attributeFilter: ['style'],
+                valueParser: (element) => {
+                    return (element as HTMLElement).style.getPropertyValue('display');
+                }
+            });
         }
 
         HSGlobal.HSGameState.viewProperties.forEach(async (viewProperties, mainViewId) => {
@@ -184,15 +174,15 @@ export class HSGameState extends HSModule {
                         }
                     });
                 },
-                    {
-                        characterData: false,
-                        childList: false,
-                        subtree: false,
-                        attributes: true,
-                        attributeOldValue: false,
-                        attributeFilter: ['class'],
-                        valueParser: (element) => (element as HTMLElement).className
-                    });
+                {
+                    characterData: false,
+                    childList: false,
+                    subtree: false,
+                    attributes: true,
+                    attributeOldValue: false,
+                    attributeFilter: ['class'],
+                    valueParser: (element) => (element as HTMLElement).className
+                });
             }
         });
 
@@ -312,6 +302,7 @@ export class HSGameState extends HSModule {
 
     /** Get the previous sub-view (if any) for a given main view */
     getPreviousSubViewForMainView(mainView: MainView): GameView<VIEW_TYPE> | undefined {
+        // TODO: Add subview restore feature
         const mainViewId = mainView.getId();
 
         const subViewMap: Record<number, VIEW_KEY> = {
@@ -406,20 +397,20 @@ export class MainView extends GameView<MAIN_VIEW> {
 
     getViewEnum(view: string): MAIN_VIEW {
         switch (view) {
-            case 'buildings': return MAIN_VIEW.BUILDINGS;
-            case 'upgrades': return MAIN_VIEW.UPGRADES;
-            case 'statistics': return MAIN_VIEW.ACHIEVEMENTS;
-            case 'runes': return MAIN_VIEW.RUNES;
-            case 'challenges': return MAIN_VIEW.CHALLENGES;
-            case 'research': return MAIN_VIEW.RESEARCH;
-            case 'ants': return MAIN_VIEW.ANTS;
-            case 'cubes': return MAIN_VIEW.CUBES;
-            case 'campaigns': return MAIN_VIEW.CAMPAIGNS;
-            case 'traits': return MAIN_VIEW.TRAITS;
-            case 'settings': return MAIN_VIEW.SETTINGS;
-            case 'shop': return MAIN_VIEW.SHOP;
+            case 'buildings':   return MAIN_VIEW.BUILDINGS;
+            case 'upgrades':    return MAIN_VIEW.UPGRADES;
+            case 'statistics':  return MAIN_VIEW.ACHIEVEMENTS;
+            case 'runes':       return MAIN_VIEW.RUNES;
+            case 'challenges':  return MAIN_VIEW.CHALLENGES;
+            case 'research':    return MAIN_VIEW.RESEARCH;
+            case 'ants':        return MAIN_VIEW.ANTS;
+            case 'cubes':       return MAIN_VIEW.CUBES;
+            case 'campaigns':   return MAIN_VIEW.CAMPAIGNS;
+            case 'traits':      return MAIN_VIEW.TRAITS;
+            case 'settings':    return MAIN_VIEW.SETTINGS;
+            case 'shop':        return MAIN_VIEW.SHOP;
             case 'singularity': return MAIN_VIEW.SINGULARITY;
-            case 'event': return MAIN_VIEW.EVENT;
+            case 'event':       return MAIN_VIEW.EVENT;
             case 'pseudoCoins': return MAIN_VIEW.PSEUDOCOINS;
         }
         return MAIN_VIEW.UNKNOWN;
@@ -440,10 +431,10 @@ export class BuildingView extends GameView<BUILDING_VIEW> {
 
     getViewEnum(tab: string): BUILDING_VIEW {
         switch (tab) {
-            case 'switchToCoinBuilding': return BUILDING_VIEW.COIN;
-            case 'switchToDiamondBuilding': return BUILDING_VIEW.DIAMOND;
-            case 'switchToMythosBuilding': return BUILDING_VIEW.MYTHOS;
-            case 'switchToParticleBuilding': return BUILDING_VIEW.PARTICLE;
+            case 'switchToCoinBuilding':      return BUILDING_VIEW.COIN;
+            case 'switchToDiamondBuilding':   return BUILDING_VIEW.DIAMOND;
+            case 'switchToMythosBuilding':    return BUILDING_VIEW.MYTHOS;
+            case 'switchToParticleBuilding':  return BUILDING_VIEW.PARTICLE;
             case 'switchToTesseractBuilding': return BUILDING_VIEW.TESSERACT;
         }
         return BUILDING_VIEW.UNKNOWN;

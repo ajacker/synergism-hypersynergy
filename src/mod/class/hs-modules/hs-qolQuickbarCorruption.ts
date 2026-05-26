@@ -3,10 +3,10 @@ import { HSUtils } from "../hs-utils/hs-utils";
 import { HSLogger } from "../hs-core/hs-logger";
 import { HSModuleManager } from "../hs-core/module/hs-module-manager";
 import { HSUI } from "../hs-core/hs-ui";
-import { HSSettings } from "../hs-core/settings/hs-settings";
 import { HSGameDataAPI } from "../hs-core/gds/hs-gamedata-api";
 import { HSCorruption, HSCorruptionLevels, HSCorruptionUserLoadout } from "./hs-corruption";
 import { HSQOLQuickbarBase } from "./hs-qolQuickbarBase";
+import { HSQuickbarIconPickerController } from "./hs-qolQuickbarIconPicker";
 
 type HSQOLCorruptionStatusTarget = 'noSingularityUpgrades' | 'noOcteracts' | 'sadisticPrequel';
 type HSQOLCorruptionPlatonicTarget = 'platUpg5' | 'platUpg10';
@@ -65,10 +65,20 @@ export class HSQOLCorruptionQuickbar extends HSQOLQuickbarBase {
     #cachedDomElements: Map<string, HTMLElement> = new Map();
 
     // Icon picking
-    #isPickingIcon = false;
-    #pickTargetSlotIndex: number | null = null;
-    #pickDocClickListener: ((event: MouseEvent) => void) | null = null;
-    #wasGdsEnabled: boolean | null = null;
+    #iconPicker = new HSQuickbarIconPickerController<number>({
+        shouldIgnoreClickTarget: (target: Element) => !this.container || this.container.contains(target),
+        setSlotPickModeVisual: (slotIndex: number, active: boolean) => {
+            const slot = this.#slots[slotIndex];
+            if (!slot) return;
+            slot.classList.toggle('hs-quickbar-slot-pickmode', active);
+        },
+        clearAllSlotPickModeVisuals: () => {
+            this.#slots.forEach((slot) => slot.classList.remove('hs-quickbar-slot-pickmode'));
+        },
+        assignIconToSlot: (slotIndex: number, iconUrl: string) => {
+            this.#setIconForSlot(slotIndex, iconUrl);
+        },
+    });
 
     // Event handlers
     #slotEventHandlers: Map<HTMLButtonElement, { click: (event: MouseEvent) => Promise<void>; contextmenu: (event: MouseEvent) => void }> = new Map();
@@ -177,7 +187,7 @@ export class HSQOLCorruptionQuickbar extends HSQOLQuickbarBase {
 
     /** Tear down quickbar and release resources/observers. */
     protected onTeardown(): void {
-        this.#endPickupMode();
+        this.#iconPicker.dispose();
         this.#cleanupCorruptionObserver();
         this.#cleanupSlotEventHandlers();
         this.#cleanupCorruptionCleanseButton();
@@ -383,8 +393,7 @@ export class HSQOLCorruptionQuickbar extends HSQOLQuickbarBase {
         this.#cachedSadisticPrequelActive = false;
         this.#cachedHighestCompletedChallengeLevel = 0;
         this.#cachedDomElements.clear();
-        this.#isPickingIcon = false;
-        this.#pickTargetSlotIndex = null;
+        this.#iconPicker.end();
     }
 
 
@@ -503,7 +512,7 @@ export class HSQOLCorruptionQuickbar extends HSQOLQuickbarBase {
             if (event.altKey) {
                 event.preventDefault();
                 event.stopPropagation();
-                this.#startPickupMode(index);
+                this.#iconPicker.start(index);
                 return;
             }
 
@@ -790,103 +799,5 @@ export class HSQOLCorruptionQuickbar extends HSQOLQuickbarBase {
             iconEl.style.display = 'none';
             slot.classList.remove('hs-corruption-slot-icon');
         }
-    }
-
-    /** Extract a usable icon URL from the clicked element or its parents. */
-    #findIconUrlFromEventTarget(target: EventTarget | null): string | null {
-        let element = target instanceof Element ? target : null;
-        let depth = 0;
-        while (element && element !== document.documentElement && depth < 8) {
-            const url = this.#getIconUrlFromElement(element);
-            if (url) return url;
-            element = element.parentElement;
-            depth += 1;
-        }
-        return null;
-    }
-
-    /** Return icon URL from element styles or image source, if present. */
-    #getIconUrlFromElement(element: Element): string | null {
-        if (element instanceof HTMLImageElement && element.src) {
-            return element.src;
-        }
-        const style = window.getComputedStyle(element);
-        const bg = style.backgroundImage;
-        if (bg && bg !== 'none') {
-            const match = /^url\(["']?(.*?)["']?\)$/.exec(bg);
-            if (match && match[1]) {
-                return match[1];
-            }
-        }
-        return null;
-    }
-
-    /** Enter slot icon pick mode to select an icon from page elements. */
-    #startPickupMode(slotIndex: number): void {
-        if (this.#isPickingIcon) { HSLogger.debug(() => 'Icon pickup mode already active; request ignored.', this.context); return; }
-
-        this.#wasGdsEnabled = HSSettings.getSetting('useGameData')?.isEnabled() ?? null;
-        if (this.#wasGdsEnabled) {
-            HSSettings.getSetting('useGameData')?.disable();
-        }
-
-        this.#isPickingIcon = true;
-        this.#pickTargetSlotIndex = slotIndex;
-        this.#slots.forEach((slot, idx) => {
-            if (idx === slotIndex) {
-                slot.classList.add('hs-corruption-slot-pickmode');
-            } else {
-                slot.classList.remove('hs-corruption-slot-pickmode');
-            }
-        });
-
-        HSUI.Notify('Icon picker active: click an in-game icon/image to assign to this slot. Any click ends mode.', { notificationType: 'default' });
-
-        this.#pickDocClickListener = (event: MouseEvent) => {
-            const target = event.target instanceof Element ? event.target : null;
-            if (!target || !this.container || this.container.contains(target)) { this.#endPickupMode(); return; }
-            if (this.#pickTargetSlotIndex === null) { this.#endPickupMode(); return; }
-
-            const iconUrl = this.#findIconUrlFromEventTarget(target);
-            if (!iconUrl) {
-                HSUI.Notify('No usable icon found on the clicked element.', { notificationType: 'warning' });
-                this.#endPickupMode();
-                return;
-            }
-
-            event.preventDefault();
-            event.stopPropagation();
-
-            this.#setIconForSlot(this.#pickTargetSlotIndex, iconUrl);
-            HSUI.Notify('Corruption slot icon set successfully', { notificationType: 'success' });
-            this.#endPickupMode();
-        };
-
-        document.addEventListener('click', this.#pickDocClickListener, true);
-    }
-
-    /** End slot icon pick mode and restore previous game data settings. */
-    #endPickupMode(): void {
-        this.#isPickingIcon = false;
-        this.#pickTargetSlotIndex = null;
-        if (this.#pickDocClickListener) {
-            document.removeEventListener('click', this.#pickDocClickListener, true);
-            this.#pickDocClickListener = null;
-        }
-
-        // restore GDS to prior state
-        if (this.#wasGdsEnabled !== null) {
-            const gdsSetting = HSSettings.getSetting('useGameData');
-            if (gdsSetting) {
-                if (this.#wasGdsEnabled && !gdsSetting.isEnabled()) {
-                    gdsSetting.enable();
-                }
-                if (!this.#wasGdsEnabled && gdsSetting.isEnabled()) {
-                    gdsSetting.disable();
-                }
-            }
-            this.#wasGdsEnabled = null;
-        }
-        this.#slots.forEach((slot) => slot.classList.remove('hs-corruption-slot-pickmode'));
     }
 }

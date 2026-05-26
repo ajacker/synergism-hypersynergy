@@ -1,5 +1,5 @@
 import { MeData } from "../../../types/data-types/hs-me-data";
-import { AmbrosiaUpgradeData, AmbrosiaUpgrades, PlayerData } from "../../../types/data-types/hs-player-savedata";
+import { GameData } from "../../../types/data-types/hs-player-savedata";
 import { PseudoGameData } from "../../../types/data-types/hs-pseudo-data";
 import { HSUtils } from "../../hs-utils/hs-utils";
 import { HSElementHooker } from "../hs-elementhooker";
@@ -17,7 +17,6 @@ import { CampaignData } from "../../../types/data-types/hs-campaign-data";
 import { GameEventResponse, GameEventResponseType, ConsumableGameEvents, GameEventID } from "../../../types/data-types/hs-event-data";
 import { HSWebSocket } from "../hs-websocket";
 import { HSModuleOptions } from "../../../types/hs-types";
-import { AmbrosiaUpgradeCalculationCollection, AmbrosiaUpgradeCalculationConfig } from "../../../types/data-types/hs-gamedata-api-types";
 
 /**
  * Class: HSGameData
@@ -31,13 +30,15 @@ export class HSGameData extends HSModule {
     // --- Save Data & State ---
     #saveDataLocalStorageKey = 'Synergysave2';
     #saveDataCheckInterval?: number;
-    #saveData?: PlayerData;
+    #saveData?: GameData;
     #lastB64Save?: string;
     #wasUsingGDS = false;
 
     // --- MITM / Encoding / Native JS Hooks ---
     #mitm_gamedata: string | undefined;
+    #last_mitm_gamedata?: string;
     #mitm_atob_data: string | undefined;
+    #mitmProcessScheduled = false;
     #btoaHacked = false;
     #atobHacked = false;
     #nativeBtoa?: typeof window.btoa;
@@ -70,7 +71,7 @@ export class HSGameData extends HSModule {
     #loadFromFileEventHandler?: (e: MouseEvent) => Promise<void>;
 
     // --- Data APIs & Subscribers ---
-    #gameDataSubscribers: Map<string, (data: PlayerData) => void> = new Map();
+    #gameDataSubscribers: Map<string, (data: GameData) => void> = new Map();
     #gameDataAPI?: HSGameDataAPI;
 
     // --- Player/Me/Campaign Data ---
@@ -92,7 +93,7 @@ export class HSGameData extends HSModule {
     // --- Miscellaneous ---
     #saveTriggerEvent: Event;
     #lastForceFetch = 0;
-    #ForceFetchCooldown = 5000;
+    #ForceFetchCooldown = 1000;
 
     constructor(moduleOptions: HSModuleOptions) {
         super(moduleOptions);
@@ -130,9 +131,7 @@ export class HSGameData extends HSModule {
 
             this.#meBonuses = data;
             this.#meDataUpdated();
-        } catch (err) {
-            HSLogger.error(`Could not fetch me data: ${err}`, this.context);
-        }
+        } catch (err) { HSLogger.error(`Could not fetch me data: ${err}`, this.context); }
 
         this.#gameDataAPI = HSModuleManager.getModule('HSGameDataAPI') as HSGameDataAPI;
         this.#registerWebSocket();
@@ -196,7 +195,7 @@ export class HSGameData extends HSModule {
 
         if (this.#mitm_gamedata) {
             try {
-                this.#saveData = JSON.parse(this.#mitm_gamedata) as PlayerData;
+                this.#saveData = JSON.parse(this.#mitm_gamedata) as GameData;
             } catch (err) {
                 HSLogger.error(`Failed to parse save data during forceRefreshGameData: ${err}`, this.context);
             }
@@ -473,7 +472,7 @@ export class HSGameData extends HSModule {
             this.#lastB64Save = saveDataB64;
 
             try {
-                this.#saveData = JSON.parse(atob(saveDataB64)) as PlayerData;
+                this.#saveData = JSON.parse(atob(saveDataB64)) as GameData;
                 this.#saveDataUpdated();
             } catch (error) {
                 HSLogger.debug(() => `<red>Error processing save data:</red> ${error}`, this.context);
@@ -482,27 +481,6 @@ export class HSGameData extends HSModule {
         }
 
         requestAnimationFrame(this.#processSaveDataWithRAF);
-    }
-
-    /**
-     * Processes save data from MITM using requestAnimationFrame loop.
-     * Updates internal save data and handles errors.
-     * @returns void
-     */
-    #processSaveDataWithRAFExperimental = () => {
-        if (!this.#turboEnabled) return;
-
-        if (this.#mitm_gamedata) {
-            try {
-                this.#saveData = JSON.parse(this.#mitm_gamedata) as PlayerData;
-                this.#saveDataUpdated();
-            } catch (error) {
-                HSLogger.debug(() => `<red>Error processing save data:</red> ${error}`, this.context);
-                this.#maybeStopSniffOnError();
-            }
-        }
-
-        requestAnimationFrame(this.#processSaveDataWithRAFExperimental);
     }
 
     /**
@@ -586,9 +564,28 @@ export class HSGameData extends HSModule {
         if (HSGlobal.Common.experimentalGDS) {
             this.#hackJSNativebtoa();
             this.#hackJSNativeAtob();
-            this.#processSaveDataWithRAFExperimental();
+            this.#processSaveDataExperimental();
         } else {
             this.#processSaveDataWithRAF();
+        }
+    }
+
+    /**
+     * Processes save data from MITM when new encoded save JSON has been captured.
+     */
+    #processSaveDataExperimental = () => {
+        if (!this.#turboEnabled) return;
+
+        if (this.#mitm_gamedata && this.#mitm_gamedata !== this.#last_mitm_gamedata) {
+            this.#last_mitm_gamedata = this.#mitm_gamedata;
+
+            try {
+                this.#saveData = JSON.parse(this.#mitm_gamedata) as GameData;
+                this.#saveDataUpdated();
+            } catch (error) {
+                HSLogger.debug(() => `<red>Error processing save data:</red> ${error}`, this.context);
+                this.#maybeStopSniffOnError();
+            }
         }
     }
 
@@ -717,11 +714,18 @@ export class HSGameData extends HSModule {
 
         // Overwrite btoa
         window.btoa = function (s) {
-            // Small check so we hopefully mitm just when we have the save
+            // Capture raw save JSON before the game encodes it to base64.
+            // This is the save payload as the game produces it.
             if (s && s.length > 0 && s[0] === '{') {
                 self.#mitm_gamedata = s;
-            } // Snatch the save json before it is encoded
-
+                if (!self.#mitmProcessScheduled) {
+                    self.#mitmProcessScheduled = true;
+                    queueMicrotask(() => {
+                        self.#mitmProcessScheduled = false;
+                        self.#processSaveDataExperimental();
+                    });
+                }
+            }
             // Call the original btoa so everything still works normally
             return _btoa(s);
         }
@@ -786,7 +790,7 @@ export class HSGameData extends HSModule {
                     // --- Restore Correct Loadout Logic ---
                     if (self.#mitm_atob_data) {
                         try {
-                            const saveData = JSON.parse(self.#mitm_atob_data) as PlayerData;
+                            const saveData = JSON.parse(self.#mitm_atob_data) as GameData;
                             if (ambrosiaModule) {
                                 await ambrosiaModule.performInitialActiveLoadoutMatch(saveData);
                             }
@@ -978,7 +982,7 @@ export class HSGameData extends HSModule {
      * @param callback Function to call when game data changes.
      * @returns Subscription ID string or undefined.
      */
-    subscribeGameDataChange(callback: (data: PlayerData) => void): string | undefined {
+    subscribeGameDataChange(callback: (data: GameData) => void): string | undefined {
         const id = HSUtils.uuidv4();
         this.#gameDataSubscribers.set(id, callback);
         return id;
@@ -995,32 +999,5 @@ export class HSGameData extends HSModule {
         } else {
             HSLogger.warn(`Could not unsubscribe from game data change. ID ${id} not found`, this.context);
         }
-    }
-
-
-    // --- Ambrosia Loadouts Logic ---
-
-    /**
-     * Calculates the effective level of an Ambrosia upgrade based on invested amount and save data.
-     * @param upgradeName Name of the Ambrosia upgrade.
-     * @param invested Amount invested in the upgrade.
-     * @param saveData Player save data.
-     * @returns Calculated upgrade level as a number.
-     */
-    #calculateAmbUpgradeLevelFromSave(upgradeName: keyof AmbrosiaUpgrades, invested: number, saveData: PlayerData): number {
-        if (!this.#gameDataAPI) return 0;
-
-        const investmentParameters = ((this.#gameDataAPI.R_ambrosiaUpgradeCalculationCollection as AmbrosiaUpgradeCalculationCollection)[upgradeName]) as AmbrosiaUpgradeCalculationConfig<any>;
-        if (!investmentParameters) return 0;
-
-        // Calculate purchased levels only; free levels are handled separately.
-        const level = this.#gameDataAPI.investToAmbrosiaUpgrade(
-            0,
-            invested,
-            investmentParameters.costPerLevel,
-            investmentParameters.maxLevel,
-            investmentParameters.costFunction
-        );
-        return level;
     }
 }

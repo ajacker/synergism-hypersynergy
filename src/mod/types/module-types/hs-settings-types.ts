@@ -43,7 +43,6 @@ export interface HSSettingsDefinition {
     ambrosiaMinibars: AmbrosiaMinibarsSetting;
 
     // Patch Settings
-    patch_ambrosiaViewOverflow: PATCH_ambrosiaViewOverflow;
     patch_testPatch: PATCH_TestPatch;
     patch_shopItemNameMapping: PATCH_shopItemNameMapping;
 
@@ -70,6 +69,9 @@ export interface HSSettingsDefinition {
     autosingAutoChallTimerStart: AutosingAutoChallTimerStart;
     autosingAutoChallTimerExit: AutosingAutoChallTimerExit;
     autosingAutoChallTimerEnter: AutosingAutoChallTimerEnter;
+
+    // Heater Settings
+    heaterTypeLoadoutSelections: HeaterTypeLoadoutSelectionsSetting;
 
     // QOL Buttons Settings
     ambrosiaQuickBar: QOLButtonsQuickBarSetting;
@@ -190,7 +192,6 @@ export interface AmbrosiaIdleSwapRedLuckLoadoutSetting extends HSSettingBase<str
 
 
 // Patch Settings
-export interface PATCH_ambrosiaViewOverflow extends HSSettingBase<boolean> { }
 export interface PATCH_TestPatch extends HSSettingBase<boolean> { }
 export interface PATCH_shopItemNameMapping extends HSSettingBase<boolean> { }
 
@@ -239,3 +240,6 @@ export interface GQDistributorRatio5Setting extends HSSettingBase<number> { }
 export interface GQDistributorRatio6Setting extends HSSettingBase<number> { }
 export interface GQDistributorRatio7Setting extends HSSettingBase<number> { }
 export interface GQDistributorRatio8Setting extends HSSettingBase<number> { }
+
+// Heater Settings
+export interface HeaterTypeLoadoutSelectionsSetting extends HSSettingBase<string[]> { }

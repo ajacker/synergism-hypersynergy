@@ -1,126 +1,395 @@
-import { HSGameDataAPI } from "../../class/hs-core/gds/hs-gamedata-api";
-import { goldenQuarkUpgrades, OcteractUpgradeData, octUpgrades, PlayerData, RedAmbrosiaUpgrades, Runes } from "./hs-player-savedata";
+import { EventBuffType } from "./hs-event-data";
+import { goldenQuarkUpgrades, octUpgrades, RedAmbrosiaUpgrades, Runes, CorruptionLevels, GameData } from "./hs-player-savedata";
+
+export type CalculationMode = 'normal' | 'true_base';
+
+export enum ShopUpgradeGroups {
+  Offering = 0,
+  Obtainium,
+  Cubes,
+  Speed,
+  Quark,
+  AmbrosiaLuck,
+  RedAmbrosiaLuck,
+  AmbrosiaGeneration,
+  InfinityUpgrades,
+  Utility
+}
+
+export interface ShopUpgradeTypeInfo {
+  HTMLColor: string
+  symbol: string
+  bonusLevels: () => number
+}
+
+export interface ShopUpgradeEffectEnvironment {
+  getGameData: () => GameData | undefined
+  getPCoinUpgradeLevel: (upgradeKey: string) => number
+  getShopUpgradeTypeBonusLevels: (type: ShopUpgradeGroups) => number
+  getShopUpgradeEffects: (upgradeKey: string, effectKey: string, mode?: CalculationMode) => number | boolean
+  calculateSumOfExaltCompletions: () => number
+  getAmbrosiaUpgradeEffects: (upgradeKey: string, mode?: CalculationMode) => any
+  getRuneEffectiveLevel: (rune: RuneKeys) => number
+}
+
+export interface ShopUpgradeHelperContext extends ShopUpgradeEffectEnvironment {
+  getSingularityChallengeEffect: (challengeKey: string, effectKey: string) => number
+  getRuneEffects: (rune: RuneKeys) => any
+  getRedAmbrosiaUpgradeEffects: (upgradeKey: string) => any
+  calculateFreeShopInfinityUpgrades: (reduce_vals: boolean) => number[]
+  checkCalculationCache: (cacheName: keyof CalculationCache, calculationVars: number[]) => number | undefined
+  updateCalculationCache: (cacheName: keyof CalculationCache, item: CachedValue) => void
+}
+
+export interface AntUpgradeHelperContext {
+  getGameData: () => GameData | undefined
+  getAchievementReward: (rewardName: string) => number | boolean | undefined
+  calculateSigmoidExponential: (constant: number, coefficient: number) => number
+  calculateChallenge15Reward: (rewardName: string) => number
+  CalcECC: (refinement: string, value: number) => number
+  calculateCorruptionEffect: (loadout: CorruptionLevels, corruption: string) => number
+  checkCalculationCache: (cacheName: keyof CalculationCache, calculationVars: number[]) => number | undefined
+  updateCalculationCache: (cacheName: keyof CalculationCache, item: CachedValue) => void
+}
+
+export interface TalismanHelperContext {
+  getGameData: () => GameData | undefined
+  getSingularityChallengeEffect: (challengeKey: string, effectKey: string) => number
+  getAchievementReward: (rewardName: string) => number | boolean | undefined
+  getGQUpgradeEffect: (upgradeKey: string) => number | undefined
+  getAmbrosiaUpgradeEffects: (upgradeKey: string) => any
+  getAntUpgradeEffectValue: <K extends AntUpgrades, P extends keyof AntUpgradeTypeMap[K]>(upgradeKey: K, property: P) => AntUpgradeTypeMap[K][P]
+  getLevelMilestone: (name: SynergismLevelMilestones) => number
+  getOcteractUpgradeEffect: (upgradeKey: string) => number | undefined
+  getPCoinUpgradeLevel: (upgradeName: string) => number
+  checkCalculationCache: (cacheName: keyof CalculationCache, calculationVars: number[]) => number | undefined
+  updateCalculationCache: (cacheName: keyof CalculationCache, item: CachedValue) => void
+  calculateChallenge15Reward: (rewardName: string) => number | undefined
+  CalcECC: (refinement: string, value: number) => number
+  isShopTalismanUnlocked: () => boolean
+}
+
+export interface AmbrosiaHelperContext {
+  getGameData: () => GameData | undefined
+  getMeData: () => any
+  calculateLuck: (reduce_vals?: boolean, true_base?: boolean) => { luckBase: number; luckMult: number; luckTotal: number } | any
+  getShopUpgradeEffects: (upgradeKey: string, effectKey: string, mode?: CalculationMode) => number | boolean
+  getSingularityChallengeEffect: (challengeKey: string, effectKey: string) => number
+  getAmbrosiaUpgradeEffects: (upgradeKey: string, mode?: CalculationMode) => any
+  getRedAmbrosiaUpgradeEffects: (upgradeKey: string) => any
+  getPCoinUpgradeLevel: (upgradeName: string) => number
+  getCampaignTokens: () => number
+  getEventBellAmount: () => number
+  isEvent: boolean
+  calculateEventSourceBuff: (buffType: EventBuffType) => number
+  checkCalculationCache: (cacheName: keyof CalculationCache, calculationVars: number[]) => number | undefined
+  updateCalculationCache: (cacheName: keyof CalculationCache, item: CachedValue) => void
+}
+
+export interface RuneHelperContext {
+  getGameData: () => GameData | undefined
+  getPCoinUpgradeLevel: (upgradeKey: string) => number
+  getSingularityChallengeEffect: (challengeKey: string, effectKey: string) => number
+  getAchievementReward: (rewardName: string) => number | boolean | undefined
+  getAmbrosiaUpgradeEffects: (upgradeKey: string) => any
+  getAntUpgradeEffectValue: <K extends AntUpgrades, P extends keyof AntUpgradeTypeMap[K]>(upgradeKey: K, property: P) => AntUpgradeTypeMap[K][P]
+  getLevelMilestone: (name: SynergismLevelMilestones) => number
+  CalcECC: (refinement: string, value: number) => number
+  getRuneEffects: (rune: RuneKeys) => any
+  firstFiveFreeLevels: () => number
+  firstFiveEffectiveRuneLevelMult: () => number
+  getRuneBonusLevels: (rune: RuneKeys) => number
+  getTalismanEffects: <K extends TalismanKeys>(t: K, rarity?: number) => TalismanTypeMap[K]
+  calculateHypercubeBlessingMultiplierPlatonicBlessing: () => number
+  calculateChallenge15Reward: (rewardName: string) => number
+  checkCalculationCache: (cacheName: keyof CalculationCache, calculationVars: number[]) => number | undefined
+  updateCalculationCache: (cacheName: keyof CalculationCache, item: CachedValue) => void
+}
+
+export interface AcceleratorHelperContext {
+  getGameData: () => GameData | undefined
+  getAchievementReward: (rewardName: string) => number | boolean | undefined
+  getAntUpgradeEffectValue: <K extends AntUpgrades, P extends keyof AntUpgradeTypeMap[K]>(upgradeKey: K, property: P) => AntUpgradeTypeMap[K][P]
+  calculateTotalRuneLevels: () => number
+  getRuneEffects: (rune: RuneKeys) => any
+  calculateHypercubeBlessingMultiplierPlatonicBlessing: () => number
+  calculateHepteractEffective: (type: HepteractType) => number
+  calculateCorruptionEffect: (loadout: CorruptionLevels, corruption: string) => number
+  calculateChallenge15Reward: (rewardName: string) => number
+}
+
+export interface AchievementHelperContext {
+  getGameData: () => GameData | undefined
+  getCampaignData: () => any
+  getSingularityChallengeEffect: (challengeKey: string, effectKey: string) => number
+  getPrestigePointGain: () => Decimal
+  getTranscendPointGain: () => Decimal
+  getReincarnationPointGain: () => Decimal
+  calcCorruptionStuff: () => { effectiveScore: number }
+  calculateChallenge15Reward: (rewardName: string) => number
+  getRuneEffectiveLevel: (rune: RuneKeys) => number
+  getRuneFreeLevels: (rune: RuneKeys) => number
+  runes: () => Record<RuneKeys, any>
+  calculateSynergismLevel: () => number
+  calculateAscensionScore: () => { effectiveScore: number }
+  checkCalculationCache: (cacheName: keyof CalculationCache, calculationVars: number[]) => number | undefined
+  updateCalculationCache: (cacheName: keyof CalculationCache, item: CachedValue) => void
+}
+
+export const FAVORITE_UPGRADE_GQ_DEPENDENCIES = ['goldenQuarks1', 'platonicDelta', 'oneMind'] as const;
+export const FAVORITE_UPGRADE_OCTERACT_DEPENDENCIES = ['octeractImprovedFree', 'octeractCorruption', 'octeractBlueberries'] as const;
+export const FAVORITE_UPGRADE_RED_AMBROSIA_DEPENDENCIES = ['tutorial', 'infiniteShopUpgrades', 'blueberryGenerationSpeed2'] as const;
+
+export type GoldenQuarkUpgradeRewards = {
+  goldenQuarks1: { goldenQuarkMult: number }
+  goldenQuarks2: { goldenQuarkCostMult: number }
+  goldenQuarks3: { exportGQPerHour: number }
+  starterPack: {
+    obtainiumMult: number
+    offeringMult: number
+    cubeMult: number
+  }
+  cookies: { unlocked: boolean }
+  cookies2: { unlocked: boolean }
+  cookies3: { unlocked: boolean }
+  cookies4: { unlocked: boolean }
+  cookies5: { unlocked: boolean }
+  ascensions: { ascensionCountMult: number }
+  corruptionFourteen: { unlocked: boolean }
+  corruptionFifteen: { freeCorruptionLevel: number }
+  singOfferings1: { offeringMult: number }
+  singOfferings2: { offeringMult: number }
+  singOfferings3: { offeringMult: number }
+  singObtainium1: { obtainiumMult: number }
+  singObtainium2: { obtainiumMult: number }
+  singObtainium3: { obtainiumMult: number }
+  singCubes1: { cubeMult: number }
+  singCubes2: { cubeMult: number }
+  singCubes3: { cubeMult: number }
+  singCitadel: {
+    offeringMult: number
+    obtainiumMult: number
+    cubeMult: number
+  }
+  singCitadel2: {
+    offeringMult: number
+    obtainiumMult: number
+    cubeMult: number
+    citadel1FreeLevels: number
+  }
+  octeractUnlock: { unlocked: boolean }
+  singOcteractPatreonBonus: { octeractMult: number }
+  offeringAutomatic: { unlocked: boolean }
+  intermediatePack: {
+    globalSpeedMult: number
+    ascensionSpeedMult: number
+    packQuarkAdd: number
+  }
+  advancedPack: {
+    packQuarkAdd: number
+    corruptionScoreIncrease: number
+  }
+  expertPack: {
+    packQuarkAdd: number
+    ascensionScoreMult: number
+    addCodeAscensionTimeMult: number
+  }
+  masterPack: {
+    packQuarkAdd: number
+    ascensionScoreMult: number
+  }
+  divinePack: {
+    packQuarkAdd: number
+    octeractMult: number
+  }
+  wowPass: { unlocked: boolean }
+  wowPass2: { unlocked: boolean }
+  wowPass3: { unlocked: boolean }
+  wowPass4: { unlocked: boolean }
+  potionBuff: { potionPowerMult: number }
+  potionBuff2: { potionPowerMult: number }
+  potionBuff3: { potionPowerMult: number }
+  singChallengeExtension: {
+    reincarnationCapIncrease: number
+    ascensionCapIncrease: number
+  }
+  singChallengeExtension2: {
+    reincarnationCapIncrease: number
+    ascensionCapIncrease: number
+  }
+  singChallengeExtension3: {
+    reincarnationCapIncrease: number
+    ascensionCapIncrease: number
+  }
+  singQuarkImprover1: { quarkMult: number }
+  singQuarkHepteract: { quarkHeptExponent: number }
+  singQuarkHepteract2: { quarkHeptExponent: number }
+  singQuarkHepteract3: { quarkHeptExponent: number }
+  singOcteractGain: { octeractMult: number }
+  singOcteractGain2: { octeractMult: number }
+  singOcteractGain3: { octeractMult: number }
+  singOcteractGain4: { octeractMult: number }
+  singOcteractGain5: { octeractMult: number }
+  platonicTau: {
+    unlocked: boolean
+    tauPower: number
+  }
+  platonicAlpha: { unlocked: boolean }
+  platonicDelta: { cubeMult: number }
+  platonicPhi: { dailyCodes: number }
+  singFastForward: { lookahead: number }
+  singFastForward2: { lookahead: number }
+  singAscensionSpeed: { exponentSpread: number }
+  singAscensionSpeed2: { exponentSpread: number }
+  ultimatePen: { platonicPowers: boolean }
+  halfMind: { unlocked: boolean }
+  oneMind: { unlocked: boolean }
+  blueberries: { blueberries: number }
+  singAmbrosiaLuck: { ambrosiaLuck: number }
+  singAmbrosiaLuck2: { ambrosiaLuck: number }
+  singAmbrosiaLuck3: { ambrosiaLuck: number }
+  singAmbrosiaLuck4: { ambrosiaLuck: number }
+  singAmbrosiaGeneration: { ambrosiaBarSpeedMult: number }
+  singAmbrosiaGeneration2: { ambrosiaBarSpeedMult: number }
+  singAmbrosiaGeneration3: { ambrosiaBarSpeedMult: number }
+  singAmbrosiaGeneration4: { ambrosiaBarSpeedMult: number }
+  singBonusTokens1: { firstCompletionBonusTokens: number }
+  singBonusTokens2: { tokenMultiplier: number }
+  singBonusTokens3: { lastCompletionBonusTokens: number }
+  singBonusTokens4: { initialTokenBonus: number }
+  singInfiniteShopUpgrades: { infinityVouchers: number }
+  singTalismanBonusRunes1: { talismanRuneEffect: number }
+  singTalismanBonusRunes2: { talismanRuneEffect: number }
+  singTalismanBonusRunes3: { talismanRuneEffect: number }
+  singTalismanBonusRunes4: { talismanRuneEffect: number }
+  favoriteUpgrade: { quarkMult: number }
+}
+
+export const offeringPotionThresholds = [
+    1,
+    10,
+    25,
+    50,
+    100,
+    500,
+    1000,
+    10000,
+    50000,
+    100000,
+    1000000,
+    10000000,
+    100000000,
+    1000000000,
+    10000000000,
+    100000000000,
+    1000000000000,
+    10000000000000,
+    100000000000000
+]
+
+export const obtainiumPotionThresholds = [
+    1,
+    20,
+    50,
+    250,
+    1000,
+    20000,
+    400000,
+    10000000,
+    400000000,
+    10000000000,
+    100000000000,
+    1000000000000,
+    10000000000000,
+    100000000000000,
+    1000000000000000
+]
+
+export const TALISMAN_EXEMPTION_INSCRIPT_VALUES = [0, -0.2, -0.3, -0.4, -0.45, -0.5, -0.55, -0.6, -0.61, -0.62, -0.65]
+export const TALISMAN_CHRONOS_INSCRIPT_VALUES = [1, 1.04, 1.08, 1.12, 1.16, 1.20, 1.25, 1.30, 1.325, 1.35, 1.4]
+export const TALISMAN_MIDAS_INSCRIPT_VALUES = [1, 1.04, 1.08, 1.12, 1.16, 1.20, 1.25, 1.30, 1.325, 1.35, 1.40]
+export const TALISMAN_METAPHYSICS_INSCRIPT_VALUES = [1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2]
+export const TALISMAN_POLYMATH_INSCRIPT_VALUES = [1, 1.04, 1.08, 1.12, 1.16, 1.20, 1.25, 1.30, 1.325, 1.35, 1.40]
+export const TALISMAN_MORTUUS_INSCRIPT_VALUES = [1, 1.05, 1.1, 1.15, 1.2, 1.3, 1.4, 1.5, 1.65, 1.8, 2]
+export const TALISMAN_PLASTIC_INSCRIPT_VALUES = [1, 1.005, 1.01, 1.015, 1.02, 1.025, 1.03, 1.04, 1.045, 1.05, 1.0666]
+export const TALISMAN_WOWSQUARE_INSCRIPT_VALUES = [1, 1.025, 1.05, 1.075, 1.1, 1.125, 1.15, 1.2, 1.225, 1.25, 1.30]
+export const TALISMAN_ACHIEVEMENT_EFFECT_INSCRIPT_VALUES = [0, 0.001, 0.002, 0.003, 0.004, 0.006, 0.008, 0.01, 0.015, 0.02, 0.03]
+export const TALISMAN_ACHIEVEMENT_DESC_INSCRIPT_VALUES = [1, 1, 1, 1, 1, 1, 1, 1.01, 1.015, 1.02, 1.03]
+export const TALISMAN_COOKIEGRANDMA_INSCRIPT_VALUES = [0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10]
+export const TALISMAN_HORSESHOE_INSCRIPT_VALUES = [0, 0.001, 0.002, 0.003, 0.004, 0.005, 0.007, 0.01, 0.012, 0.015, 0.02]
+
+export const ACHIEVEMENT_REWARD_TYPES: AchievementRewards[] = [
+    'acceleratorPower',
+    'accelerators',
+    'multipliers',
+    'accelBoosts',
+    'crystalMultiplier',
+    'taxReduction',
+    'particleGain',
+    'conversionExponent',
+    'chronosTalisman',
+    'midasTalisman',
+    'metaphysicsTalisman',
+    'polymathTalisman',
+    'talismanPower',
+    'sacrificeMult',
+    'antSpeed',
+    'antSacrificeUnlock',
+    'preserveAnthillCount',
+    'preserveAnthillCountSingularity',
+    'antAutobuyers',
+    'inceptusAutobuy',
+    'fortunaeAutobuy',
+    'tributumAutobuy',
+    'celeritasAutobuy',
+    'exploratoremAutobuy',
+    'sacrificiumAutobuy',
+    'experientiaAutobuy',
+    'hicAutobuy',
+    'scientiaAutobuy',
+    'praemoenioAutobuy',
+    'phylacteriumAutobuy',
+    'antELOAdditive',
+    'antELOAdditiveMultiplier',
+    'wowSquareTalisman',
+    'ascensionCountMultiplier',
+    'ascensionCountAdditive',
+    'wowCubeGain',
+    'wowTesseractGain',
+    'wowHypercubeGain',
+    'wowPlatonicGain',
+    'quarkGain',
+    'wowHepteractGain',
+    'ascensionScore',
+    'constUpgrade1Buff',
+    'constUpgrade2Buff',
+    'platonicToHypercubes',
+    'statTracker',
+    'ascensionRewardScaling',
+    'overfluxConversionRate',
+    'diamondUpgrade18',
+    'diamondUpgrade19',
+    'diamondUpgrade20',
+    'prestigeCountMultiplier',
+    'transcensionCountMultiplier',
+    'reincarnationCountMultiplier',
+    'duplicationRuneUnlock',
+    'prismRuneUnlock',
+    'thriftRuneUnlock',
+    'salvage',
+    'offeringBonus',
+    'obtainiumBonus',
+    'transcendToPrestige',
+    'reincarnationToTranscend',
+    'antSacrificeCountMultiplier',
+    'freeAntUpgrades',
+    'autoAntSacrifice',
+    'antSpeed2UpgradeImprover',
+    'antSacrificeToReincarnation'
+] as const;
 
 export interface CalculationCache {
-    R_AmbrosiaGenerationShopUpgrade: CachedValue;
-    R_AmbrosiaGenerationSingularityUpgrade: CachedValue;
-    R_AmbrosiaGenerationOcteractUpgrade: CachedValue;
-    R_SingularityMilestoneBlueberries: CachedValue;
-    R_DilatedFiveLeafBonus: CachedValue;
-    R_SingularityAmbrosiaLuckMilestoneBonus: CachedValue;
-    R_AmbrosiaLuckShopUpgrade: CachedValue;
-    R_AmbrosiaLuckSingularityUpgrade: CachedValue;
-    R_AmbrosiaLuckOcteractUpgrade: CachedValue;
-    R_TotalCubes: CachedValue;
-
-    AMB_ambrosiaTutorial: CachedValue;
-
-    AMB_ambrosiaQuarks1: CachedValue;
-    AMB_ambrosiaCubes1: CachedValue;
-    AMB_ambrosiaLuck1: CachedValue;
-
-    AMB_ambrosiaQuarkCube1: CachedValue;
-    AMB_ambrosiaLuckCube1: CachedValue;
-    AMB_ambrosiaCubeQuark1: CachedValue;
-    AMB_ambrosiaLuckQuark1: CachedValue;
-    AMB_ambrosiaCubeLuck1: CachedValue;
-    AMB_ambrosiaQuarkLuck1: CachedValue;
-
-    AMB_ambrosiaQuarks2: CachedValue;
-    AMB_ambrosiaCubes2: CachedValue;
-    AMB_ambrosiaLuck2: CachedValue;
-
-    AMB_ambrosiaQuarks3: CachedValue;
-    AMB_ambrosiaCubes3: CachedValue;
-    AMB_ambrosiaLuck3: CachedValue;
-    AMB_ambrosiaLuck4: CachedValue;
-
-    AMB_ambrosiaPatreon: CachedValue;
-
-    AMB_ambrosiaObtainium1: CachedValue;
-    AMB_ambrosiaOffering1: CachedValue;
-
-    AMB_ambrosiaHyperflux: CachedValue;
-
-    AMB_ambrosiaBaseOffering1: CachedValue;
-    AMB_ambrosiaBaseObtainium1: CachedValue;
-    AMB_ambrosiaBaseOffering2: CachedValue;
-    AMB_ambrosiaBaseObtainium2: CachedValue;
-
-    AMB_ambrosiaSingReduction1: CachedValue;
-    AMB_ambrosiaSingReduction2: CachedValue;
-
-    AMB_ambrosiaInfiniteShopUpgrades1: CachedValue;
-    AMB_ambrosiaInfiniteShopUpgrades2: CachedValue;
-
-    AMB_ambrosiaTalismanBonusRuneLevel: CachedValue;
-    AMB_ambrosiaRuneOOMBonus: CachedValue;
-
-    AMB_ambrosiaBrickOfLead: CachedValue;
-
-    REDAMB_blueberryGenerationSpeed: CachedValue;
-    REDAMB_blueberryGenerationSpeed2: CachedValue;
-    REDAMB_freeLevelsRow2: CachedValue;
-    REDAMB_freeLevelsRow3: CachedValue;
-    REDAMB_freeLevelsRow4: CachedValue;
-    REDAMB_freeLevelsRow5: CachedValue;
-    REDAMB_regularLuck: CachedValue;
-    REDAMB_regularLuck2: CachedValue;
-    REDAMB_viscount: CachedValue;
-    REDAMB_tutorial: CachedValue;
-    REDAMB_conversionImprovement1: CachedValue;
-    REDAMB_conversionImprovement2: CachedValue;
-    REDAMB_conversionImprovement3: CachedValue;
-    REDAMB_freeTutorialLevels: CachedValue;
-    REDAMB_redGenerationSpeed: CachedValue;
-    REDAMB_redLuck: CachedValue;
-    REDAMB_redAmbrosiaCube: CachedValue;
-    REDAMB_redAmbrosiaObtainium: CachedValue;
-    REDAMB_redAmbrosiaOffering: CachedValue;
-    REDAMB_redAmbrosiaCubeImprover: CachedValue;
-    REDAMB_infiniteShopUpgrades: CachedValue;
-    REDAMB_redAmbrosiaAccelerator: CachedValue;
-    REDAMB_salvageYinYang: CachedValue;
-    REDAMB_blueberries: CachedValue;
-
-    R_CampaignAmbrosiaSpeedBonus: CachedValue;
-    R_CampaignRune6Bonus: CachedValue;
-    R_CampaignLuckBonus: CachedValue;
-    R_calculateCampaignRune6Bonus: CachedValue;
-    R_CookieUpgrade29Luck: CachedValue;
-    R_SumOfExaltCompletions: CachedValue;
-
-    R_NumberOfThresholds: CachedValue;
-    R_ToNextThreshold: CachedValue;
-    R_RequiredBlueberryTime: CachedValue;
-    R_RequiredRedAmbrosiaTime: CachedValue;
-
-    EVENTBUFF_Quark: CachedValue;
-    EVENTBUFF_GoldenQuark: CachedValue;
-    EVENTBUFF_Cubes: CachedValue;
-    EVENTBUFF_PowderConversion: CachedValue;
-    EVENTBUFF_AscensionSpeed: CachedValue;
-    EVENTBUFF_GlobalSpeed: CachedValue;
-    EVENTBUFF_AscensionScore: CachedValue;
-    EVENTBUFF_AntSacrifice: CachedValue;
-    EVENTBUFF_Offering: CachedValue;
-    EVENTBUFF_Obtainium: CachedValue;
-    EVENTBUFF_Octeract: CachedValue;
-    EVENTBUFF_BlueberryTime: CachedValue;
-    EVENTBUFF_AmbrosiaLuck: CachedValue;
-    EVENTBUFF_OneMind: CachedValue;
-
-    R_RawAscensionSpeedMult: CachedValue;
-    R_HepteractEffective: CachedValue;
-    R_AllShopTablets: CachedValue;
-    R_LimitedAscensionsDebuff: CachedValue;
-    R_SingularityDebuff: CachedValue;
-    R_SingularityReductions: CachedValue;
-    R_EffectiveSingularities: CachedValue;
-    R_AscensionSpeedExponentSpread: CachedValue;
-
-    R_RedAmbrosiaLuck: CachedValue;
-    R_LuckConversion: CachedValue;
+    [key: string]: CachedValue;
 }
 
 export type RuneTypeMap = {
@@ -163,6 +432,13 @@ export type RuneTypeMap = {
         redLuck: number
         redLuckConversion: number
     }
+    topHat: {
+        freeOfferingLevels: number
+        freeObtainiumLevels: number
+        freeCubeLevels: number
+        freeSpeedLevels: number
+        freeInfinityLevels: number
+    }
     finiteDescent: {
         ascensionScore: number
         corruptionFreeLevels: number
@@ -171,6 +447,18 @@ export type RuneTypeMap = {
 }
 
 export type RuneKeys = keyof RuneTypeMap
+export const RUNE_KEYS: RuneKeys[] = [
+    'speed',
+    'duplication',
+    'prism',
+    'thrift',
+    'superiorIntellect',
+    'infiniteAscent',
+    'antiquities',
+    'horseShoe',
+    'topHat',
+    'finiteDescent',
+]
 
 export type TalismanCraftItems =
     | 'shard'
@@ -180,6 +468,34 @@ export type TalismanCraftItems =
     | 'epicFragment'
     | 'legendaryFragment'
     | 'mythicalFragment'
+
+export type SynergismLevelMilestones =
+    | 'offeringTimerScaling'
+    | 'speedRune'
+    | 'duplicationRune'
+    | 'prismRune'
+    | 'thriftRune'
+    | 'SIRune'
+    | 'autoPrestige'
+    | 'tier1CrystalAutobuy'
+    | 'tier2CrystalAutobuy'
+    | 'tier3CrystalAutobuy'
+    | 'tier4CrystalAutobuy'
+    | 'tier5CrystalAutobuy'
+    | 'achievementTalismanUnlock'
+    | 'runeAutobuyImprover'
+    | 'achievementTalismanEnhancement'
+    | 'salvageChallengeBuff'
+    | 'antSpeed2Autobuyer'
+    | 'wowCubesAutobuyer'
+    | 'ascensionScoreAutobuyer'
+    | 'mortuus2Autobuyer'
+
+export interface SynergismLevelMilestoneDefinition {
+    effect: () => number
+    defaultValue: number
+    levelReq: number
+}
 
 export type TalismanTypeMap = {
     exemption: { taxReduction: number; duplicationOOMBonus: number }
@@ -203,23 +519,21 @@ export type RedAmbrosiaUpgradeKey = keyof RedAmbrosiaUpgrades;
 export type RuneType = keyof Runes;
 
 export interface CachedValue {
-    value: number | undefined;
+    value: unknown;
     cachedBy: number[]
 }
 
 export interface RedAmbrosiaUpgradeCalculationConfig<K extends keyof RedAmbrosiaUpgradeRewards> {
+    label: string,
     costPerLevel: number,
     maxLevel: number,
     costFunction: (n: number, cpl: number) => number,
-    effects: (n: number) => RedAmbrosiaUpgradeRewards[K]
+    effects: (n: number, gameData?: GameData) => RedAmbrosiaUpgradeRewards[K],
+    url: string
 }
 
 export type RedAmbrosiaUpgradeRewards = {
-    tutorial: {
-        cubeMult: number
-        obtainiumMult: number
-        offeringMult: number
-    }
+    tutorial: { cubeMult: number; obtainiumMult: number; offeringMult: number }
     conversionImprovement1: { conversionImprovement: number }
     conversionImprovement2: { conversionImprovement: number }
     conversionImprovement3: { conversionImprovement: number }
@@ -232,35 +546,42 @@ export type RedAmbrosiaUpgradeRewards = {
     regularLuck: { ambrosiaLuck: number }
     redGenerationSpeed: { redAmbrosiaGenerationSpeed: number }
     redLuck: { redAmbrosiaLuck: number }
-    redAmbrosiaCube: { unlockedRedAmbrosiaCube: number }
-    redAmbrosiaObtainium: { unlockRedAmbrosiaObtainium: number }
-    redAmbrosiaOffering: { unlockRedAmbrosiaOffering: number }
+    redAmbrosiaCube: { unlockedRedAmbrosiaCube: boolean }
+    redAmbrosiaObtainium: { unlockRedAmbrosiaObtainium: boolean }
+    redAmbrosiaOffering: { unlockRedAmbrosiaOffering: boolean }
     redAmbrosiaCubeImprover: { extraExponent: number }
-    viscount: {
-        roleUnlock: boolean
-        quarkBonus: number
-        luckBonus: number
-        redLuckBonus: number
-    }
+    viscount: { roleUnlock: boolean; quarkBonus: number; luckBonus: number; redLuckBonus: number }
     infiniteShopUpgrades: { freeLevels: number }
     redAmbrosiaAccelerator: { ambrosiaTimePerRedAmbrosia: number }
     regularLuck2: { ambrosiaLuck: number }
     blueberryGenerationSpeed2: { blueberryGenerationSpeed: number }
     salvageYinYang: { positiveSalvage: number; negativeSalvage: number }
     blueberries: { blueberries: number }
+    redAmbrosiaFreeAccumulator: { freeAccumulatorLevels: number; freeAccumulatorLevelCapIncrease: number }
+    freeOfferingUpgrades: { levels: number }
+    freeObtainiumUpgrades: { levels: number }
+    freeCubeUpgrades: { levels: number }
+    freeSpeedUpgrades: { levels: number }
 }
 
 export type RedAmbrosiaNames = keyof RedAmbrosiaUpgradeRewards
 
+
+export interface AmbrosiaUpgradeEffectContext {
+    readonly freeLevelsOnly: boolean
+    getAmbrosiaUpgradeLevel: (upgradeName: AmbrosiaUpgradeNames) => number
+}
 
 export interface AmbrosiaUpgradeCalculationConfig<
     K extends keyof AmbrosiaUpgradeRewards
 > {
     costPerLevel: number
     maxLevel: number
-    costFunction: (n: number, cpl: number) => number
-    effects: (n: number) => AmbrosiaUpgradeRewards[K]
+    costFormula: (n: number, cpl: number) => number
+    effects: (n: number, ctx?: AmbrosiaUpgradeEffectContext) => AmbrosiaUpgradeRewards[K]
     extraLevelCalc: () => number
+    prerequisites?: Partial<Record<AmbrosiaUpgradeNames, number>>
+    ignoreEXALT?: boolean
 }
 
 
@@ -456,6 +777,7 @@ export type AchievementGroups =
     | 'transcensionCount'
     | 'reincarnationCount'
     | 'sacCount'
+    | 'addCodesUsed'
     | 'ungrouped'
 
 export type AchievementRewards =
@@ -504,6 +826,7 @@ export type AchievementRewards =
     | 'constUpgrade1Buff'
     | 'constUpgrade2Buff'
     | 'platonicToHypercubes'
+    | 'antSacrificeToReincarnation'
     | 'statTracker'
     | 'ascensionRewardScaling'
     | 'overfluxConversionRate'
@@ -526,7 +849,7 @@ export type AchievementRewards =
     | 'autoAntSacrifice'
     | 'antSpeed2UpgradeImprover'
 
-export type AchievementReward = Partial<Record<AchievementRewards, (player?: PlayerData) => number>>
+export type AchievementReward = Partial<Record<AchievementRewards, (player?: GameData) => number>>
 
 export interface Achievement {
     pointValue: number;
@@ -553,16 +876,29 @@ export const LAST_ANT_PRODUCER = AntProducers.HolySpirit
 export type SingularityChallengeDataKeys =
     | 'noSingularityUpgrades'
     | 'oneChallengeCap'
-    | 'noOcteracts'
     | 'limitedAscensions'
+    | 'noQuarkUpgrades'
+    | 'noOcteracts'
     | 'noAmbrosiaUpgrades'
     | 'limitedTime'
     | 'sadisticPrequel'
     | 'taxmanLastStand'
 
-export interface ISingularityChallengeData {
-    effect: (n: number) => Record<string, number | boolean>
+export interface ISingularityChallengeData<T = Record<string, number | boolean>> {
+    baseReq: number
+    maxCompletions: number
+    unlockSingularity: number
+    HTMLTag: SingularityChallengeDataKeys
+    singularityRequirement: (baseReq: number, completions: number) => number
     achievementPointValue: (n: number) => number
+    scalingrewardcount: number
+    uniquerewardcount: number
+    resetTime?: boolean
+    completions?: number
+    enabled?: boolean
+    alternateDescription?: () => string
+    highestSingularityCompleted?: number
+    effect: (n: number) => T
 }
 
 export type ProgressiveAchievements =
@@ -630,30 +966,35 @@ export type AntUpgradeTypeMap = {
 }
 
 export interface RedAmbrosiaUpgradeCalculationCollection {
-    blueberryGenerationSpeed: RedAmbrosiaUpgradeCalculationConfig<'blueberryGenerationSpeed'>;
-    blueberryGenerationSpeed2: RedAmbrosiaUpgradeCalculationConfig<'blueberryGenerationSpeed2'>;
-    freeLevelsRow2: RedAmbrosiaUpgradeCalculationConfig<'freeLevelsRow2'>;
-    freeLevelsRow3: RedAmbrosiaUpgradeCalculationConfig<'freeLevelsRow3'>;
-    freeLevelsRow4: RedAmbrosiaUpgradeCalculationConfig<'freeLevelsRow4'>;
-    freeLevelsRow5: RedAmbrosiaUpgradeCalculationConfig<'freeLevelsRow5'>;
-    regularLuck: RedAmbrosiaUpgradeCalculationConfig<'regularLuck'>;
-    regularLuck2: RedAmbrosiaUpgradeCalculationConfig<'regularLuck2'>;
-    viscount: RedAmbrosiaUpgradeCalculationConfig<'viscount'>;
     tutorial: RedAmbrosiaUpgradeCalculationConfig<'tutorial'>;
     conversionImprovement1: RedAmbrosiaUpgradeCalculationConfig<'conversionImprovement1'>;
     conversionImprovement2: RedAmbrosiaUpgradeCalculationConfig<'conversionImprovement2'>;
     conversionImprovement3: RedAmbrosiaUpgradeCalculationConfig<'conversionImprovement3'>;
     freeTutorialLevels: RedAmbrosiaUpgradeCalculationConfig<'freeTutorialLevels'>;
+    freeLevelsRow2: RedAmbrosiaUpgradeCalculationConfig<'freeLevelsRow2'>;
+    freeLevelsRow3: RedAmbrosiaUpgradeCalculationConfig<'freeLevelsRow3'>;
+    freeLevelsRow4: RedAmbrosiaUpgradeCalculationConfig<'freeLevelsRow4'>;
+    freeLevelsRow5: RedAmbrosiaUpgradeCalculationConfig<'freeLevelsRow5'>;
+    blueberryGenerationSpeed: RedAmbrosiaUpgradeCalculationConfig<'blueberryGenerationSpeed'>;
+    regularLuck: RedAmbrosiaUpgradeCalculationConfig<'regularLuck'>;
     redGenerationSpeed: RedAmbrosiaUpgradeCalculationConfig<'redGenerationSpeed'>;
     redLuck: RedAmbrosiaUpgradeCalculationConfig<'redLuck'>;
     redAmbrosiaCube: RedAmbrosiaUpgradeCalculationConfig<'redAmbrosiaCube'>;
     redAmbrosiaObtainium: RedAmbrosiaUpgradeCalculationConfig<'redAmbrosiaObtainium'>;
     redAmbrosiaOffering: RedAmbrosiaUpgradeCalculationConfig<'redAmbrosiaOffering'>;
     redAmbrosiaCubeImprover: RedAmbrosiaUpgradeCalculationConfig<'redAmbrosiaCubeImprover'>;
+    viscount: RedAmbrosiaUpgradeCalculationConfig<'viscount'>;
     infiniteShopUpgrades: RedAmbrosiaUpgradeCalculationConfig<'infiniteShopUpgrades'>;
     redAmbrosiaAccelerator: RedAmbrosiaUpgradeCalculationConfig<'redAmbrosiaAccelerator'>;
+    regularLuck2: RedAmbrosiaUpgradeCalculationConfig<'regularLuck2'>;
+    blueberryGenerationSpeed2: RedAmbrosiaUpgradeCalculationConfig<'blueberryGenerationSpeed2'>;
     salvageYinYang: RedAmbrosiaUpgradeCalculationConfig<'salvageYinYang'>;
     blueberries: RedAmbrosiaUpgradeCalculationConfig<'blueberries'>;
+    redAmbrosiaFreeAccumulator: RedAmbrosiaUpgradeCalculationConfig<'redAmbrosiaFreeAccumulator'>;
+    freeOfferingUpgrades: RedAmbrosiaUpgradeCalculationConfig<'freeOfferingUpgrades'>;
+    freeObtainiumUpgrades: RedAmbrosiaUpgradeCalculationConfig<'freeObtainiumUpgrades'>;
+    freeCubeUpgrades: RedAmbrosiaUpgradeCalculationConfig<'freeCubeUpgrades'>;
+    freeSpeedUpgrades: RedAmbrosiaUpgradeCalculationConfig<'freeSpeedUpgrades'>;
 }
 
 export interface HepteractEffectiveValue {
@@ -680,8 +1021,10 @@ export type HepteractType = typeof hepteractTypeList[number];
 export type SingularityDebuffs =
     | 'Offering'
     | 'Obtainium'
+    | 'Salvage'
     | 'Global Speed'
     | 'Researches'
+    | 'Ant ELO'
     | 'Ascension Speed'
     | 'Cubes'
     | 'Cube Upgrades'
@@ -696,7 +1039,10 @@ export interface HSCalculationParams {
 
 export interface HSCalculationDefinition {
     calculationName: string;
-    fnName: keyof HSGameDataAPI;
+    // fnName is intentionally broad because calculation functions may come
+    // from HSGameDataAPI or from registered helper providers.
+    // TODO later: derive the union from GameDataAPI + actual helper keys
+    fnName: string;
     fnParams: HSCalculationParams[];
     supportsReduce: boolean;
     toolingSupport: boolean;

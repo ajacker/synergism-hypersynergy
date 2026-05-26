@@ -1,8 +1,8 @@
 import { CampaignData } from "../../../types/data-types/hs-campaign-data";
-import { ConsumableGameEvents } from "../../../types/data-types/hs-event-data";
+import { ConsumableGameEvents, VanillaGlobalEvent } from "../../../types/data-types/hs-event-data";
 import { HSCalculationDefinition } from "../../../types/data-types/hs-gamedata-api-types";
 import { MeData } from "../../../types/data-types/hs-me-data";
-import { PlayerData } from "../../../types/data-types/hs-player-savedata";
+import { GameData } from "../../../types/data-types/hs-player-savedata";
 import { PseudoGameData } from "../../../types/data-types/hs-pseudo-data";
 import { HSModuleOptions } from "../../../types/hs-types";
 import { HSLogger } from "../hs-logger";
@@ -37,15 +37,19 @@ export abstract class HSGameDataAPIPartial extends HSModule {
 
     protected gameDataModule: HSGameData | undefined;
 
-    protected gameData: PlayerData | undefined;
+    protected gameData: GameData | undefined;
     protected meData: MeData | undefined;
     protected pseudoData: PseudoGameData | undefined;
     protected campaignData: CampaignData | undefined;
     protected eventData: ConsumableGameEvents | undefined;
+    protected vanillaGlobalEvent: VanillaGlobalEvent | null = null;
     protected isEvent: boolean = false;
 
     // Subscribers for event data changes
     #eventDataSubscribers: Set<(eventData: ConsumableGameEvents | undefined) => void> = new Set();
+
+    // Subscribers for vanilla global event data changes
+    #vanillaGlobalEventSubscribers: Set<(eventData: VanillaGlobalEvent | null) => void> = new Set();
 
     static readonly Calculations: HSCalculationDefinition[] = HSCalculationDefinitions;
 
@@ -63,7 +67,7 @@ export abstract class HSGameDataAPIPartial extends HSModule {
 
     // All of these _update methods are called from HSGameData (hs-gamedata.ts)
     // when the game data updates
-    _updateGameData(data: PlayerData) {
+    _updateGameData(data: GameData) {
         this.gameData = data;
     }
 
@@ -79,13 +83,17 @@ export abstract class HSGameDataAPIPartial extends HSModule {
         this.campaignData = data;
     }
 
+    // TODO: clean that...
     _updateEventData(data: ConsumableGameEvents) {
         this.eventData = data;
 
-        if (this.eventData) {
-            if ("HAPPY_HOUR_BELL" in this.eventData) {
-                this.isEvent = this.eventData.HAPPY_HOUR_BELL.amount > 0;
-            }
+        this.isEvent = false;
+        if (this.eventData && "HAPPY_HOUR_BELL" in this.eventData) {
+            this.isEvent = this.eventData.HAPPY_HOUR_BELL.amount > 0;
+        }
+
+        if (!this.isEvent && this.vanillaGlobalEvent) {
+            this.isEvent = true;
         }
 
         // Notify subscribers
@@ -103,7 +111,7 @@ export abstract class HSGameDataAPIPartial extends HSModule {
         return this.campaignData;
     }
 
-    getGameData(): PlayerData | undefined {
+    getGameData(): GameData | undefined {
         return this.gameData;
     }
 
@@ -129,7 +137,49 @@ export abstract class HSGameDataAPIPartial extends HSModule {
         return this.eventData;
     }
 
-    async getForcedGameData(): Promise<PlayerData | undefined> {
+    async fetchVanillaGlobalEventData(): Promise<VanillaGlobalEvent | null> {
+        const response = await fetch("https://synergism.cc/events/get");
+        if (!response.ok) { throw new Error(`HSGameDataAPI: failed to fetch vanilla event data (${response.status})`); }
+
+        const apiEvent = await response.json() as VanillaGlobalEvent;
+        const now = Date.now();
+
+        if (apiEvent.name.length > 0 && now >= apiEvent.start && now <= apiEvent.end) {
+            this.vanillaGlobalEvent = apiEvent;
+        } else {
+            this.vanillaGlobalEvent = null;
+        }
+
+        this.isEvent = false;
+        if (this.eventData && "HAPPY_HOUR_BELL" in this.eventData) {
+            this.isEvent = this.eventData.HAPPY_HOUR_BELL.amount > 0;
+        }
+        if (!this.isEvent && this.vanillaGlobalEvent) {
+            this.isEvent = true;
+        }
+
+        for (const cb of this.#vanillaGlobalEventSubscribers) {
+            try {
+                cb(this.vanillaGlobalEvent);
+            } catch (e) { HSLogger.error("VanillaGlobalEvent subscriber error: " + e, this.context); }
+        }
+
+        return this.vanillaGlobalEvent;
+    }
+
+    getVanillaGlobalEvent(): VanillaGlobalEvent | null {
+        return this.vanillaGlobalEvent;
+    }
+
+    public subscribeVanillaGlobalEventChange(cb: (eventData: VanillaGlobalEvent | null) => void): () => void {
+        this.#vanillaGlobalEventSubscribers.add(cb);
+        cb(this.vanillaGlobalEvent);
+        return () => {
+            this.#vanillaGlobalEventSubscribers.delete(cb);
+        };
+    }
+
+    async getForcedGameData(): Promise<GameData | undefined> {
         if (this.gameDataModule) {
             await this.gameDataModule.forceRefreshGameData();
             // HSGameData will call _updateGameData internally

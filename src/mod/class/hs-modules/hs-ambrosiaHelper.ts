@@ -1,4 +1,4 @@
-import { AMBROSIA_ICON, AMBROSIA_LOADOUT_SLOT } from "../../types/module-types/hs-ambrosia-types";
+import { AMBROSIA_LOADOUT_SLOT } from "../../types/module-types/hs-ambrosia-types";
 import { HSLogger } from "../hs-core/hs-logger";
 import { HSUtils } from "../hs-utils/hs-utils";
 import { HSElementHooker } from "../hs-core/hs-elementhooker";
@@ -13,9 +13,29 @@ import { HSElementHooker } from "../hs-core/hs-elementhooker";
 export class HSAmbrosiaHelper {
     static #context: string = 'HSAmbrosiaHelper';
 
-    /** Resolve an ambrosia icon enum by its ID string. */
-    static getIconEnumById(iconId: string): AMBROSIA_ICON | undefined {
-        return Object.values(AMBROSIA_ICON).find((icon) => icon === iconId) as AMBROSIA_ICON | undefined;
+    static #cachedBlueberryToggleModeButton: HTMLButtonElement | undefined;
+    static #cachedQuickbarSummaryElements: HTMLElement[] | undefined;
+
+    static async cacheBlueberryToggleModeButton(): Promise<HTMLButtonElement | undefined> {
+        if (this.#cachedBlueberryToggleModeButton instanceof HTMLButtonElement) {
+            return this.#cachedBlueberryToggleModeButton;
+        }
+        const element = await HSElementHooker.HookElement('#blueberryToggleMode');
+        if (element instanceof HTMLButtonElement) {
+            this.#cachedBlueberryToggleModeButton = element;
+            return element;
+        }
+        HSLogger.warn('Could not cache blueberry loadout mode toggle button', this.#context);
+        return undefined;
+    }
+
+    static getCachedQuickbarSummaryElements(): HTMLElement[] {
+        if (this.#cachedQuickbarSummaryElements) {
+            return this.#cachedQuickbarSummaryElements;
+        }
+        const elements = Array.from(document.querySelectorAll<HTMLElement>('.hs-quickbar-summary-wrapper'));
+        this.#cachedQuickbarSummaryElements = elements;
+        return elements;
     }
 
     /** Resolve an ambrosia loadout slot enum by its slot ID string. */
@@ -60,34 +80,29 @@ export class HSAmbrosiaHelper {
         const loadoutEnum = Object.values(AMBROSIA_LOADOUT_SLOT).find(
             slot => slot === `blueberryLoadout${loadoutNumber}`
         ) as AMBROSIA_LOADOUT_SLOT | undefined;
-
         if (!loadoutEnum) {
-            HSLogger.warn(`Could not convert loadout ${loadoutNumber} to slot`, this.#context);
+            HSLogger.warn(`Check your loadout settings (missing loadout).`, this.#context);
+            return undefined;
         }
 
         return loadoutEnum;
     }
 
-    /** Ensure the game is in LOAD mode before clicking slots. */
-    static async ensureLoadoutModeIsLoad(): Promise<void> {
-        // The module interacts with the real loadout buttons; game must be in load state to avoid accidental save.
-        const modeButton = await HSElementHooker.HookElement('#blueberryToggleMode') as HTMLButtonElement;
+    /** Ensure the game is in the specified loadout mode before clicking slots. */
+    static ensureLoadoutMode(mode: 'LOAD' | 'SAVE'): void {
+        const modeButton = this.#cachedBlueberryToggleModeButton;
+        if (!modeButton) { return; }
 
-        if (modeButton) {
-            const currentMode = modeButton.innerText;
-
-            // If we're in SAVE mode, toggle to LOAD mode.
-            // TODO: exposedPlayer.blueberryLoadoutMode = 'saveTree' / 'loadTree'
-            // TODO: update HSAmbrosiaHelper.ensureLoadoutModeIsLoad to handle either save or load with a parameter
-            if (currentMode.includes('SAVE')) {
-                modeButton.click();
-            }
+        const currentMode = modeButton.innerText?.trim().toUpperCase();
+        const expectedMode = `MODE: ${mode} LOADOUT`;
+        if (currentMode !== expectedMode) {
+            modeButton.click();
         }
     }
 
     /** Show or hide other quickbars' summary headers. */
     static setQuickbarTopTextVisibility(visibility: boolean): void {
-        const quickbarSummaryElements = document.querySelectorAll('.hs-quickbar-summary-wrapper');
+        const quickbarSummaryElements = this.getCachedQuickbarSummaryElements();
 
         quickbarSummaryElements.forEach(
             (el) => el.classList.toggle('hs-hidden', !visibility)

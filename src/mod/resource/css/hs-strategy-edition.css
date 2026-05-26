@@ -585,29 +585,6 @@ select option[data-default="true"] {
     color: #888; 
 }
 
-/* ===== SHARED SCROLLBARS ===== */
-/* Scrollbar styling for modal containers */
-.hs-strategy-phase-list::-webkit-scrollbar,
-.hs-corruption-grid::-webkit-scrollbar,
-.hs-challenges-list-container::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
-}
-
-.hs-strategy-phase-list::-webkit-scrollbar-track,
-.hs-corruption-grid::-webkit-scrollbar-track,
-.hs-challenges-list-container::-webkit-scrollbar-track {
-    background: #1c1b22;
-    border-radius: 3px;
-}
-
-.hs-strategy-phase-list::-webkit-scrollbar-thumb,
-.hs-corruption-grid::-webkit-scrollbar-thumb,
-.hs-challenges-list-container::-webkit-scrollbar-thumb {
-    background: #a22a2a;
-    border-radius: 3px;
-}
-
 .hs-strategy-error {
     margin-top: 8px;
     padding: 6px 10px;

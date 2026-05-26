@@ -90,6 +90,8 @@ export interface HSUIModalOptions extends HSOptional<HSUICOptions, 'id'> {
     needsToLoad?: boolean;
     title?: string;
     parentModalId?: string;
+    headerClass?: string;
+    bodyClass?: string;
 }
 
 export type HSNotifyPosition = "topLeft" | "top" | "topRight" | "right" | "bottomRight" | "bottom" | "bottomLeft" | "left";
@@ -108,6 +110,8 @@ export interface HSNotifyOptions {
 export interface HSUICModalOptions extends HSUICOptions {
     htmlContent?: string;
     title?: string;
+    headerClass?: string;
+    bodyClass?: string;
 }
 
 export interface HSUICSelectOption {

@@ -1649,23 +1649,6 @@
       "controlEnabledId": "hs-setting-patch-test-btn"
     }
   },
-  "patch_ambrosiaViewOverflow": {
-    "settingName": "patch_ambrosiaViewOverflow",
-    "settingDescription": "Fix ambrosia view overflow",
-    "settingHelpText": "This patch fixes an overflow issue in the ambrosia view which makes the page jump around when hovering over ambrosia upgrades.",
-    "settingType": "boolean",
-    "enabled": false,
-    "settingAction": "patch",
-    "patchConfig": {
-      "patchName": "AmbrosiaViewOverflow"
-    },
-    "settingControl": {
-      "controlType": "switch",
-      "controlGroup": "patch",
-      "controlPage": "debug",
-      "controlEnabledId": "hs-setting-patch-ambrosia-view-overflow-btn"
-    }
-  },
   "patch_iconSetCaching": {
     "settingName": "patch_iconSetCaching",
     "settingDescription": "IconSet Caching",
@@ -1790,5 +1773,14 @@
         "step": 0.01
       }
     }
+  },
+  "heaterTypeLoadoutSelections": {
+    "hidden": true,
+    "settingName": "heaterTypeLoadoutSelections",
+    "settingDescription": "Heater type loadout selections",
+    "settingHelpText": "Stores the selected heater type for each loadout slot in the heater modal.",
+    "settingType": "selectstrings",
+    "enabled": true,
+    "settingValue": []
   }
 }

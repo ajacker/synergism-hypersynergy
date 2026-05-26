@@ -1,0 +1,234 @@
+import Decimal from "break_infinity.js";
+import { AntUpgrades } from "../../../types/data-types/hs-gamedata-api-types";
+import type { AcceleratorHelperContext } from "../../../types/data-types/hs-gamedata-api-types";
+import { calcECC } from "./hs-gamedata-utils";
+
+export class AcceleratorHelper {
+    readonly #ctx: AcceleratorHelperContext;
+
+    constructor(context: AcceleratorHelperContext) {
+        this.#ctx = context;
+    }
+
+    calculateAcceleratorHypercubeBlessing = (): number => {
+        const data = this.#ctx.getGameData();
+        if (!data) return 1
+
+        const DR = 1 / 12
+        const effectPerBlessing = this.#ctx.calculateHypercubeBlessingMultiplierPlatonicBlessing() / 1000
+        const limit = 1000
+        const acceleratorBlessings = data.hypercubeBlessings.accelerator ?? 0
+
+        if (acceleratorBlessings < limit) {
+            return 1 + effectPerBlessing * acceleratorBlessings
+        }
+
+        const limitMult = Math.pow(limit, 1 - DR)
+        return 1 + effectPerBlessing * limitMult * Math.pow(acceleratorBlessings, DR)
+    }
+
+    calculateAcceleratorTesseractBlessing = (): number => {
+        const data = this.#ctx.getGameData();
+        if (!data) return 1
+
+        const DR = 1 / 6
+        const effectPerBlessing = this.calculateAcceleratorHypercubeBlessing() / 1000
+        const limit = 1000
+        const acceleratorBlessings = data.tesseractBlessings.accelerator ?? 0
+
+        if (acceleratorBlessings < limit) {
+            return 1 + effectPerBlessing * acceleratorBlessings
+        }
+
+        const limitMult = Math.pow(limit, 1 - DR)
+        return 1 + effectPerBlessing * limitMult * Math.pow(acceleratorBlessings, DR)
+    }
+
+    calculateAcceleratorCubeBlessing = (): number => {
+        const data = this.#ctx.getGameData();
+        if (!data) return 0
+
+        const DR = 1 / 3
+        const effectPerBlessing = this.calculateAcceleratorTesseractBlessing() / 500
+        const limit = 1000
+        const acceleratorBlessings = data.cubeBlessings.accelerator ?? 0
+        const DRIncrease = (data.cubeUpgrades?.[45] ?? 0) / 300
+
+        if (acceleratorBlessings < limit) {
+            return Math.pow(effectPerBlessing * acceleratorBlessings, 1 + DRIncrease)
+        }
+
+        const limitMult = Math.pow(limit, 1 - DR + DRIncrease)
+        return effectPerBlessing * limitMult * Math.pow(acceleratorBlessings, DR + DRIncrease)
+    }
+
+    calculateTotalCoinOwned = (): number => {
+        const data = this.#ctx.getGameData();
+        if (!data) return 0
+        return (
+            (data.firstOwnedCoin ?? 0)
+            + (data.secondOwnedCoin ?? 0)
+            + (data.thirdOwnedCoin ?? 0)
+            + (data.fourthOwnedCoin ?? 0)
+            + (data.fifthOwnedCoin ?? 0)
+        )
+    }
+
+    getFreeAcceleratorBoost = (): number => {
+        const data = this.#ctx.getGameData();
+        if (!data) return 0
+
+        let boost = 0
+
+        if ((data.upgrades?.[26] ?? 0) > 0.5) {
+            boost += 1
+        }
+        if ((data.upgrades?.[31] ?? 0) > 0.5) {
+            boost += Math.floor(this.calculateTotalCoinOwned() / 2000)
+        }
+        boost += Number(this.#ctx.getAchievementReward('accelBoosts'))
+        boost += (data.researches?.[93] ?? 0) * Math.floor(this.#ctx.calculateTotalRuneLevels() / 20)
+
+        boost *= 1 + (data.researches?.[3] ?? 0) / 5 * (1 + 0.5 * calcECC('ascension', data.challengecompletions?.[14] ?? 0))
+        boost *= 1 + (data.researches?.[16] ?? 0) / 20 + (data.researches?.[17] ?? 0) / 20
+        boost *= 1 + (data.researches?.[88] ?? 0) / 20
+        boost *= this.#ctx.getAntUpgradeEffectValue(AntUpgrades.AcceleratorBoosts, 'acceleratorBoostMult')
+        boost *= 1 + (data.researches?.[127] ?? 0) / 100
+        boost *= 1 + 0.008 * (data.researches?.[142] ?? 0)
+        boost *= 1 + 0.006 * (data.researches?.[157] ?? 0)
+        boost *= 1 + 0.004 * (data.researches?.[172] ?? 0)
+        boost *= 1 + 0.002 * (data.researches?.[187] ?? 0)
+        boost *= 1 + 0.0001 * (data.researches?.[200] ?? 0)
+        boost *= 1 + 0.0001 * (data.cubeUpgrades?.[50] ?? 0)
+        boost *= 1 + (1 / 1000) * this.#ctx.calculateHepteractEffective('acceleratorBoost')
+
+        if ((data.upgrades?.[73] ?? 0) > 0.5 && data.currentChallenge.reincarnation !== 0) {
+            boost *= 2
+        }
+
+        return Math.min(1e100, Math.floor(boost))
+    }
+
+    calculateTotalAcceleratorBoost = (): number => {
+        const data = this.#ctx.getGameData();
+        if (!data) return 0
+        return Math.floor((data.acceleratorBoostBought ?? 0) + this.getFreeAcceleratorBoost())
+    }
+
+    getAcceleratorMultiplier = (): number => {
+        const data = this.#ctx.getGameData();
+        if (!data) return 1
+
+        let multiplier = 1
+
+        multiplier *= 1 + (data.researches?.[1] ?? 0) / 5 * (1 + 0.5 * calcECC('ascension', data.challengecompletions?.[14] ?? 0))
+        multiplier *= 1 + (data.researches?.[6] ?? 0) / 20 + (data.researches?.[7] ?? 0) / 25 + (data.researches?.[8] ?? 0) / 40 + (3 / 200) * (data.researches?.[9] ?? 0) + (data.researches?.[10] ?? 0) / 200
+        multiplier *= 1 + (data.researches?.[86] ?? 0) / 20
+        multiplier *= 1 + (data.researches?.[126] ?? 0) / 100
+        multiplier *= 1 + 0.008 * (data.researches?.[141] ?? 0)
+        multiplier *= 1 + 0.006 * (data.researches?.[156] ?? 0)
+        multiplier *= 1 + 0.004 * (data.researches?.[171] ?? 0)
+        multiplier *= 1 + 0.002 * (data.researches?.[186] ?? 0)
+        multiplier *= 1 + 0.0001 * (data.researches?.[200] ?? 0)
+        multiplier *= 1 + 0.0001 * (data.cubeUpgrades?.[50] ?? 0)
+        multiplier *= Math.pow(
+            1.01,
+            (data.upgrades?.[21] ?? 0)
+            + (data.upgrades?.[22] ?? 0)
+            + (data.upgrades?.[23] ?? 0)
+            + (data.upgrades?.[24] ?? 0)
+            + (data.upgrades?.[25] ?? 0)
+        )
+
+        if (
+            (data.currentChallenge.transcension !== 0 || data.currentChallenge.reincarnation !== 0)
+            && (data.upgrades?.[50] ?? 0) > 0.5
+        ) {
+            multiplier *= 1.25
+        }
+
+        return multiplier
+    }
+
+    getFreeAccelerator = (): number => {
+        const data = this.#ctx.getGameData();
+        if (!data) return 0
+
+        let accelerator = Number(this.#ctx.getAchievementReward('accelerators'))
+        accelerator += 5 * Number(calcECC('transcend', data.challengecompletions?.[2] ?? 0))
+        accelerator += this.calculateTotalAcceleratorBoost() * (
+            5
+            + 2 * (data.researches?.[18] ?? 0)
+            + 2 * (data.researches?.[19] ?? 0)
+            + 3 * (data.researches?.[20] ?? 0)
+            + this.calculateAcceleratorCubeBlessing()
+        )
+
+        if (data.unlocks?.prestige) {
+            const speedEffects = this.#ctx.getRuneEffects('speed')
+            accelerator *= Number(speedEffects.multiplicativeAccelerators ?? 1)
+        }
+
+        accelerator *= this.getAcceleratorMultiplier()
+        const viscosityPower = this.#ctx.calculateCorruptionEffect(data.corruptions.used, 'viscosity')
+        accelerator = Math.pow(
+            accelerator,
+            Math.min(1, (1 + (data.platonicUpgrades[6] ?? 0) / 30) * viscosityPower)
+        )
+
+        accelerator += 2000 * this.#ctx.calculateHepteractEffective('accelerator')
+        accelerator *= this.#ctx.calculateChallenge15Reward('accelerator')
+        accelerator *= 1 + 3 * this.#ctx.calculateHepteractEffective('accelerator') / 10000
+        accelerator = Math.min(1e100, Math.floor(accelerator))
+
+        const usedLevels = data.corruptions.used
+        if (usedLevels.viscosity >= 15) {
+            accelerator = Math.pow(accelerator, 0.2)
+        }
+        if (usedLevels.viscosity >= 16) {
+            accelerator = 1
+        }
+
+        return accelerator
+    }
+
+    getAcceleratorPower = (): number => {
+        const data = this.#ctx.getGameData();
+        if (!data) return 0
+
+        const achievementBonus = Number(this.#ctx.getAchievementReward('acceleratorPower'))
+        const transcendECC = Number(calcECC('transcend', data.challengecompletions?.[2] ?? 0))
+        const tuSevenMulti = (data.upgrades?.[46] ?? 0) > 0.5 ? 1.05 : 1
+
+        const speedEffects = this.#ctx.getRuneEffects('speed')
+        const base = 1.1
+            + (speedEffects.acceleratorPower ?? 0)
+            + achievementBonus
+            + transcendECC / 400
+            + tuSevenMulti * (this.calculateTotalAcceleratorBoost() / 100) * (1 + transcendECC / 20)
+
+        const exponent = 1 + 0.04 * calcECC('reincarnation', data.challengecompletions?.[7] ?? 0)
+        return Math.pow(base, exponent)
+    }
+
+    getAcceleratorEffect = (): Decimal => {
+        const data = this.#ctx.getGameData();
+        if (!data) return new Decimal(1)
+
+        const acceleratorPower = this.getAcceleratorPower()
+        const totalAccelerator = (data.acceleratorBought ?? 0) + this.getFreeAccelerator()
+        const totalMultiplier = data.multiplierBought
+
+        const exponent = data.currentChallenge.transcension === 1
+            ? totalAccelerator + totalMultiplier
+            : totalAccelerator
+
+        let effect = Decimal.pow(acceleratorPower, exponent)
+
+        if (data.currentChallenge.reincarnation === 10) {
+            effect = new Decimal(1)
+        }
+
+        return effect
+    }
+}
