@@ -20,6 +20,7 @@ import { HSWebSocket } from "../hs-websocket";
 import { HSDebug } from "../hs-debug";
 import { HSAutosing } from "../../hs-modules/hs-autosing/hs-autosing";
 import { HSQOLButtons } from "../../hs-modules/hs-qolButtons";
+import { HSLocalization } from "../../hs-modules/hs-localization";
 
 /**
  * Class: HSModuleManager
@@ -54,7 +55,8 @@ export class HSModuleManager {
         "HSWebSocket": HSWebSocket,
         "HSDebug": HSDebug,
         "HSAutosing": HSAutosing,
-        "HSQOLButtons": HSQOLButtons
+        "HSQOLButtons": HSQOLButtons,
+        "HSLocalization": HSLocalization
     };
 
     constructor(context: string, modulesToEnable: HSModuleDefinition[]) {

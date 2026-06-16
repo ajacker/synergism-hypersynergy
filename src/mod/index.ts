@@ -125,6 +125,12 @@ declare global {
             moduleColor: '#c0c0c0',
         },
         {
+            className: 'HSLocalization',
+            context: 'HSLocalization',
+            moduleColor: 'coral',
+            loadOrder: 20,
+        },
+        {
             className: 'Chartist',
             context: 'Chartist',
             moduleColor: '#e8d7bf',
