@@ -61,11 +61,11 @@ export class HSUI extends HSModule {
     readonly #tabConfigMap: Map<number, HSPanelTabDefinition>;
 
     readonly #quickbarSubMenuItems = [
-        { label: 'Ambrosia',     btnId: 'hs-setting-qol-ambrosia-quickbar-btn',          icon: 'Pictures/Default/Blueberries.png',           hoverColor: '#0a1085' },
-        { label: 'Amb minibars', btnId: 'hs-setting-ambrosia-minibar-btn',               icon: 'Pictures/Default/Blueberries.png',           hoverColor: '#0a1085' },
-        { label: 'Corruption',   btnId: 'hs-setting-qol-enable-corruption-quickbar-btn', icon: 'Pictures/Default/CorruptHyperchallenge.png', hoverColor: '#560404' },
-        { label: 'Automation',   btnId: 'hs-setting-qol-enable-syn-ui-btn',              icon: 'Pictures/Default/Generators.png',            hoverColor: '#083d02' },
-        { label: 'Events',       btnId: 'hs-setting-qol-enable-events-quickbar-btn',     icon: 'Pictures/PseudoShop/HAPPY_HOUR_BELL.png',    hoverColor: '#654a02' }
+        { label: '神肴',     btnId: 'hs-setting-qol-ambrosia-quickbar-btn',          icon: 'Pictures/Default/Blueberries.png',           hoverColor: '#0a1085' },
+        { label: '神肴迷你条', btnId: 'hs-setting-ambrosia-minibar-btn',               icon: 'Pictures/Default/Blueberries.png',           hoverColor: '#0a1085' },
+        { label: '腐化',   btnId: 'hs-setting-qol-enable-corruption-quickbar-btn', icon: 'Pictures/Default/CorruptHyperchallenge.png', hoverColor: '#560404' },
+        { label: '自动化',   btnId: 'hs-setting-qol-enable-syn-ui-btn',              icon: 'Pictures/Default/Generators.png',            hoverColor: '#083d02' },
+        { label: '事件',       btnId: 'hs-setting-qol-enable-events-quickbar-btn',     icon: 'Pictures/PseudoShop/HAPPY_HOUR_BELL.png',    hoverColor: '#654a02' }
     ];
 
     #tabs: HSPanelTabDefinition[] = [
@@ -362,9 +362,9 @@ export class HSUI extends HSModule {
         this.#uiQuickAccessMenu = quickMenu;
         const quickbarsSubmenu = this.#buildQuickbarsSubmenu();
         const quickbarsBtn     = this.#buildQuickbarsButton();
-        const autoSingBtn     = this.#buildQuickAccessButton('autosing',   '▶', 'Start Auto-Sing (S256+)', () => this.#toggleAutoSing());
-        const heaterHSBtn     = this.#buildQuickAccessButton('amb-heater', '🔥', 'Amb Heater (HS)',         () => this.#triggerHeaterHS());
-        const heaterExportBtn = this.#buildQuickAccessButton('amb-heater', '🔥', 'Amb Heater (Export)',     () => this.#triggerHeaterExport());
+        const autoSingBtn     = this.#buildQuickAccessButton('autosing',   '▶', '开始自动奇点', () => this.#toggleAutoSing());
+        const heaterHSBtn     = this.#buildQuickAccessButton('amb-heater', '🔥', '神肴加热器',         () => this.#triggerHeaterHS());
+        const heaterExportBtn = this.#buildQuickAccessButton('amb-heater', '🔥', '神肴导出',     () => this.#triggerHeaterExport());
 
         quickMenu.appendChild(quickbarsSubmenu);
         quickMenu.appendChild(quickbarsBtn);
@@ -400,7 +400,7 @@ export class HSUI extends HSModule {
         quickbarsBtn.setAttribute('data-type', 'quickbars');
         quickbarsBtn.innerHTML = `
             <span style="display: inline-block; width: 20px; text-align: center; margin-right: 5px;">☰</span>
-            <span>Quickbars</span>
+            <span>快捷栏</span>
             <span class="quickbars-arrow">&gt;</span>
         `;
 

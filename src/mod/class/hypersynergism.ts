@@ -134,9 +134,9 @@ export class Hypersynergism {
             this.#buildSettingsTab(hsui);
             this.#buildDebugTab(hsui);
 
-            hsui.renameTab(2, 'Tools');
-            hsui.renameTab(3, 'Settings');
-            hsui.renameTab(4, 'Debug');
+            hsui.renameTab(2, '工具');
+            hsui.renameTab(3, '设置');
+            hsui.renameTab(4, '调试');
         }
     }
 
@@ -176,28 +176,28 @@ export class Hypersynergism {
         hsui.replaceTabContents(2,
             HSUIC.Grid({
                 html: [
-                    this.#buildGridSectionHeader('Export tools'),
+                    this.#buildGridSectionHeader('导出工具'),
                     this.#buildGridFullSpanDiv('hs-panel-amb-heater-p', `Export an extended save file string for the <a href="${HSGlobal.General.heaterUrl}" class="hs-link" target="_blank">Ambrosia Heater sheet</a>.`),
-                    HSUIC.Button({ id: 'hs-panel-amb-heater-btn', text: 'Copy Heater Data' }),
-                    HSUIC.Button({ id: 'hs-panel-amb-heater-compute-btn', text: 'Ambrosia Heater' }),
-                    this.#buildGridSectionHeader('References'),
-                    HSUIC.Button({ id: 'hs-panel-cor-ref-btn', text: 'Corruption Ref.' }),
-                    HSUIC.Button({ id: 'hs-panel-cor-ref-btn-2', text: 'Crpt. Onemind' }),
-                    this.#buildGridSectionHeader('Mod links'),
-                    HSUIC.Button({ id: 'hs-panel-mod-github-btn', text: 'Mod Github' }),
-                    HSUIC.Button({ id: 'hs-panel-mod-wiki-btn', text: 'Mod Wiki' }),
-                    HSUIC.Button({ id: 'hs-panel-mod-wiki-features-btn', text: 'Mod Features' }),
-                    HSUIC.Button({ id: 'hs-panel-discord-thread-btn', text: 'Discord Thread' }),
-                    HSUIC.Button({ id: 'hs-panel-check-version-btn', text: 'CHECK VERSION' }),
-                    this.#buildGridSectionHeader('Other tools'),
-                    HSUIC.Button({ id: 'hs-panel-dump-settings-btn', text: 'Dump Settings' }),
-                    HSUIC.Button({ id: 'hs-panel-dump-gamedata-btn', text: 'Dump Game vars' }),
-                    HSUIC.Button({ id: 'hs-panel-exit-exalt-bug-btn', text: 'Fix Exalt Bug' }),
-                    HSUIC.Button({ id: 'hs-panel-clear-settings-btn', text: 'CLEAR SETTINGS', styles: { borderColor: 'red' } }),
-                    this.#buildGridSectionHeader('Testing tools'),
-                    HSUIC.Button({ id: 'hs-panel-test-notify-btn', text: 'Notify test' }),
-                    HSUIC.Button({ id: 'hs-panel-test-notify-long-btn', text: 'Notify test 2' }),
-                    this.#buildGridSectionHeader('Calculation tools'),
+                    HSUIC.Button({ id: 'hs-panel-amb-heater-btn', text: '复制加热器数据' }),
+                    HSUIC.Button({ id: 'hs-panel-amb-heater-compute-btn', text: '神肴加热器' }),
+                    this.#buildGridSectionHeader('参考信息'),
+                    HSUIC.Button({ id: 'hs-panel-cor-ref-btn', text: '腐化参考表' }),
+                    HSUIC.Button({ id: 'hs-panel-cor-ref-btn-2', text: '一心后腐化表' }),
+                    this.#buildGridSectionHeader('Mod 链接'),
+                    HSUIC.Button({ id: 'hs-panel-mod-github-btn', text: 'Mod 仓库' }),
+                    HSUIC.Button({ id: 'hs-panel-mod-wiki-btn', text: 'Mod 维基' }),
+                    HSUIC.Button({ id: 'hs-panel-mod-wiki-features-btn', text: '功能说明' }),
+                    HSUIC.Button({ id: 'hs-panel-discord-thread-btn', text: 'Discord 帖子' }),
+                    HSUIC.Button({ id: 'hs-panel-check-version-btn', text: '检查版本' }),
+                    this.#buildGridSectionHeader('其他工具'),
+                    HSUIC.Button({ id: 'hs-panel-dump-settings-btn', text: '导出设置' }),
+                    HSUIC.Button({ id: 'hs-panel-dump-gamedata-btn', text: '导出游戏变量' }),
+                    HSUIC.Button({ id: 'hs-panel-exit-exalt-bug-btn', text: '修复拔擢 Bug' }),
+                    HSUIC.Button({ id: 'hs-panel-clear-settings-btn', text: '清除设置', styles: { borderColor: 'red' } }),
+                    this.#buildGridSectionHeader('测试工具'),
+                    HSUIC.Button({ id: 'hs-panel-test-notify-btn', text: '通知测试' }),
+                    HSUIC.Button({ id: 'hs-panel-test-notify-long-btn', text: '通知测试 2' }),
+                    this.#buildGridSectionHeader('计算工具'),
                     this.#buildGridFullSpanDiv('hs-panel-calc-tools-p', `Execute supported calculations and see their results. Calculations denoted with "(C)" support "calculating by components",
                         meaning that the calculation results can be output as an array of components that make up the calculations.<br><br>
                         Note that calculating by components always clears the calculation cache first.`),
@@ -206,10 +206,10 @@ export class Hypersynergism {
                         id: 'hs-panel-test-calc-sel',
                         type: HSInputType.TEXT
                     }, calculationOptions),
-                    HSUIC.Button({ id: 'hs-panel-test-calc-redu-btn', text: 'Calculate reduced', class: 'hs-panel-btn-auto-width' }),
-                    HSUIC.Button({ id: 'hs-panel-test-calc-comps-btn', text: 'Calculate components', class: 'hs-panel-btn-auto-width' }),
-                    HSUIC.Button({ id: 'hs-panel-test-calc-cache-clear-btn', text: 'Clear cache' }),
-                    HSUIC.Button({ id: 'hs-panel-test-calc-cache-dump-btn', text: 'Dump cache' }),
+                    HSUIC.Button({ id: 'hs-panel-test-calc-redu-btn', text: '计算结果', class: 'hs-panel-btn-auto-width' }),
+                    HSUIC.Button({ id: 'hs-panel-test-calc-comps-btn', text: '计算组件', class: 'hs-panel-btn-auto-width' }),
+                    HSUIC.Button({ id: 'hs-panel-test-calc-cache-clear-btn', text: '清除缓存' }),
+                    HSUIC.Button({ id: 'hs-panel-test-calc-cache-dump-btn', text: '导出缓存' }),
                     this.#buildGridFullSpanDiv('hs-panel-test-calc-latest', ''),
                 ],
                 styles: {
@@ -243,7 +243,7 @@ export class Hypersynergism {
             const tsv = HSUtils.base64WithCRLF(base64);
             await navigator.clipboard.writeText(tsv);
 
-            HSUI.Notify('Ambrosia heater data copied to clipboard', {
+            HSUI.Notify('神肴加热器数据已复制到剪贴板', {
                 position: 'top',
                 notificationType: 'success'
             });
@@ -322,8 +322,8 @@ export class Hypersynergism {
         const isLatest = await HSGithub.isLatestTag();
 
         HSUI.Notify(isLatest
-            ? 'You are using the latest version of Hypersynergism!'
-            : 'You are NOT using the latest version of Hypersynergism!', {
+            ? '您正在使用最新版本的 Hypersynergism！'
+            : '您使用的不是最新版本的 Hypersynergism！', {
             position: 'top',
             notificationType: isLatest ? 'success' : 'warning'
         });
@@ -523,9 +523,9 @@ export class Hypersynergism {
             HSUIC.Grid({
                 class: 'hs-panel-grid-2col',
                 html: [
-                    this.#buildGridSectionHeader('Mouse'),
+                    this.#buildGridSectionHeader('鼠标'),
                     HSUIC.Div({ id: 'hs-panel-debug-mousepos' }),
-                    this.#buildGridSectionHeader('Game Data'),
+                    this.#buildGridSectionHeader('游戏数据'),
                     this.#buildGridFullSpanDiv('hs-panel-debug-gamedata-currentambrosia', ''),
                 ]
             })

@@ -218,7 +218,7 @@ export class HSAmbrosiaQuickbar {
 
             const buttonId = this.#resolveOriginalButtonId(clone);
             clone.dataset.originalId = buttonId;
-            clone.title = 'Alt+Click to pick an icon | Right-click to clear';
+            clone.title = 'Alt+点击选择图标 | 右键清除';
             this.#cacheOriginalButtonRef(buttonId);
 
             const buttonHandler = async (e: Event) => {

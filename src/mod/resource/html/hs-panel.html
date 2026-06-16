@@ -1,46 +1,43 @@
 <div id="hs-panel" class="hs-panel-closed">
     <div class="hs-panel-header">
-        <div class="hs-panel-header-left" id="hs-panel-version">HyperSynergism</div>
+        <div class="hs-panel-header-left" id="hs-panel-version">超级协同 Mod</div>
         <div class="hs-panel-header-right">
-            <div class="hs-modal-btn hs-modal-minimize-btn" id="hs-panel-minimize-btn" title="Minimize">_</div>
-            <div class="hs-modal-btn" id="hs-panel-close-btn" title="Close">X</div>
+            <div class="hs-modal-btn hs-modal-minimize-btn" id="hs-panel-minimize-btn" title="最小化">_</div>
+            <div class="hs-modal-btn" id="hs-panel-close-btn" title="关闭">X</div>
         </div>
     </div>
     <div class="hs-panel-tabs">
-        <div class="hs-panel-tab hs-tab-selected" id="hs-panel-tab-1" data-tab="1">Log</div>
-        <div class="hs-panel-tab" id="hs-panel-tab-5" data-tab="5">Info</div>
-        <div class="hs-panel-tab" id="hs-panel-tab-2" data-tab="2">Tools</div>
-        <div class="hs-panel-tab" id="hs-panel-tab-3" data-tab="3">Settings</div>
-        <div class="hs-panel-tab" id="hs-panel-tab-4" data-tab="4">Debug</div>
+        <div class="hs-panel-tab hs-tab-selected" id="hs-panel-tab-1" data-tab="1">日志</div>
+        <div class="hs-panel-tab" id="hs-panel-tab-5" data-tab="5">信息</div>
+        <div class="hs-panel-tab" id="hs-panel-tab-2" data-tab="2">工具</div>
+        <div class="hs-panel-tab" id="hs-panel-tab-3" data-tab="3">设置</div>
+        <div class="hs-panel-tab" id="hs-panel-tab-4" data-tab="4">调试</div>
     </div>
     <div class="hs-panel-body hs-panel-body-1 hs-panel-body-open-flex" id="hs-log-panel">
         <div id="hs-ui-log" class="hs-scrollbar-themed"></div>
         <div id="hs-ui-log-controls">
-            <button class="hs-panel-btn" id="hs-ui-log-clear">Clear Log</button>
-            <button class="hs-panel-btn" id="hs-ui-log-copy">Copy Log</button>
+            <button class="hs-panel-btn" id="hs-ui-log-clear">清除日志</button>
+            <button class="hs-panel-btn" id="hs-ui-log-copy">复制日志</button>
         </div>
     </div>
-    <div class="hs-panel-body hs-panel-body-2 hs-scrollbar-themed" id="hs-tools-panel">Tools</div>
-    <div class="hs-panel-body hs-panel-body-3 hs-scrollbar-themed" id="hs-settings-panel">Setting</div>
+    <div class="hs-panel-body hs-panel-body-2 hs-scrollbar-themed" id="hs-tools-panel">工具</div>
+    <div class="hs-panel-body hs-panel-body-3 hs-scrollbar-themed" id="hs-settings-panel">设置</div>
     <div class="hs-panel-body hs-panel-body-4 hs-scrollbar-themed" id="hs-debug-panel"></div>
     <div class="hs-panel-body hs-panel-body-5 hs-scrollbar-themed" id="hs-info-panel">
-        <h1 class="hs-panel-info-h1">Important information about the mod</h1>
+        <h1 class="hs-panel-info-h1">关于 Mod 的重要信息</h1>
 
-        <h2 class="hs-panel-info-h2">18.4.2026 - Bugs</h2>
+        <h2 class="hs-panel-info-h2">2026.4.18 - 已知问题</h2>
         <p class="hs-panel-info-p">
-            This mod is still in development and may contain bugs. You are using it at your own risk and you should save often.</br></br>
-            We (the devs of the mod) are not to be held responsible for any issues caused by the mod. However, if you have a bug report or a suggestion, let us know on the 
-            <a href="https://discord.com/channels/677271830838640680/1456904896099127367" target="_blank" rel="noopener noreferrer" class="hs-link">HyperSynergism thread</a> on discord and we will gladly look at it.</br></br>
+            本 Mod 仍在开发中，可能存在缺陷。使用风险自负，请经常保存存档。</br></br>
+            我们不承担任何因 Mod 引起的问题责任。如果您有 Bug 报告或建议，请在 Discord 的
+            <a href="https://discord.com/channels/677271830838640680/1456904896099127367" target="_blank" rel="noopener noreferrer" class="hs-link">HyperSynergism 帖子</a>中告知我们。</br></br>
         </p>
 
-        <h2 class="hs-panel-info-h2">12.5.2025 - Game Data Sniffing (GDS) and Singularity</h2>
+        <h2 class="hs-panel-info-h2">2025.5.12 - 游戏数据嗅探与奇点</h2>
         <p class="hs-panel-info-p">
-            The mod will automatically disable GDS when the player enters a new Singularity or exits or leaves
-            Singularity challenge.</br></br>
-            This is because GDS reads and writes to localStorage heavily, which is fine otherwise,
-            but results in stuttering and other issues if it is enabled when starting a new singularity.</br></br>
-            <span style="color: chartreuse">After a few seconds, the mod will automatically re-enable GDS for the new
-                Singularity.</span>
+            当玩家进入新奇点或退出奇点挑战时，Mod 会自动禁用 GDS。</br></br>
+            这是因为 GDS 会频繁读写 localStorage，在新奇点开始时启用会导致卡顿。</br></br>
+            <span style="color: chartreuse">几秒后，Mod 会自动为新奇点重新启用 GDS。</span>
         </p>
     </div>
     <div class="hs-resizer"></div>
